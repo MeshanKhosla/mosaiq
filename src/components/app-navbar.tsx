@@ -1,7 +1,6 @@
-import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { convexQuery } from "@convex-dev/react-query"
 import { api } from "../../convex/_generated/api"
-import { authClient } from "~/lib/auth-client"
 import { Avatar, AvatarFallback } from "./ui/avatar"
 import {
   DropdownMenu,
@@ -11,8 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu"
-import { ThemeToggle } from "./theme-toggle"
 import { SidebarTrigger } from "./ui/sidebar"
+import { ThemeToggle } from "./theme-toggle"
+import { authClient } from "~/lib/auth-client"
 
 export function AppNavbar() {
   const queryClient = useQueryClient()

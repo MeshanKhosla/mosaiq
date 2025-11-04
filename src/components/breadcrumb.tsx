@@ -1,6 +1,5 @@
-import { useRouterState } from "@tanstack/react-router"
+import { Link, useRouterState } from "@tanstack/react-router"
 import { ChevronRight } from "lucide-react"
-import { Link } from "@tanstack/react-router"
 
 const routeMap: Record<string, string> = {
   "/": "Home",
@@ -14,7 +13,18 @@ export function Breadcrumb() {
   const pathname = router.location.pathname
   
   // Get the current page name
-  const currentPage = routeMap[pathname] || pathname.split("/").pop()?.charAt(0).toUpperCase() + pathname.split("/").pop()?.slice(1) || "Page"
+  const getCurrentPage = () => {
+    if (routeMap[pathname]) {
+      return routeMap[pathname]
+    }
+    const lastSegment = pathname.split("/").pop()
+    if (lastSegment && lastSegment.length > 0) {
+      return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1)
+    }
+    return "Page"
+  }
+  
+  const currentPage = getCurrentPage()
   
   return (
     <nav className="flex items-center gap-1.5 text-sm">
