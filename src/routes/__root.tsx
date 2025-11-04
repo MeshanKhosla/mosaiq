@@ -14,6 +14,7 @@ import {
   fetchSession,
   getCookieName,
 } from '@convex-dev/better-auth/react-start';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { ConvexQueryClient } from '@convex-dev/react-query';
 import type { ConvexReactClient } from 'convex/react';
 import type { QueryClient } from '@tanstack/react-query';
@@ -101,6 +102,12 @@ function RootComponent() {
     >
       <RootDocument>
         <Outlet />
+        {import.meta.env.DEV && (
+          <ReactQueryDevtools
+            initialIsOpen={false}
+            buttonPosition="bottom-left"
+          />
+        )}
       </RootDocument>
     </ConvexBetterAuthProvider>
   );
