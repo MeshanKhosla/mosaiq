@@ -1,7 +1,8 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useMutation } from 'convex/react'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
 import { convexQuery } from '@convex-dev/react-query'
+import { authClient } from '~/lib/auth-client'
 import { api } from '../../convex/_generated/api'
 
 export const Route = createFileRoute('/')({
@@ -9,17 +10,58 @@ export const Route = createFileRoute('/')({
 })
 
 function Home() {
+  const queryClient = useQueryClient()
+  const { data: user } = useSuspenseQuery(
+    convexQuery(api.auth.getCurrentUser, {})
+  )
   const {
     data: { viewer, numbers },
   } = useSuspenseQuery(convexQuery(api.myFunctions.listNumbers, { count: 10 }))
 
   const addNumber = useMutation(api.myFunctions.addNumber)
 
+  const handleSignOut = async () => {
+    await authClient.signOut()
+    // Refetch the user query immediately to update the UI
+    await queryClient.refetchQueries({
+      queryKey: convexQuery(api.auth.getCurrentUser, {}).queryKey,
+    })
+  }
+
   return (
     <main className="p-8 flex flex-col gap-16">
-      <h1 className="text-4xl font-bold text-center">
-        Convex + Tanstack Start
-      </h1>
+      <div className="flex justify-between items-center max-w-lg mx-auto w-full">
+        <h1 className="text-4xl font-bold">
+          Convex + Tanstack Start
+        </h1>
+        <div className="flex items-center gap-4">
+          {user ? (
+            <>
+              <div className="flex flex-col items-end">
+                <p className="text-sm font-medium">
+                  {user.name || user.email}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {user.email}
+                </p>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm px-4 py-2 rounded-md transition-colors"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/signin"
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-md transition-colors"
+            >
+              Sign In
+            </Link>
+          )}
+        </div>
+      </div>
       <div className="flex flex-col gap-8 max-w-lg mx-auto">
         <p>Welcome {viewer ?? 'Anonymous'}!</p>
         <p>
