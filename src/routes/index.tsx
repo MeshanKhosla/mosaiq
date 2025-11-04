@@ -1,11 +1,28 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { AppLayout } from '~/components/app-layout'
+import { createFileRoute } from '@tanstack/react-router';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from 'convex/_generated/api';
+import { useMutation } from 'convex/react';
+import { AppLayout } from '~/components/app-layout';
+import { Button } from '~/components/ui/button';
 
 export const Route = createFileRoute('/')({
   component: HomePage,
-})
+  loader: async (opts) => {
+    await opts.context.queryClient.prefetchQuery(
+      convexQuery(api.numbers.list, {}),
+    );
+  },
+});
 
 function HomePage() {
+  const { data: numbers } = useSuspenseQuery(convexQuery(api.numbers.list, {}));
+  const createNumber = useMutation(api.numbers.create);
+
+  function createRandomNumber() {
+    createNumber({ value: Math.floor(Math.random() * 10) + 1 });
+  }
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -14,10 +31,11 @@ function HomePage() {
             Welcome to Mosaiq
           </h1>
           <p className="text-muted-foreground">
-            Your minimal and beautiful dashboard
+            {numbers.map((number) => number.value).join(', ')}
           </p>
+          <Button onClick={createRandomNumber}>Create Number</Button>
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }

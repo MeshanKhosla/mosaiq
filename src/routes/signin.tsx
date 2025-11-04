@@ -1,66 +1,66 @@
-import { useEffect, useState } from 'react'
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { convexQuery } from '@convex-dev/react-query'
-import { api } from '../../convex/_generated/api'
-import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
-import { authClient } from '~/lib/auth-client'
+import { useEffect, useState } from 'react';
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '../../convex/_generated/api';
+import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
+import { authClient } from '~/lib/auth-client';
 
 export const Route = createFileRoute('/signin')({
   component: SignIn,
-})
+});
 
 function SignIn() {
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: user } = useSuspenseQuery(
     convexQuery(api.auth.getCurrentUser, {}),
-  )
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  );
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Redirect if already signed in
   useEffect(() => {
     if (user) {
-      navigate({ to: '/' })
+      navigate({ to: '/' });
     }
-  }, [user, navigate])
+  }, [user, navigate]);
 
   // Don't render if already signed in (will redirect)
   if (user) {
-    return null
+    return null;
   }
 
   const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setIsLoading(true)
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
 
     try {
       const result = await authClient.signIn.email({
         email,
         password,
-      })
+      });
 
       if (result.error) {
-        setError(result.error.message || 'Sign in failed')
+        setError(result.error.message || 'Sign in failed');
       } else {
         // Refetch the user query immediately to update the UI
         await queryClient.refetchQueries({
           queryKey: convexQuery(api.auth.getCurrentUser, {}).queryKey,
-        })
-        navigate({ to: '/' })
+        });
+        navigate({ to: '/' });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center p-8">
@@ -115,5 +115,5 @@ function SignIn() {
         </div>
       </div>
     </main>
-  )
+  );
 }

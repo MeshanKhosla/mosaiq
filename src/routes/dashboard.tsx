@@ -1,9 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { AppLayout } from '~/components/app-layout'
+import { createFileRoute } from '@tanstack/react-router';
+import { AppLayout } from '~/components/app-layout';
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
-})
+});
 
 function Dashboard() {
   return (
@@ -17,5 +17,5 @@ function Dashboard() {
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }

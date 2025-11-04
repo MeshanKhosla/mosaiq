@@ -1,9 +1,9 @@
-import { Home, LayoutDashboard } from 'lucide-react'
-import { Link, useRouterState } from '@tanstack/react-router'
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { convexQuery } from '@convex-dev/react-query'
-import { api } from '../../convex/_generated/api'
-import { Avatar, AvatarFallback } from './ui/avatar'
+import { Home, LayoutDashboard } from 'lucide-react';
+import { Link, useRouterState } from '@tanstack/react-router';
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import { api } from '../../convex/_generated/api';
+import { Avatar, AvatarFallback } from './ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu'
+} from './ui/dropdown-menu';
 import {
   Sidebar,
   SidebarContent,
@@ -24,9 +24,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
-} from './ui/sidebar'
-import { ThemeToggle } from './theme-toggle'
-import { authClient } from '~/lib/auth-client'
+} from './ui/sidebar';
+import { ThemeToggle } from './theme-toggle';
+import { authClient } from '~/lib/auth-client';
 
 const menuItems = [
   {
@@ -39,22 +39,22 @@ const menuItems = [
     url: '/dashboard',
     icon: LayoutDashboard,
   },
-]
+];
 
 export function AppSidebar() {
-  const router = useRouterState()
-  const queryClient = useQueryClient()
-  const currentPath = router.location.pathname
+  const router = useRouterState();
+  const queryClient = useQueryClient();
+  const currentPath = router.location.pathname;
   const { data: user } = useSuspenseQuery(
     convexQuery(api.auth.getCurrentUser, {}),
-  )
+  );
 
   const handleSignOut = async () => {
-    await authClient.signOut()
+    await authClient.signOut();
     await queryClient.refetchQueries({
       queryKey: convexQuery(api.auth.getCurrentUser, {}).queryKey,
-    })
-  }
+    });
+  };
 
   const getInitials = (name?: string, email?: string) => {
     if (name) {
@@ -63,13 +63,13 @@ export function AppSidebar() {
         .map((n) => n[0])
         .join('')
         .toUpperCase()
-        .slice(0, 2)
+        .slice(0, 2);
     }
     if (email) {
-      return email[0].toUpperCase()
+      return email[0].toUpperCase();
     }
-    return '?'
-  }
+    return '?';
+  };
 
   return (
     <Sidebar>
@@ -147,5 +147,5 @@ export function AppSidebar() {
         )}
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
