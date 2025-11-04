@@ -18,6 +18,7 @@ import type { ConvexQueryClient } from '@convex-dev/react-query'
 import type { ConvexReactClient } from 'convex/react'
 import type { QueryClient } from '@tanstack/react-query'
 import { authClient } from '~/lib/auth-client'
+import { ThemeProvider } from '~/components/theme-provider'
 import appCss from '~/styles/app.css?url'
 
 // Get auth information for SSR using available cookies
@@ -47,7 +48,7 @@ export const Route = createRootRouteWithContext<{
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Mosaiq',
       },
     ],
     links: [
@@ -107,12 +108,14 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html>
+    <html suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body>
-        {children}
+        <ThemeProvider defaultTheme="light" storageKey="mosaiq-theme">
+          {children}
+        </ThemeProvider>
         <Scripts />
       </body>
     </html>

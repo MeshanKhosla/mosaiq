@@ -4,6 +4,9 @@ import { convexQuery } from '@convex-dev/react-query'
 import { authClient } from '~/lib/auth-client'
 import { api } from '../../convex/_generated/api'
 import { useState, useEffect } from 'react'
+import { Button } from '~/components/ui/button'
+import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
 
 export const Route = createFileRoute('/signin')({
   component: SignIn,
@@ -62,67 +65,51 @@ function SignIn() {
   return (
     <main className="min-h-screen flex items-center justify-center p-8">
       <div className="w-full max-w-md">
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 border border-gray-200 dark:border-gray-800">
+        <div className="rounded-lg border bg-card p-8 shadow-lg">
           <h1 className="text-3xl font-bold text-center mb-8">Sign In</h1>
           
           <form onSubmit={handleSignIn} className="space-y-6">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium mb-2"
-              >
-                Email
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="you@example.com"
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium mb-2"
-              >
-                Password
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="••••••••"
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-                <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+              <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3">
+                <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
-            >
+            <Button type="submit" disabled={isLoading} className="w-full">
               {isLoading ? 'Signing in...' : 'Sign In'}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Don't have an account?{' '}
               <Link
                 to="/signup"
-                className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline"
+                className="text-primary hover:underline"
               >
                 Sign up
               </Link>
