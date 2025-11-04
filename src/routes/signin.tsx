@@ -1,12 +1,12 @@
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
-import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { convexQuery } from '@convex-dev/react-query'
-import { authClient } from '~/lib/auth-client'
 import { api } from '../../convex/_generated/api'
-import { useState, useEffect } from 'react'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
+import { authClient } from '~/lib/auth-client'
 
 export const Route = createFileRoute('/signin')({
   component: SignIn,
@@ -16,7 +16,7 @@ function SignIn() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { data: user } = useSuspenseQuery(
-    convexQuery(api.auth.getCurrentUser, {})
+    convexQuery(api.auth.getCurrentUser, {}),
   )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -67,7 +67,7 @@ function SignIn() {
       <div className="w-full max-w-md">
         <div className="rounded-lg border bg-card p-8 shadow-lg">
           <h1 className="text-3xl font-bold text-center mb-8">Sign In</h1>
-          
+
           <form onSubmit={handleSignIn} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -107,10 +107,7 @@ function SignIn() {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Don't have an account?{' '}
-              <Link
-                to="/signup"
-                className="text-primary hover:underline"
-              >
+              <Link to="/signup" className="text-primary hover:underline">
                 Sign up
               </Link>
             </p>
@@ -120,4 +117,3 @@ function SignIn() {
     </main>
   )
 }
-

@@ -1,9 +1,17 @@
-import { Home, LayoutDashboard } from "lucide-react"
-import { Link, useRouterState } from "@tanstack/react-router"
-import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query"
-import { convexQuery } from "@convex-dev/react-query"
-import { api } from "../../convex/_generated/api"
-import { authClient } from "~/lib/auth-client"
+import { Home, LayoutDashboard } from 'lucide-react'
+import { Link, useRouterState } from '@tanstack/react-router'
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { convexQuery } from '@convex-dev/react-query'
+import { api } from '../../convex/_generated/api'
+import { Avatar, AvatarFallback } from './ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
 import {
   Sidebar,
   SidebarContent,
@@ -16,27 +24,19 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
-} from "./ui/sidebar"
-import { Avatar, AvatarFallback } from "./ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu"
-import { ThemeToggle } from "./theme-toggle"
+} from './ui/sidebar'
+import { ThemeToggle } from './theme-toggle'
+import { authClient } from '~/lib/auth-client'
 
 const menuItems = [
   {
-    title: "Home",
-    url: "/",
+    title: 'Home',
+    url: '/',
     icon: Home,
   },
   {
-    title: "Dashboard",
-    url: "/dashboard",
+    title: 'Dashboard',
+    url: '/dashboard',
     icon: LayoutDashboard,
   },
 ]
@@ -46,7 +46,7 @@ export function AppSidebar() {
   const queryClient = useQueryClient()
   const currentPath = router.location.pathname
   const { data: user } = useSuspenseQuery(
-    convexQuery(api.auth.getCurrentUser, {})
+    convexQuery(api.auth.getCurrentUser, {}),
   )
 
   const handleSignOut = async () => {
@@ -59,16 +59,16 @@ export function AppSidebar() {
   const getInitials = (name?: string, email?: string) => {
     if (name) {
       return name
-        .split(" ")
+        .split(' ')
         .map((n) => n[0])
-        .join("")
+        .join('')
         .toUpperCase()
         .slice(0, 2)
     }
     if (email) {
       return email[0].toUpperCase()
     }
-    return "?"
+    return '?'
   }
 
   return (
@@ -99,19 +99,19 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-2">
         {user ? (
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 flex-1 rounded-md px-3 py-2 hover:bg-sidebar-accent focus:outline-none focus:ring-2 focus:ring-ring">
+                <button className="flex items-center gap-2 flex-1 rounded-md px-2 py-2 hover:bg-sidebar-accent focus:outline-none focus:ring-2 focus:ring-ring">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="text-xs">
                       {getInitials(user.name, user.email)}
                     </AvatarFallback>
                   </Avatar>
                   <p className="text-sm font-medium leading-none truncate">
-                    {user.name || "User"}
+                    {user.name || 'User'}
                   </p>
                 </button>
               </DropdownMenuTrigger>
@@ -119,7 +119,7 @@ export function AppSidebar() {
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {user.name || "User"}
+                      {user.name || 'User'}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email}
@@ -149,4 +149,3 @@ export function AppSidebar() {
     </Sidebar>
   )
 }
-

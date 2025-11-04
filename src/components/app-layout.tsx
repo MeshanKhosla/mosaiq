@@ -1,6 +1,6 @@
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "./ui/sidebar"
-import { AppSidebar } from "./app-sidebar"
-import { Breadcrumb } from "./breadcrumb"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from './ui/sidebar'
+import { AppSidebar } from './app-sidebar'
+import { Breadcrumb } from './breadcrumb'
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -8,7 +8,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       defaultOpen={false}
       style={
         {
-          "--sidebar-width": "18rem",
+          '--sidebar-width': '18rem',
         } as React.CSSProperties
       }
     >
@@ -18,11 +18,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarTrigger />
           <Breadcrumb />
         </div>
-        <div className="flex-1 p-6">
-          {children}
-        </div>
+        <div className="flex-1 p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   )
 }
-

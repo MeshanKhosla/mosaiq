@@ -30,7 +30,7 @@ export function getRouter() {
     createRouter({
       routeTree,
       defaultPreload: 'intent',
-      context: { queryClient, convexClient: convex, convexQueryClient }, 
+      context: { queryClient, convexClient: convex, convexQueryClient },
       scrollRestoration: true,
       defaultPreloadStaleTime: 0, // Let React Query handle all caching
       defaultErrorComponent: (err) => <p>{err.error.stack}</p>,
