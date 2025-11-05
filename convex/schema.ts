@@ -7,19 +7,45 @@ export default defineSchema({
     createdBy: v.string(),
   }).index('by_createdBy', ['createdBy']),
 
-  // Datasources
+  datasources: defineTable({
+    name: v.string(),
+    createdBy: v.string(),
+  }).index('by_createdBy', ['createdBy']),
 
-  // Analyses
-  // analyses: defineTable({
-  //   datasourceId: v.array(v.id('datasources')),
-  //   name: v.string(),
-  //   sheets: v.array(v.id('sheets')),
-  //   createdBy: v.id('users'),
-  // }).index('by_createdBy', ['createdBy']),
+  analyses: defineTable({
+    datasourceIds: v.array(v.id('datasources')),
+    name: v.string(),
+    createdBy: v.string(),
+  }).index('by_createdBy', ['createdBy']),
 
-  // Dashboards
+  sheets: defineTable({
+    name: v.string(),
+    analysisId: v.id('analyses'),
+    createdBy: v.string(),
+  })
+    .index('by_createdBy', ['createdBy'])
+    .index('by_analysisId', ['analysisId']),
 
-  // Sheets
+  dashboards: defineTable({
+    name: v.string(),
+    sourceAnalysisId: v.id('analyses'),
+    createdBy: v.string(),
+  }).index('by_createdBy', ['createdBy']),
 
-  // Visuals
+  visuals: defineTable({
+    type: v.union(
+      v.literal('table'),
+      v.literal('bar chart'),
+      v.literal('line chart'),
+      v.literal('pie chart'),
+    ),
+    title: v.string(),
+    position: v.object({
+      x: v.number(),
+      y: v.number(),
+      width: v.number(),
+      height: v.number(),
+    }),
+    createdBy: v.string(),
+  }),
 });

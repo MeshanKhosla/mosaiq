@@ -24,14 +24,23 @@ import appCss from '~/styles/app.css?url';
 
 // Get auth information for SSR using available cookies
 const fetchAuth = createServerFn({ method: 'GET' }).handler(async () => {
-  const { createAuth } = await import('../../convex/auth');
-  const { session } = await fetchSession(getRequest());
-  const sessionCookieName = getCookieName(createAuth);
-  const token = getCookie(sessionCookieName);
-  return {
-    userId: session?.user.id,
-    token,
-  };
+  try {
+    const { createAuth } = await import('../../convex/auth');
+    const { session } = await fetchSession(getRequest());
+    const sessionCookieName = getCookieName(createAuth);
+    const token = getCookie(sessionCookieName);
+    return {
+      userId: session?.user.id,
+      token,
+    };
+  } catch (error) {
+    // Return empty auth data if there's an error (e.g., during stream closure)
+    console.error('Error in fetchAuth:', error);
+    return {
+      userId: undefined,
+      token: undefined,
+    };
+  }
 });
 
 export const Route = createRootRouteWithContext<{
@@ -42,12 +51,18 @@ export const Route = createRootRouteWithContext<{
   beforeLoad: async (ctx) => {
     // all queries, mutations and action made with TanStack Query will be
     // authenticated by an identity token.
-    const { token } = await fetchAuth();
+    try {
+      const { token } = await fetchAuth();
 
-    // During SSR only (the only time serverHttpClient exists),
-    // set the auth token to make HTTP queries with.
-    if (token) {
-      ctx.context.convexQueryClient.serverHttpClient?.setAuth(token);
+      // During SSR only (the only time serverHttpClient exists),
+      // set the auth token to make HTTP queries with.
+      if (token) {
+        ctx.context.convexQueryClient.serverHttpClient?.setAuth(token);
+      }
+    } catch (error) {
+      // Silently handle errors during SSR to prevent stream closure issues
+      // This can happen during page refreshes when the stream is already closing
+      console.error('Error fetching auth in beforeLoad:', error);
     }
   },
   head: () => ({
