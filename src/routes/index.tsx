@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from 'convex/_generated/api';
 import { useMutation } from 'convex/react';
@@ -18,7 +18,9 @@ export const Route = createFileRoute('/')({
 
 function HomePage() {
   const { data: numbers } = useSuspenseQuery(convexQuery(api.numbers.list, {}));
-  const { data: user } = useQuery(convexQuery(api.auth.getCurrentUser, {}));
+  // const { data: user } = useSuspenseQuery(
+  //   convexQuery(api.auth.getCurrentUser, {}),
+  // );
 
   const createNumber = useMutation(api.numbers.create).withOptimisticUpdate(
     (localStore, args) => {
@@ -32,7 +34,7 @@ function HomePage() {
             _id: crypto.randomUUID() as Id<'numbers'>,
             _creationTime: Date.now(),
             value,
-            createdBy: user?._id ?? '',
+            createdBy: '',
           },
         ]);
       }
@@ -53,7 +55,7 @@ function HomePage() {
           <p className="text-muted-foreground">
             {numbers.map((number) => number.value).join(', ')}
           </p>
-          {user && <Button onClick={createRandomNumber}>Create Number</Button>}
+          <Button onClick={createRandomNumber}>Create Number</Button>
         </div>
       </div>
     </AppLayout>

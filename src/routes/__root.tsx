@@ -39,17 +39,6 @@ export const Route = createRootRouteWithContext<{
   convexClient: ConvexReactClient;
   convexQueryClient: ConvexQueryClient;
 }>()({
-  beforeLoad: async (ctx) => {
-    // all queries, mutations and action made with TanStack Query will be
-    // authenticated by an identity token.
-    const { token } = await fetchAuth();
-
-    // During SSR only (the only time serverHttpClient exists),
-    // set the auth token to make HTTP queries with.
-    if (token) {
-      ctx.context.convexQueryClient.serverHttpClient?.setAuth(token);
-    }
-  },
   head: () => ({
     meta: [
       {
@@ -85,6 +74,20 @@ export const Route = createRootRouteWithContext<{
       { rel: 'manifest', href: '/site.webmanifest', color: '#fffff' },
       { rel: 'icon', href: '/favicon.ico' },
     ],
+    beforeLoad: async (ctx: any) => {
+      // all queries, mutations and action made with TanStack Query will be
+      // authenticated by an identity token.
+      const { userId, token } = await fetchAuth();
+
+      // During SSR only (the only time serverHttpClient exists),
+      // set the auth token to make HTTP queries with.
+      if (token) {
+        ctx.context.convexQueryClient.serverHttpClient?.setAuth(token);
+      }
+
+      return { userId, token };
+    },
+    component: RootComponent,
   }),
   notFoundComponent: () => <div>Route not found</div>,
   component: RootComponent,
