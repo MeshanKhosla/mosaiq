@@ -5,7 +5,16 @@ import { authComponent } from './auth';
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query('numbers').collect();
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return [];
+    }
+
+    const userId = user._id;
+    return await ctx.db
+      .query('numbers')
+      .withIndex('by_createdBy', (q) => q.eq('createdBy', userId))
+      .collect();
   },
 });
 
@@ -15,10 +24,11 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const user = await authComponent.getAuthUser(ctx);
+    const userId = user._id;
 
     return await ctx.db.insert('numbers', {
       value: args.value,
-      createdBy: user._id,
+      createdBy: userId,
     });
   },
 });
