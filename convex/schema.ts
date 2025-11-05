@@ -2,11 +2,6 @@ import { defineSchema, defineTable } from 'convex/server';
 import { v } from 'convex/values';
 
 export default defineSchema({
-  numbers: defineTable({
-    value: v.number(),
-    createdBy: v.string(),
-  }).index('by_createdBy', ['createdBy']),
-
   datasources: defineTable({
     name: v.string(),
     fileName: v.string(),

@@ -399,3 +399,22 @@ export const updateColumnType = mutation({
     });
   },
 });
+
+export const updateName = mutation({
+  args: {
+    datasourceId: v.id('datasources'),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+    const datasource = await ctx.db.get(args.datasourceId);
+
+    if (!datasource || datasource.createdBy !== user._id) {
+      throw new Error('Datasource not found or unauthorized');
+    }
+
+    await ctx.db.patch(args.datasourceId, {
+      name: args.name.trim(),
+    });
+  },
+});

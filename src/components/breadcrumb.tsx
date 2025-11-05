@@ -1,5 +1,8 @@
 import { Link, useRouterState } from '@tanstack/react-router';
+import { useQuery } from 'convex/react';
 import { ChevronRight } from 'lucide-react';
+import { api } from '../../convex/_generated/api';
+import type { Id } from '../../convex/_generated/dataModel';
 
 const routeMap: Record<string, string> = {
   '/': 'Home',
@@ -12,14 +15,26 @@ export function Breadcrumb() {
   const router = useRouterState();
   const pathname = router.location.pathname;
 
+  // Extract datasource ID from pathname if on datasource page
+  const datasourceIdMatch = pathname.match(/^\/datasource\/(.+)$/);
+  const datasourceId = datasourceIdMatch
+    ? (datasourceIdMatch[1] as Id<'datasources'>)
+    : null;
+
+  // Fetch datasource if on datasource page
+  const datasource = useQuery(
+    api.datasources.get,
+    datasourceId ? { id: datasourceId } : 'skip',
+  );
+
   // Get the current page name
   const getCurrentPage = () => {
     if (routeMap[pathname]) {
       return routeMap[pathname];
     }
-    // Handle datasource routes
+    // Handle datasource routes - use actual datasource name if available
     if (pathname.startsWith('/datasource/')) {
-      return 'Datasource';
+      return datasource?.name ?? 'Datasource';
     }
     const lastSegment = pathname.split('/').pop();
     if (lastSegment && lastSegment.length > 0) {

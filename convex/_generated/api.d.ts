@@ -11,7 +11,6 @@
 import type * as auth from "../auth.js";
 import type * as datasources from "../datasources.js";
 import type * as http from "../http.js";
-import type * as numbers from "../numbers.js";
 
 import type {
   ApiFromModules,
@@ -31,7 +30,6 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   datasources: typeof datasources;
   http: typeof http;
-  numbers: typeof numbers;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 
