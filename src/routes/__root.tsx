@@ -118,6 +118,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const storageKey = 'mosaiq-theme';
+                const stored = localStorage.getItem(storageKey);
+                const theme = stored === 'dark' || stored === 'light' ? stored : 'light';
+                document.documentElement.classList.remove('light', 'dark');
+                document.documentElement.classList.add(theme);
+              })();
+            `,
+          }}
+        />
       </head>
       <body>
         <ThemeProvider defaultTheme="light" storageKey="mosaiq-theme">
