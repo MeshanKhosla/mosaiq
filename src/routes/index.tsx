@@ -18,9 +18,9 @@ export const Route = createFileRoute('/')({
 
 function HomePage() {
   const { data: numbers } = useSuspenseQuery(convexQuery(api.numbers.list, {}));
-  // const { data: user } = useSuspenseQuery(
-  //   convexQuery(api.auth.getCurrentUser, {}),
-  // );
+  const { data: user } = useSuspenseQuery(
+    convexQuery(api.auth.getCurrentUser, {}),
+  );
 
   const createNumber = useMutation(api.numbers.create).withOptimisticUpdate(
     (localStore, args) => {
@@ -55,7 +55,7 @@ function HomePage() {
           <p className="text-muted-foreground">
             {numbers.map((number) => number.value).join(', ')}
           </p>
-          <Button onClick={createRandomNumber}>Create Number</Button>
+          {user && <Button onClick={createRandomNumber}>Create Number</Button>}
         </div>
       </div>
     </AppLayout>
