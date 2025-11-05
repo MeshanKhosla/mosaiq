@@ -9,6 +9,9 @@ export default defineSchema({
 
   datasources: defineTable({
     name: v.string(),
+    storageId: v.id('_storage'),
+    fileName: v.string(),
+    fileSize: v.number(),
     createdBy: v.string(),
   }).index('by_createdBy', ['createdBy']),
 

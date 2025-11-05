@@ -6,6 +6,7 @@ import { useMutation } from 'convex/react';
 import type { Id } from 'convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
 import { Button } from '~/components/ui/button';
+import { Upload } from '~/components/upload';
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -55,7 +56,12 @@ function HomePage() {
           <p className="text-muted-foreground">
             {numbers.map((number) => number.value).join(', ')}
           </p>
-          {user && <Button onClick={createRandomNumber}>Create Number</Button>}
+          {user && (
+            <div className="space-y-4">
+              <Button onClick={createRandomNumber}>Create Number</Button>
+              <Upload />
+            </div>
+          )}
         </div>
       </div>
     </AppLayout>
