@@ -35,9 +35,9 @@ export default defineSchema({
   visuals: defineTable({
     type: v.union(
       v.literal('table'),
-      v.literal('bar chart'),
-      v.literal('line chart'),
-      v.literal('pie chart'),
+      v.literal('bar_chart'),
+      v.literal('line_chart'),
+      v.literal('pie_chart'),
     ),
     title: v.string(),
     position: v.object({
