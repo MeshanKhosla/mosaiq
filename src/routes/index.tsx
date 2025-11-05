@@ -18,23 +18,24 @@ export const Route = createFileRoute('/')({
 
 function HomePage() {
   const { data: numbers } = useSuspenseQuery(convexQuery(api.numbers.list, {}));
+  // const { data: user } = useSuspenseQuery(
+  //   convexQuery(api.auth.getCurrentUser, {}),
+  // );
 
   const createNumber = useMutation(api.numbers.create).withOptimisticUpdate(
     (localStore, args) => {
       const { value } = args;
       const existingNumbers = localStore.getQuery(api.numbers.list, {});
 
-      // If we've loaded the api.numbers.list query, add an optimistic number
       if (existingNumbers !== undefined) {
-        const now = Date.now();
-        const newNumber = {
-          _id: crypto.randomUUID() as Id<'numbers'>,
-          _creationTime: now,
-          value,
-        };
         localStore.setQuery(api.numbers.list, {}, [
           ...existingNumbers,
-          newNumber,
+          {
+            _id: crypto.randomUUID() as Id<'numbers'>,
+            _creationTime: Date.now(),
+            value,
+            createdBy: '',
+          },
         ]);
       }
     },
