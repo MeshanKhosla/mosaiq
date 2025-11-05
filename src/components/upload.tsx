@@ -5,6 +5,8 @@ import { api } from '../../convex/_generated/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { CsvTable } from './csv-table';
+import type { Id } from '../../convex/_generated/dataModel';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB in bytes
 
@@ -13,6 +15,8 @@ export function Upload() {
   const [name, setName] = React.useState('');
   const [isUploading, setIsUploading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [uploadedDatasourceId, setUploadedDatasourceId] =
+    React.useState<Id<'datasources'> | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const generateUploadUrl = useMutation(api.datasources.generateUploadUrl);
@@ -75,12 +79,15 @@ export function Upload() {
       const { storageId } = await result.json();
 
       // Step 3: Save the newly allocated storage id to the database
-      await createDatasource({
+      const datasourceId = await createDatasource({
         storageId,
         name: name.trim(),
         fileName: selectedFile.name,
         fileSize: selectedFile.size,
       });
+
+      // Store the uploaded datasource ID to display the table
+      setUploadedDatasourceId(datasourceId);
 
       // Reset form
       setSelectedFile(null);
@@ -177,6 +184,13 @@ export function Upload() {
           )}
         </Button>
       </form>
+
+      {uploadedDatasourceId && (
+        <div className="mt-6 space-y-4">
+          <h2 className="text-xl font-semibold">Uploaded Data</h2>
+          <CsvTable datasourceId={uploadedDatasourceId} />
+        </div>
+      )}
     </div>
   );
 }
