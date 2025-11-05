@@ -9,9 +9,20 @@ export default defineSchema({
 
   datasources: defineTable({
     name: v.string(),
-    storageId: v.id('_storage'),
     fileName: v.string(),
     fileSize: v.number(),
+    // Array of records where each record has string keys and string|number values
+    data: v.optional(
+      v.array(v.record(v.string(), v.union(v.string(), v.number()))),
+    ),
+    // Record mapping column names to their types
+    columnTypes: v.optional(
+      v.record(
+        v.string(),
+        v.union(v.literal('string'), v.literal('number'), v.literal('date')),
+      ),
+    ),
+    storageId: v.optional(v.id('_storage')), // Legacy field for old datasources
     createdBy: v.string(),
   }).index('by_createdBy', ['createdBy']),
 

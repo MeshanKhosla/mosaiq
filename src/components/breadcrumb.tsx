@@ -17,6 +17,10 @@ export function Breadcrumb() {
     if (routeMap[pathname]) {
       return routeMap[pathname];
     }
+    // Handle datasource routes
+    if (pathname.startsWith('/datasource/')) {
+      return 'Datasource';
+    }
     const lastSegment = pathname.split('/').pop();
     if (lastSegment && lastSegment.length > 0) {
       return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);

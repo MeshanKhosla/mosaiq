@@ -1,28 +1,26 @@
-import * as React from 'react';
+import { useRef, useState } from 'react';
 import { Loader2, Upload as UploadIcon, X } from 'lucide-react';
 import { useMutation } from 'convex/react';
+import { useNavigate } from '@tanstack/react-router';
 import { api } from '../../convex/_generated/api';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { CsvTable } from './csv-table';
-import type { Id } from '../../convex/_generated/dataModel';
+import type { ChangeEvent, FormEvent } from 'react';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB in bytes
 
 export function Upload() {
-  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
-  const [name, setName] = React.useState('');
-  const [isUploading, setIsUploading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [uploadedDatasourceId, setUploadedDatasourceId] =
-    React.useState<Id<'datasources'> | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [name, setName] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const generateUploadUrl = useMutation(api.datasources.generateUploadUrl);
   const createDatasource = useMutation(api.datasources.create);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
       return;
@@ -50,7 +48,7 @@ export function Upload() {
     setName(file.name.replace(/\.csv$/i, ''));
   };
 
-  const handleUpload = async (event: React.FormEvent) => {
+  const handleUpload = async (event: FormEvent) => {
     event.preventDefault();
 
     if (!selectedFile || !name.trim()) {
@@ -62,32 +60,16 @@ export function Upload() {
     setError(null);
 
     try {
-      // Step 1: Get a short-lived upload URL
-      const postUrl = await generateUploadUrl();
+      // Read CSV content
+      const csvContent = await selectedFile.text();
 
-      // Step 2: POST the file to the URL
-      const result = await fetch(postUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': selectedFile.type || 'text/csv' },
-        body: selectedFile,
-      });
-
-      if (!result.ok) {
-        throw new Error('Failed to upload file');
-      }
-
-      const { storageId } = await result.json();
-
-      // Step 3: Save the newly allocated storage id to the database
+      // Parse and store datasource
       const datasourceId = await createDatasource({
-        storageId,
         name: name.trim(),
         fileName: selectedFile.name,
         fileSize: selectedFile.size,
+        csvContent,
       });
-
-      // Store the uploaded datasource ID to display the table
-      setUploadedDatasourceId(datasourceId);
 
       // Reset form
       setSelectedFile(null);
@@ -95,6 +77,9 @@ export function Upload() {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+
+      // Redirect to datasource page
+      await navigate({ to: '/datasource/$id', params: { id: datasourceId } });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload file');
     } finally {
@@ -184,13 +169,6 @@ export function Upload() {
           )}
         </Button>
       </form>
-
-      {uploadedDatasourceId && (
-        <div className="mt-6 space-y-4">
-          <h2 className="text-xl font-semibold">Uploaded Data</h2>
-          <CsvTable datasourceId={uploadedDatasourceId} />
-        </div>
-      )}
     </div>
   );
 }
