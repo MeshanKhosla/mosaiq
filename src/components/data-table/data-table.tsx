@@ -9,6 +9,14 @@ import {
 } from '@tanstack/react-table';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
+import type { Id } from '../../../convex/_generated/dataModel';
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+} from '@tanstack/react-table';
+import type { ColumnType } from '~/lib/types';
 import {
   Table,
   TableBody,
@@ -16,19 +24,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../ui/table';
-import { ColumnHeader } from './column-header';
-import { DataTableCell } from './table-cell';
-import { DataTableSkeleton } from './skeleton';
-import { DataTablePagination } from './pagination';
-import type { ColumnType } from '../../lib/types';
-import type {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-} from '@tanstack/react-table';
-import type { Id } from '../../../convex/_generated/dataModel';
+} from '~/components/ui/table';
+import { ColumnHeader } from '~/components/data-table/column-header';
+import { DataTableCell } from '~/components/data-table/table-cell';
+import { DataTableSkeleton } from '~/components/data-table/skeleton';
+import { DataTablePagination } from '~/components/data-table/pagination';
 
 interface DataTableProps {
   datasourceId: Id<'datasources'>;

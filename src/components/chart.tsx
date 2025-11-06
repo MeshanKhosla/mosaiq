@@ -2,8 +2,8 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import ReactECharts from 'echarts-for-react';
 import { api } from '../../convex/_generated/api';
-import { useTheme } from './theme-provider';
 import type { Id } from '../../convex/_generated/dataModel';
+import { useTheme } from '~/components/theme-provider';
 
 interface ChartProps {
   datasourceId: Id<'datasources'>;

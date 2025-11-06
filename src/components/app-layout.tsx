@@ -1,6 +1,10 @@
-import { SidebarInset, SidebarProvider, SidebarTrigger } from './ui/sidebar';
-import { AppSidebar } from './app-sidebar';
-import { Breadcrumb } from './breadcrumb';
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from '~/components/ui/sidebar';
+import { AppSidebar } from '~/components/app-sidebar';
+import { Breadcrumb } from '~/components/breadcrumb';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -5,8 +5,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from './ui/table';
-import { Skeleton } from './ui/skeleton';
+} from '~/components/ui/table';
+import { Skeleton } from '~/components/ui/skeleton';
 
 interface TableSkeletonProps {
   /** Number of columns to display */

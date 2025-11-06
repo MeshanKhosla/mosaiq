@@ -3,9 +3,9 @@ import { Loader2 } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { useNavigate } from '@tanstack/react-router';
 import { api } from '../../convex/_generated/api';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
 import type { ChangeEvent } from 'react';
+import { Input } from '~/components/ui/input';
+import { Label } from '~/components/ui/label';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB in bytes
 

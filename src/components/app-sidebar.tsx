@@ -3,7 +3,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
-import { Avatar, AvatarFallback } from './ui/avatar';
+import { Avatar, AvatarFallback } from '~/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from './ui/dropdown-menu';
+} from '~/components/ui/dropdown-menu';
 import {
   Sidebar,
   SidebarContent,
@@ -23,8 +23,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from './ui/sidebar';
-import { ThemeToggle } from './theme-toggle';
+} from '~/components/ui/sidebar';
+import { ThemeToggle } from '~/components/theme-toggle';
 import { authClient } from '~/lib/auth-client';
 
 const menuItems = [

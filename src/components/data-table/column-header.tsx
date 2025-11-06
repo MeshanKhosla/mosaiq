@@ -1,5 +1,8 @@
 import { ArrowDown, ArrowUp } from 'lucide-react';
-import { Button } from '../ui/button';
+import type { Column } from '@tanstack/react-table';
+import type { Id } from '../../../convex/_generated/dataModel';
+import type { ColumnType } from '~/lib/types';
+import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,10 +12,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
-import type { Column } from '@tanstack/react-table';
-import type { Id } from '../../../convex/_generated/dataModel';
-import type { ColumnType } from '../../lib/types';
+} from '~/components/ui/dropdown-menu';
 
 interface ColumnHeaderProps {
   column: Column<Record<string, string | number>, unknown>;
