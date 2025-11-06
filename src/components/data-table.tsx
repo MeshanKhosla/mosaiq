@@ -89,53 +89,11 @@ export function DataTable({
   const columnTypes =
     (datasource?.columnTypes as Record<string, ColumnType> | undefined) || {};
 
-  if (!datasource) {
-    return (
-      <div className="w-full space-y-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <TableHead key={i}>
-                    <Skeleton className="h-5 w-24" />
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 10 }).map((_row, rowIndex) => (
-                <TableRow key={rowIndex}>
-                  {Array.from({ length: 5 }).map((_col, colIndex) => (
-                    <TableCell key={colIndex}>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        <div className="flex items-center justify-end space-x-2">
-          <Skeleton className="h-5 w-48" />
-          <div className="space-x-2">
-            <Skeleton className="h-9 w-20" />
-            <Skeleton className="h-9 w-20" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Create columns from data keys
   const columns = useMemo<
     Array<ColumnDef<Record<string, string | number>>>
   >(() => {
-    if (!datasource.data || datasource.data.length === 0) {
+    if (!datasource?.data || datasource.data.length === 0) {
       return [];
     }
 
@@ -244,7 +202,7 @@ export function DataTable({
   }, [datasource, columnTypes, datasourceId, updateColumnType]);
 
   const table = useReactTable({
-    data: datasource.data || [],
+    data: datasource?.data || [],
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -273,6 +231,48 @@ export function DataTable({
       onTableReady(table);
     }
   }, [onTableReady, table]);
+
+  if (!datasource) {
+    return (
+      <div className="w-full space-y-4">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <TableHead key={i}>
+                    <Skeleton className="h-5 w-24" />
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 10 }).map((_row, rowIndex) => (
+                <TableRow key={rowIndex}>
+                  {Array.from({ length: 5 }).map((_col, colIndex) => (
+                    <TableCell key={colIndex}>
+                      <Skeleton className="h-5 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-end space-x-2">
+          <Skeleton className="h-5 w-48" />
+          <div className="space-x-2">
+            <Skeleton className="h-9 w-20" />
+            <Skeleton className="h-9 w-20" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-4">

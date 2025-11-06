@@ -123,10 +123,10 @@ function DatasourcePage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {datasource ? (
-          <>
-            <div>
-              <div className="flex items-baseline justify-between gap-4">
+        <div>
+          <div className="flex items-baseline justify-between gap-4">
+            {datasource ? (
+              <>
                 {isEditing ? (
                   <input
                     ref={(el) => {
@@ -154,193 +154,189 @@ function DatasourcePage() {
                     {datasource.name}
                   </h1>
                 )}
-                <Button
-                  onClick={handleUseInAnalysis}
-                  disabled={isCreatingAnalysis}
-                  className="bg-[hsl(var(--ring))] text-white hover:bg-[hsl(var(--ring))]/90 self-center"
-                >
-                  {isCreatingAnalysis ? 'Creating...' : 'Use in analysis'}
-                </Button>
-              </div>
-              <p className="text-muted-foreground mt-2">
-                {datasource.fileName} • {datasource.data?.length ?? 0} rows
-              </p>
-            </div>
+              </>
+            ) : (
+              <div className="h-9 w-64 animate-pulse rounded bg-muted" />
+            )}
+            <Button
+              onClick={handleUseInAnalysis}
+              disabled={isCreatingAnalysis || !datasource}
+              className="bg-[hsl(var(--ring))] text-white hover:bg-[hsl(var(--ring))]/90 self-center"
+            >
+              {isCreatingAnalysis ? 'Creating...' : 'Use in analysis'}
+            </Button>
+          </div>
+          {datasource ? (
+            <p className="text-muted-foreground mt-2">
+              {datasource.fileName} • {datasource.data?.length ?? 0} rows
+            </p>
+          ) : (
+            <div className="mt-2 h-5 w-96 animate-pulse rounded bg-muted" />
+          )}
+        </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Preview data
-                  </p>
-                  <div className="relative flex items-center">
-                    <button
-                      onClick={() => {
-                        if (!isSearchExpanded) {
-                          setIsSearchExpanded(true);
-                          setTimeout(() => {
-                            searchInputRef.current?.focus();
-                          }, 0);
-                        }
-                      }}
-                      className={`p-1.5 hover:bg-accent rounded-md transition-all duration-200 ${
-                        isSearchExpanded
-                          ? 'opacity-0 w-0 pointer-events-none'
-                          : 'opacity-100 w-auto'
-                      }`}
-                      aria-label="Search rows"
-                    >
-                      <Search className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                    <div
-                      className={`relative flex items-center transition-all duration-200 ease-in-out overflow-hidden ${
-                        isSearchExpanded
-                          ? 'opacity-100 w-[200px] ml-2'
-                          : 'opacity-0 w-0'
-                      }`}
-                    >
-                      <Search className="absolute left-2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                      <Input
-                        ref={searchInputRef}
-                        placeholder="Search rows..."
-                        value={searchValue}
-                        onChange={(e) => setSearchValue(e.target.value)}
-                        onBlur={() => {
-                          if (!searchValue) {
-                            setIsSearchExpanded(false);
-                          }
-                        }}
-                        className="pl-8 pr-8 h-8 w-[200px]"
-                      />
-                      <button
-                        onClick={() => {
-                          setSearchValue('');
-                          setIsSearchExpanded(false);
-                        }}
-                        className="absolute right-2 p-0.5 hover:bg-accent rounded-sm z-10"
-                        aria-label="Close search"
-                      >
-                        <X className="h-3.5 w-3.5 text-muted-foreground" />
-                      </button>
-                    </div>
-                  </div>
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-muted-foreground">
+                Preview data
+              </p>
+              <div className="relative flex items-center">
+                <button
+                  onClick={() => {
+                    if (!isSearchExpanded) {
+                      setIsSearchExpanded(true);
+                      setTimeout(() => {
+                        searchInputRef.current?.focus();
+                      }, 0);
+                    }
+                  }}
+                  className={`p-1.5 hover:bg-accent rounded-md transition-all duration-200 ${
+                    isSearchExpanded
+                      ? 'opacity-0 w-0 pointer-events-none'
+                      : 'opacity-100 w-auto'
+                  }`}
+                  aria-label="Search rows"
+                >
+                  <Search className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <div
+                  className={`relative flex items-center transition-all duration-200 ease-in-out overflow-hidden ${
+                    isSearchExpanded
+                      ? 'opacity-100 w-[200px] ml-2'
+                      : 'opacity-0 w-0'
+                  }`}
+                >
+                  <Search className="absolute left-2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                  <Input
+                    ref={searchInputRef}
+                    placeholder="Search rows..."
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    onBlur={() => {
+                      if (!searchValue) {
+                        setIsSearchExpanded(false);
+                      }
+                    }}
+                    className="pl-8 pr-8 h-8 w-[200px]"
+                  />
+                  <button
+                    onClick={() => {
+                      setSearchValue('');
+                      setIsSearchExpanded(false);
+                    }}
+                    className="absolute right-2 p-0.5 hover:bg-accent rounded-sm z-10"
+                    aria-label="Close search"
+                  >
+                    <X className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
                 </div>
-                {tableInstance && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        Columns <ChevronDown className="ml-2 h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      onCloseAutoFocus={(e) => e.preventDefault()}
-                      className="w-56"
-                    >
-                      <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                        Columns
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <div className="flex items-center gap-1 px-2 py-1">
-                        <DropdownMenuItem
-                          className="flex-1 justify-center px-2 py-1.5 text-xs"
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            tableInstance
-                              .getAllColumns()
-                              .filter((column) => column.getCanHide())
-                              .forEach((column) => {
-                                column.toggleVisibility(true);
-                              });
-                          }}
-                        >
-                          Select All
-                        </DropdownMenuItem>
-                        <div className="h-4 w-px bg-border" />
-                        <DropdownMenuItem
-                          className="flex-1 justify-center px-2 py-1.5 text-xs"
-                          onSelect={(e) => {
-                            e.preventDefault();
-                            tableInstance
-                              .getAllColumns()
-                              .filter((column) => column.getCanHide())
-                              .forEach((column) => {
-                                column.toggleVisibility(false);
-                              });
-                          }}
-                        >
-                          Deselect All
-                        </DropdownMenuItem>
-                      </div>
-                      <DropdownMenuSeparator />
-                      <div className="max-h-[300px] overflow-y-auto">
-                        {tableInstance
+              </div>
+            </div>
+            {tableInstance && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Columns <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  onCloseAutoFocus={(e) => e.preventDefault()}
+                  className="w-56"
+                >
+                  <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                    Columns
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <div className="flex items-center gap-1 px-2 py-1">
+                    <DropdownMenuItem
+                      className="flex-1 justify-center px-2 py-1.5 text-xs"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        tableInstance
                           .getAllColumns()
                           .filter((column) => column.getCanHide())
-                          .map((column) => {
-                            return (
-                              <DropdownMenuCheckboxItem
-                                key={column.id}
-                                className="capitalize"
-                                checked={column.getIsVisible()}
-                                onCheckedChange={(value) =>
-                                  column.toggleVisibility(!!value)
-                                }
-                                onSelect={(e) => {
-                                  e.preventDefault();
-                                }}
-                              >
-                                {column.id}
-                              </DropdownMenuCheckboxItem>
-                            );
-                          })}
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-              <DataTable
-                datasourceId={datasourceId}
-                searchValue={searchValue}
-                onTableReady={setTableInstance}
-              />
-            </div>
-
-            {analyses !== undefined && (
-              <div className="mt-4">
-                <p className="text-sm font-medium text-muted-foreground mb-2">
-                  Used in analyses
-                </p>
-                {analyses.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Not used in any analyses yet
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {analyses.map((analysis) => (
-                      <Link
-                        key={analysis._id}
-                        to="/analysis/$id"
-                        params={{ id: analysis._id }}
-                        className="text-sm text-primary inline-flex items-center px-2.5 py-1 rounded-md border border-border bg-background hover:bg-accent transition-colors"
-                      >
-                        {analysis.name}
-                      </Link>
-                    ))}
+                          .forEach((column) => {
+                            column.toggleVisibility(true);
+                          });
+                      }}
+                    >
+                      Select All
+                    </DropdownMenuItem>
+                    <div className="h-4 w-px bg-border" />
+                    <DropdownMenuItem
+                      className="flex-1 justify-center px-2 py-1.5 text-xs"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        tableInstance
+                          .getAllColumns()
+                          .filter((column) => column.getCanHide())
+                          .forEach((column) => {
+                            column.toggleVisibility(false);
+                          });
+                      }}
+                    >
+                      Deselect All
+                    </DropdownMenuItem>
                   </div>
-                )}
+                  <DropdownMenuSeparator />
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {tableInstance
+                      .getAllColumns()
+                      .filter((column) => column.getCanHide())
+                      .map((column) => {
+                        return (
+                          <DropdownMenuCheckboxItem
+                            key={column.id}
+                            className="capitalize"
+                            checked={column.getIsVisible()}
+                            onCheckedChange={(value) =>
+                              column.toggleVisibility(!!value)
+                            }
+                            onSelect={(e) => {
+                              e.preventDefault();
+                            }}
+                          >
+                            {column.id}
+                          </DropdownMenuCheckboxItem>
+                        );
+                      })}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+          <DataTable
+            datasourceId={datasourceId}
+            searchValue={searchValue}
+            onTableReady={setTableInstance}
+          />
+        </div>
+
+        {analyses !== undefined && (
+          <div className="mt-4">
+            <p className="text-sm font-medium text-muted-foreground mb-2">
+              Used in analyses
+            </p>
+            {analyses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Not used in any analyses yet
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {analyses.map((analysis) => (
+                  <Link
+                    key={analysis._id}
+                    to="/analysis/$id"
+                    params={{ id: analysis._id }}
+                    className="text-sm text-primary inline-flex items-center px-2.5 py-1 rounded-md border border-border bg-background hover:bg-accent transition-colors"
+                  >
+                    {analysis.name}
+                  </Link>
+                ))}
               </div>
             )}
-          </>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <div className="h-9 w-64 animate-pulse rounded bg-muted" />
-              <div className="mt-2 h-5 w-96 animate-pulse rounded bg-muted" />
-            </div>
-            <div>
-              <DataTable datasourceId={datasourceId} />
-            </div>
           </div>
         )}
       </div>
