@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import type { Doc } from '../../../convex/_generated/dataModel';
 
 interface AnalysisLinksListProps {
-  analyses: Doc<'analyses'>[] | undefined;
+  analyses: Array<Doc<'analyses'>> | undefined;
 }
 
 export function AnalysisLinksList({ analyses }: AnalysisLinksListProps) {

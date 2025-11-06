@@ -1,5 +1,5 @@
-import type { ColumnType } from './utils';
 import { isValidType } from './utils';
+import type { ColumnType } from '../../lib/types';
 
 interface DataTableCellProps {
   value: unknown;

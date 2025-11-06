@@ -1,5 +1,5 @@
-import type { Doc } from '../../../convex/_generated/dataModel';
 import { Button } from '../ui/button';
+import type { Doc } from '../../../convex/_generated/dataModel';
 
 interface DatasourceHeaderProps {
   datasource: Doc<'datasources'> | null | undefined;

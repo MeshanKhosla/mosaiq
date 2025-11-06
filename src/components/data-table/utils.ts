@@ -1,4 +1,4 @@
-export type ColumnType = 'string' | 'number' | 'date';
+import type { ColumnType } from '../../lib/types';
 
 export function isValidType(value: unknown, type: ColumnType): boolean {
   if (value === null || value === undefined || value === '') {

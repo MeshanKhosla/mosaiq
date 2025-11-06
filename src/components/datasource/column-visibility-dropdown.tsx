@@ -1,5 +1,4 @@
 import { ChevronDown } from 'lucide-react';
-import type { Table } from '@tanstack/react-table';
 import { Button } from '../ui/button';
 import {
   DropdownMenu,
@@ -10,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
+import type { Table } from '@tanstack/react-table';
 
 interface ColumnVisibilityDropdownProps {
   tableInstance: Table<Record<string, string | number>>;

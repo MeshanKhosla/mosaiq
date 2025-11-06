@@ -1,5 +1,5 @@
-import type { Table } from '@tanstack/react-table';
 import { Button } from '../ui/button';
+import type { Table } from '@tanstack/react-table';
 
 interface DataTablePaginationProps {
   table: Table<Record<string, string | number>>;

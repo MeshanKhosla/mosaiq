@@ -9,13 +9,6 @@ import {
 } from '@tanstack/react-table';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import type {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-} from '@tanstack/react-table';
-import type { Id } from '../../../convex/_generated/dataModel';
 import {
   Table,
   TableBody,
@@ -24,11 +17,18 @@ import {
   TableHeader,
   TableRow,
 } from '../ui/table';
-import type { ColumnType } from './utils';
 import { ColumnHeader } from './column-header';
 import { DataTableCell } from './table-cell';
 import { DataTableSkeleton } from './skeleton';
 import { DataTablePagination } from './pagination';
+import type { ColumnType } from '../../lib/types';
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+} from '@tanstack/react-table';
+import type { Id } from '../../../convex/_generated/dataModel';
 
 interface DataTableProps {
   datasourceId: Id<'datasources'>;
@@ -50,8 +50,7 @@ export function DataTable({
   const datasource = useQuery(api.datasources.get, { id: datasourceId });
   const updateColumnType = useMutation(api.datasources.updateColumnType);
 
-  const columnTypes =
-    (datasource?.columnTypes as Record<string, ColumnType> | undefined) || {};
+  const columnTypes = datasource?.columnTypes ?? {};
 
   // Create columns from data keys
   const columns = useMemo<
