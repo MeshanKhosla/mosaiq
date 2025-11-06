@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
-import { Check, Pencil, X } from 'lucide-react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
 import { DataTable } from '~/components/data-table';
 import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
 
 export const Route = createFileRoute('/datasource/$id')({
   component: DatasourcePage,
@@ -23,47 +21,59 @@ function DatasourcePage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [isCreatingAnalysis, setIsCreatingAnalysis] = useState(false);
-
-  // Calculate input width based on text length (text-3xl font-bold approx 18px per char)
-  const getInputWidth = (text: string) => {
-    return Math.max(200, text.length);
-  };
+  const hasFocusedRef = useRef(false);
 
   const handleEditClick = () => {
-    if (datasource) {
+    if (datasource && !isEditing) {
       setEditName(datasource.name);
       setIsEditing(true);
+      hasFocusedRef.current = false;
     }
-  };
-
-  const handleNameChange = (value: string) => {
-    setEditName(value);
   };
 
   const handleSave = async () => {
-    if (!datasource || !editName.trim()) {
+    const newName = editName.trim();
+    if (!datasource || !newName || newName === datasource.name) {
+      setIsEditing(false);
+      hasFocusedRef.current = false;
       return;
     }
 
-    setIsSaving(true);
     try {
       await updateName({
         datasourceId,
-        name: editName.trim(),
+        name: newName,
       });
       setIsEditing(false);
+      hasFocusedRef.current = false;
     } catch (error) {
       console.error('Failed to update name:', error);
-    } finally {
-      setIsSaving(false);
+      setIsEditing(false);
+      hasFocusedRef.current = false;
     }
   };
 
   const handleCancel = () => {
+    if (datasource) {
+      setEditName(datasource.name);
+    }
     setIsEditing(false);
-    setEditName('');
+    hasFocusedRef.current = false;
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancel();
+    }
+  };
+
+  const handleBlur = () => {
+    handleSave();
   };
 
   const handleUseInAnalysis = async () => {
@@ -96,56 +106,33 @@ function DatasourcePage() {
           <>
             <div>
               <div className="flex items-baseline justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  {isEditing ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={editName}
-                        onChange={(e) => handleNameChange(e.target.value)}
-                        className="text-3xl font-bold tracking-tight h-auto py-2"
-                        style={{ width: `${getInputWidth(editName)}px` }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            handleSave();
-                          } else if (e.key === 'Escape') {
-                            handleCancel();
-                          }
-                        }}
-                        autoFocus
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleSave}
-                        disabled={isSaving || !editName.trim()}
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleCancel}
-                        disabled={isSaving}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <h1 className="text-3xl font-bold tracking-tight">
-                        {datasource.name}
-                      </h1>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleEditClick}
-                        className="h-8 w-8"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </>
-                  )}
-                </div>
+                {isEditing ? (
+                  <input
+                    ref={(el) => {
+                      if (el && !hasFocusedRef.current) {
+                        hasFocusedRef.current = true;
+                        el.focus();
+                        el.select();
+                      }
+                    }}
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
+                    className="text-3xl font-bold tracking-tight outline-none bg-transparent border-none p-0 m-0 w-auto min-w-[200px]"
+                    style={{
+                      width: `${Math.max(200, editName.length * 18)}px`,
+                    }}
+                  />
+                ) : (
+                  <h1
+                    className="text-3xl font-bold tracking-tight cursor-pointer underline decoration-muted-foreground/40 underline-offset-4 hover:decoration-muted-foreground/60"
+                    onClick={handleEditClick}
+                  >
+                    {datasource.name}
+                  </h1>
+                )}
                 <Button
                   onClick={handleUseInAnalysis}
                   disabled={isCreatingAnalysis}
@@ -154,7 +141,7 @@ function DatasourcePage() {
                   {isCreatingAnalysis ? 'Creating...' : 'Use in analysis'}
                 </Button>
               </div>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mt-2">
                 {datasource.fileName} • {datasource.data?.length ?? 0} rows
               </p>
             </div>
