@@ -3,12 +3,10 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
-import type { Table } from '@tanstack/react-table';
 import { AppLayout } from '~/components/app-layout';
 import { DataTable } from '~/components/data-table/data-table';
 import { DatasourceHeader } from '~/components/datasource/datasource-header';
 import { DataTableSearch } from '~/components/datasource/data-table-search';
-import { ColumnVisibilityDropdown } from '~/components/datasource/column-visibility-dropdown';
 import { AnalysisLinksList } from '~/components/datasource/analysis-links-list';
 
 export const Route = createFileRoute('/datasource/$id')({
@@ -31,9 +29,6 @@ function DatasourcePage() {
   const [isCreatingAnalysis, setIsCreatingAnalysis] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [searchValue, setSearchValue] = useState('');
-  const [tableInstance, setTableInstance] = useState<Table<
-    Record<string, string | number>
-  > | null>(null);
   const hasFocusedRef = useRef(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -130,33 +125,24 @@ function DatasourcePage() {
 
         <div>
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-muted-foreground">
-                Preview data
-              </p>
-              <DataTableSearch
-                searchValue={searchValue}
-                onSearchChange={setSearchValue}
-                isExpanded={isSearchExpanded}
-                onExpand={() => {
-                  setIsSearchExpanded(true);
-                  setTimeout(() => {
-                    searchInputRef.current?.focus();
-                  }, 0);
-                }}
-                onCollapse={() => setIsSearchExpanded(false)}
-                searchInputRef={searchInputRef}
-              />
-            </div>
-            {tableInstance && (
-              <ColumnVisibilityDropdown tableInstance={tableInstance} />
-            )}
+            <p className="text-sm font-medium text-muted-foreground">
+              Preview data
+            </p>
+            <DataTableSearch
+              searchValue={searchValue}
+              onSearchChange={setSearchValue}
+              isExpanded={isSearchExpanded}
+              onExpand={() => {
+                setIsSearchExpanded(true);
+                setTimeout(() => {
+                  searchInputRef.current?.focus();
+                }, 0);
+              }}
+              onCollapse={() => setIsSearchExpanded(false)}
+              searchInputRef={searchInputRef}
+            />
           </div>
-          <DataTable
-            datasourceId={datasourceId}
-            searchValue={searchValue}
-            onTableReady={setTableInstance}
-          />
+          <DataTable datasourceId={datasourceId} searchValue={searchValue} />
         </div>
 
         <AnalysisLinksList analyses={analyses} />

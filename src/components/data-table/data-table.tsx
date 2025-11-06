@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -33,16 +33,9 @@ import { DataTablePagination } from '~/components/data-table/pagination';
 interface DataTableProps {
   datasourceId: Id<'datasources'>;
   searchValue?: string;
-  onTableReady?: (
-    table: ReturnType<typeof useReactTable<Record<string, string | number>>>,
-  ) => void;
 }
 
-export function DataTable({
-  datasourceId,
-  searchValue = '',
-  onTableReady,
-}: DataTableProps) {
+export function DataTable({ datasourceId, searchValue = '' }: DataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -65,7 +58,9 @@ export function DataTable({
       const columnType =
         (columnTypes[key] as ColumnType | undefined) || 'string';
       return {
+        id: key, // Explicitly set column ID
         accessorKey: key,
+        enableHiding: true, // Explicitly enable hiding
         header: ({ column }) => (
           <ColumnHeader
             column={column}
@@ -107,12 +102,6 @@ export function DataTable({
       globalFilter: searchValue,
     },
   });
-
-  useEffect(() => {
-    if (onTableReady) {
-      onTableReady(table);
-    }
-  }, [onTableReady, table]);
 
   if (!datasource) {
     return <DataTableSkeleton />;
