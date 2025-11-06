@@ -5,7 +5,7 @@ import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import type { Table } from '@tanstack/react-table';
 import { AppLayout } from '~/components/app-layout';
-import { DataTable } from '~/components/data-table';
+import { DataTable } from '~/components/data-table/data-table';
 import { DatasourceHeader } from '~/components/datasource/datasource-header';
 import { DataTableSearch } from '~/components/datasource/data-table-search';
 import { ColumnVisibilityDropdown } from '~/components/datasource/column-visibility-dropdown';
