@@ -40,7 +40,7 @@ export function CsvTable({ datasourceId }: CsvTableProps) {
         </thead>
         <tbody>
           {datasource.data.map((row, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-muted/50">
+            <tr key={rowIndex} className="hover:!bg-accent">
               {headers.map((header, colIndex) => (
                 <td
                   key={colIndex}

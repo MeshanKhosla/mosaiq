@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SigninRouteImport } from './routes/signin'
+import { Route as DatasourcesRouteImport } from './routes/datasources'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AnalysesRouteImport } from './routes/analyses'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DatasourceIdRouteImport } from './routes/datasource.$id'
 import { Route as AnalysisIdRouteImport } from './routes/analysis.$id'
@@ -27,9 +29,19 @@ const SigninRoute = SigninRouteImport.update({
   path: '/signin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DatasourcesRoute = DatasourcesRouteImport.update({
+  id: '/datasources',
+  path: '/datasources',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalysesRoute = AnalysesRouteImport.update({
+  id: '/analyses',
+  path: '/analyses',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -55,7 +67,9 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analyses': typeof AnalysesRoute
   '/dashboard': typeof DashboardRoute
+  '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/analysis/$id': typeof AnalysisIdRoute
@@ -64,7 +78,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analyses': typeof AnalysesRoute
   '/dashboard': typeof DashboardRoute
+  '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/analysis/$id': typeof AnalysisIdRoute
@@ -74,7 +90,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analyses': typeof AnalysesRoute
   '/dashboard': typeof DashboardRoute
+  '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/analysis/$id': typeof AnalysisIdRoute
@@ -85,7 +103,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/analyses'
     | '/dashboard'
+    | '/datasources'
     | '/signin'
     | '/signup'
     | '/analysis/$id'
@@ -94,7 +114,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/analyses'
     | '/dashboard'
+    | '/datasources'
     | '/signin'
     | '/signup'
     | '/analysis/$id'
@@ -103,7 +125,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/analyses'
     | '/dashboard'
+    | '/datasources'
     | '/signin'
     | '/signup'
     | '/analysis/$id'
@@ -113,7 +137,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalysesRoute: typeof AnalysesRoute
   DashboardRoute: typeof DashboardRoute
+  DatasourcesRoute: typeof DatasourcesRoute
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
   AnalysisIdRoute: typeof AnalysisIdRoute
@@ -137,11 +163,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SigninRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/datasources': {
+      id: '/datasources'
+      path: '/datasources'
+      fullPath: '/datasources'
+      preLoaderRoute: typeof DatasourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analyses': {
+      id: '/analyses'
+      path: '/analyses'
+      fullPath: '/analyses'
+      preLoaderRoute: typeof AnalysesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -177,7 +217,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalysesRoute: AnalysesRoute,
   DashboardRoute: DashboardRoute,
+  DatasourcesRoute: DatasourcesRoute,
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
   AnalysisIdRoute: AnalysisIdRoute,

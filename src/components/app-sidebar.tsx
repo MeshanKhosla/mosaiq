@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard } from 'lucide-react';
+import { Database, FileText, Home } from 'lucide-react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
@@ -23,7 +23,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
 } from './ui/sidebar';
 import { ThemeToggle } from './theme-toggle';
 import { authClient } from '~/lib/auth-client';
@@ -35,9 +34,14 @@ const menuItems = [
     icon: Home,
   },
   {
-    title: 'Dashboard',
-    url: '/dashboard',
-    icon: LayoutDashboard,
+    title: 'Datasources',
+    url: '/datasources',
+    icon: Database,
+  },
+  {
+    title: 'Analyses',
+    url: '/analyses',
+    icon: FileText,
   },
 ];
 
@@ -75,7 +79,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="px-4 py-4 flex flex-row items-center justify-between gap-2">
         <h1 className="text-lg font-semibold">Mosaiq</h1>
-        <SidebarTrigger />
+        {/* <SidebarTrigger /> */}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

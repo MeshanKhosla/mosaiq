@@ -8,7 +8,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       defaultOpen={false}
       style={
         {
-          '--sidebar-width': '18rem',
+          '--sidebar-width': '10rem',
         } as React.CSSProperties
       }
     >

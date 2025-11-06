@@ -62,7 +62,7 @@ export function Breadcrumb() {
   ];
 
   if (pathname.startsWith('/analysis/')) {
-    // Analysis page: Home > Datasource name > Analysis Name
+    // Analysis page: Home > Datasources > Datasource name > Analysis Name
     // Only show if both analysis and datasource are loaded with names
     if (
       analysis &&
@@ -70,6 +70,7 @@ export function Breadcrumb() {
       analysis.name &&
       analysisDatasource.name
     ) {
+      breadcrumbItems.push({ label: 'Datasources', path: '/datasources' });
       breadcrumbItems.push({
         label: analysisDatasource.name,
         path: `/datasource/${analysisDatasourceId}`,
@@ -77,9 +78,10 @@ export function Breadcrumb() {
       breadcrumbItems.push({ label: analysis.name });
     }
   } else if (pathname.startsWith('/datasource/')) {
-    // Datasource page: Home > Datasource name
+    // Datasource page: Home > Datasource > Datasource name
     // Only show if datasource is loaded with a name
     if (datasource && datasource.name) {
+      breadcrumbItems.push({ label: 'Datasources', path: '/datasources' });
       breadcrumbItems.push({ label: datasource.name });
     }
   } else if (routeMap[pathname] && pathname !== '/') {
