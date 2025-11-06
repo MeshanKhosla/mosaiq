@@ -53,6 +53,39 @@ export const get = query({
   },
 });
 
+export const getByDatasourceId = query({
+  args: {
+    datasourceId: v.id('datasources'),
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id('analyses'),
+      _creationTime: v.number(),
+      datasourceIds: v.array(v.id('datasources')),
+      name: v.string(),
+      createdBy: v.string(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return [];
+    }
+    const userId = user._id;
+
+    // Query all analyses by user (indexed), then filter by datasourceId
+    const allAnalyses = await ctx.db
+      .query('analyses')
+      .withIndex('by_createdBy', (q) => q.eq('createdBy', userId))
+      .collect();
+
+    // Filter analyses that include this datasource
+    return allAnalyses.filter((analysis) =>
+      analysis.datasourceIds.includes(args.datasourceId),
+    );
+  },
+});
+
 export const create = mutation({
   args: {
     datasourceId: v.id('datasources'),

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -7,23 +7,20 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { ArrowDown, ArrowUp, ChevronDown } from 'lucide-react';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { Input } from './ui/input';
 import { Skeleton } from './ui/skeleton';
 import {
   Table,
@@ -43,6 +40,10 @@ import type { Id } from '../../convex/_generated/dataModel';
 
 interface DataTableProps {
   datasourceId: Id<'datasources'>;
+  searchValue?: string;
+  onTableReady?: (
+    table: ReturnType<typeof useReactTable<Record<string, string | number>>>,
+  ) => void;
 }
 
 type ColumnType = 'string' | 'number' | 'date';
@@ -73,11 +74,14 @@ function isValidType(value: unknown, type: ColumnType): boolean {
   }
 }
 
-export function DataTable({ datasourceId }: DataTableProps) {
+export function DataTable({
+  datasourceId,
+  searchValue = '',
+  onTableReady,
+}: DataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [globalFilter, setGlobalFilter] = useState('');
 
   const datasource = useQuery(api.datasources.get, { id: datasourceId });
   const updateColumnType = useMutation(api.datasources.updateColumnType);
@@ -249,7 +253,7 @@ export function DataTable({ datasourceId }: DataTableProps) {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-    onGlobalFilterChange: setGlobalFilter,
+    onGlobalFilterChange: () => {},
     globalFilterFn: 'includesString',
     initialState: {
       pagination: {
@@ -260,91 +264,18 @@ export function DataTable({ datasourceId }: DataTableProps) {
       sorting,
       columnFilters,
       columnVisibility,
-      globalFilter,
+      globalFilter: searchValue,
     },
   });
 
+  useEffect(() => {
+    if (onTableReady) {
+      onTableReady(table);
+    }
+  }, [onTableReady, table]);
+
   return (
     <div className="w-full space-y-4">
-      <div className="flex items-center justify-between">
-        <Input
-          placeholder="Search rows..."
-          value={globalFilter || ''}
-          onChange={(event) => setGlobalFilter(String(event.target.value))}
-          className="max-w-sm"
-        />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            onCloseAutoFocus={(e) => e.preventDefault()}
-            className="w-56"
-          >
-            <DropdownMenuLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-              Columns
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="flex items-center gap-1 px-2 py-1">
-              <DropdownMenuItem
-                className="flex-1 justify-center px-2 py-1.5 text-xs"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  table
-                    .getAllColumns()
-                    .filter((column) => column.getCanHide())
-                    .forEach((column) => {
-                      column.toggleVisibility(true);
-                    });
-                }}
-              >
-                Select All
-              </DropdownMenuItem>
-              <div className="h-4 w-px bg-border" />
-              <DropdownMenuItem
-                className="flex-1 justify-center px-2 py-1.5 text-xs"
-                onSelect={(e) => {
-                  e.preventDefault();
-                  table
-                    .getAllColumns()
-                    .filter((column) => column.getCanHide())
-                    .forEach((column) => {
-                      column.toggleVisibility(false);
-                    });
-                }}
-              >
-                Deselect All
-              </DropdownMenuItem>
-            </div>
-            <DropdownMenuSeparator />
-            <div className="max-h-[300px] overflow-y-auto">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide())
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                      onSelect={(e) => {
-                        e.preventDefault();
-                      }}
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
