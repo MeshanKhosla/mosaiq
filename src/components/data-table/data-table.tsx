@@ -1,0 +1,182 @@
+import { useEffect, useMemo, useState } from 'react';
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+} from '@tanstack/react-table';
+import type { Id } from '../../../convex/_generated/dataModel';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../ui/table';
+import type { ColumnType } from './utils';
+import { ColumnHeader } from './column-header';
+import { DataTableCell } from './table-cell';
+import { DataTableSkeleton } from './skeleton';
+import { DataTablePagination } from './pagination';
+
+interface DataTableProps {
+  datasourceId: Id<'datasources'>;
+  searchValue?: string;
+  onTableReady?: (
+    table: ReturnType<typeof useReactTable<Record<string, string | number>>>,
+  ) => void;
+}
+
+export function DataTable({
+  datasourceId,
+  searchValue = '',
+  onTableReady,
+}: DataTableProps) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+
+  const datasource = useQuery(api.datasources.get, { id: datasourceId });
+  const updateColumnType = useMutation(api.datasources.updateColumnType);
+
+  const columnTypes =
+    (datasource?.columnTypes as Record<string, ColumnType> | undefined) || {};
+
+  // Create columns from data keys
+  const columns = useMemo<
+    Array<ColumnDef<Record<string, string | number>>>
+  >(() => {
+    if (!datasource?.data || datasource.data.length === 0) {
+      return [];
+    }
+
+    const keys = Object.keys(datasource.data[0]);
+    return keys.map((key) => {
+      const columnType =
+        (columnTypes[key] as ColumnType | undefined) || 'string';
+      return {
+        accessorKey: key,
+        header: ({ column }) => (
+          <ColumnHeader
+            column={column}
+            columnName={key}
+            columnType={columnType}
+            datasourceId={datasourceId}
+            updateColumnType={updateColumnType}
+          />
+        ),
+        cell: ({ row }) => {
+          const value = row.getValue(key);
+          return <DataTableCell value={value} columnType={columnType} />;
+        },
+      };
+    });
+  }, [datasource, columnTypes, datasourceId, updateColumnType]);
+
+  const table = useReactTable({
+    data: datasource?.data || [],
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onGlobalFilterChange: () => {},
+    globalFilterFn: 'includesString',
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      globalFilter: searchValue,
+    },
+  });
+
+  useEffect(() => {
+    if (onTableReady) {
+      onTableReady(table);
+    }
+  }, [onTableReady, table]);
+
+  if (!datasource) {
+    return <DataTableSkeleton />;
+  }
+
+  return (
+    <div className="w-full space-y-4">
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length > 0 &&
+            table.getVisibleFlatColumns().length > 0 ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={
+                    table.getVisibleFlatColumns().length || columns.length
+                  }
+                  className="h-24 text-center"
+                >
+                  {table.getVisibleFlatColumns().length === 0
+                    ? 'No columns selected'
+                    : 'No results.'}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <DataTablePagination table={table} />
+    </div>
+  );
+}
