@@ -12,10 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as DatasourcesRouteImport } from './routes/datasources'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AnalysesRouteImport } from './routes/analyses'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DatasourceIdRouteImport } from './routes/datasource.$id'
+import { Route as DashboardIdRouteImport } from './routes/dashboard.$id'
 import { Route as AnalysisIdRouteImport } from './routes/analysis.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -34,11 +34,6 @@ const DatasourcesRoute = DatasourcesRouteImport.update({
   path: '/datasources',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AnalysesRoute = AnalysesRouteImport.update({
   id: '/analyses',
   path: '/analyses',
@@ -52,6 +47,11 @@ const IndexRoute = IndexRouteImport.update({
 const DatasourceIdRoute = DatasourceIdRouteImport.update({
   id: '/datasource/$id',
   path: '/datasource/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardIdRoute = DashboardIdRouteImport.update({
+  id: '/dashboard/$id',
+  path: '/dashboard/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnalysisIdRoute = AnalysisIdRouteImport.update({
@@ -68,22 +68,22 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analyses': typeof AnalysesRoute
-  '/dashboard': typeof DashboardRoute
   '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/analysis/$id': typeof AnalysisIdRoute
+  '/dashboard/$id': typeof DashboardIdRoute
   '/datasource/$id': typeof DatasourceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analyses': typeof AnalysesRoute
-  '/dashboard': typeof DashboardRoute
   '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/analysis/$id': typeof AnalysisIdRoute
+  '/dashboard/$id': typeof DashboardIdRoute
   '/datasource/$id': typeof DatasourceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -91,11 +91,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analyses': typeof AnalysesRoute
-  '/dashboard': typeof DashboardRoute
   '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/analysis/$id': typeof AnalysisIdRoute
+  '/dashboard/$id': typeof DashboardIdRoute
   '/datasource/$id': typeof DatasourceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -104,33 +104,33 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/analyses'
-    | '/dashboard'
     | '/datasources'
     | '/signin'
     | '/signup'
     | '/analysis/$id'
+    | '/dashboard/$id'
     | '/datasource/$id'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/analyses'
-    | '/dashboard'
     | '/datasources'
     | '/signin'
     | '/signup'
     | '/analysis/$id'
+    | '/dashboard/$id'
     | '/datasource/$id'
     | '/api/auth/$'
   id:
     | '__root__'
     | '/'
     | '/analyses'
-    | '/dashboard'
     | '/datasources'
     | '/signin'
     | '/signup'
     | '/analysis/$id'
+    | '/dashboard/$id'
     | '/datasource/$id'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
@@ -138,11 +138,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalysesRoute: typeof AnalysesRoute
-  DashboardRoute: typeof DashboardRoute
   DatasourcesRoute: typeof DatasourcesRoute
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
   AnalysisIdRoute: typeof AnalysisIdRoute
+  DashboardIdRoute: typeof DashboardIdRoute
   DatasourceIdRoute: typeof DatasourceIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -170,13 +170,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DatasourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/analyses': {
       id: '/analyses'
       path: '/analyses'
@@ -196,6 +189,13 @@ declare module '@tanstack/react-router' {
       path: '/datasource/$id'
       fullPath: '/datasource/$id'
       preLoaderRoute: typeof DatasourceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/$id': {
+      id: '/dashboard/$id'
+      path: '/dashboard/$id'
+      fullPath: '/dashboard/$id'
+      preLoaderRoute: typeof DashboardIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analysis/$id': {
@@ -218,11 +218,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysesRoute: AnalysesRoute,
-  DashboardRoute: DashboardRoute,
   DatasourcesRoute: DatasourcesRoute,
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
   AnalysisIdRoute: AnalysisIdRoute,
+  DashboardIdRoute: DashboardIdRoute,
   DatasourceIdRoute: DatasourceIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

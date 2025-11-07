@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
 import { insertFile, runQuery, useDuckDb } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
@@ -17,10 +17,13 @@ export const Route = createFileRoute('/analysis/$id')({
 
 function AnalysisPage() {
   const { id } = Route.useParams();
+  const navigate = useNavigate();
   const analysisId = id as Id<'analyses'>;
   const analysis = useQuery(api.analyses.get, { id: analysisId });
   const sheet = useQuery(api.sheets.getByAnalysis, { analysisId });
+  const createDashboard = useMutation(api.dashboards.create);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const datasourceId = analysis?.datasourceIds[0];
   const datasource = useQuery(
@@ -95,8 +98,48 @@ function AnalysisPage() {
     }
   }, [dbError]);
 
+  const handlePublishToDashboard = async () => {
+    if (!analysis) {
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      const dashboardName = `${analysis.name} Dashboard`;
+      const dashboardId = await createDashboard({
+        analysisId: analysis._id,
+        name: dashboardName,
+      });
+      toast.success('Dashboard created successfully', {
+        description: `"${dashboardName}" has been published to dashboard.`,
+      });
+      await navigate({
+        to: '/dashboard/$id',
+        params: { id: dashboardId },
+      });
+    } catch (error) {
+      console.error('Failed to create dashboard:', error);
+      toast.error('Failed to publish to dashboard', {
+        description:
+          error instanceof Error ? error.message : 'An unknown error occurred',
+      });
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   return (
-    <AppLayout>
+    <AppLayout
+      breadcrumbEditingProps={{
+        ctaButtons: [
+          {
+            label: isPublishing ? 'Publishing...' : 'Publish to dashboard',
+            onClick: handlePublishToDashboard,
+            disabled: isPublishing || !analysis,
+          },
+        ],
+      }}
+    >
       <div className="space-y-6">
         {analysis ? (
           <>

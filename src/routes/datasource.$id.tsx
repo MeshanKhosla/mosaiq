@@ -5,7 +5,6 @@ import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
 import { DataTable } from '~/components/data-table/data-table';
-import { DatasourceHeader } from '~/components/datasource/datasource-header';
 import { DataTableSearch } from '~/components/datasource/data-table-search';
 import { AnalysisLinksList } from '~/components/datasource/analysis-links-list';
 
@@ -109,26 +108,40 @@ function DatasourcePage() {
   };
 
   return (
-    <AppLayout>
+    <AppLayout
+      breadcrumbEditingProps={{
+        isEditing,
+        editName,
+        hasFocusedRef,
+        onEditClick: handleEditClick,
+        onNameChange: setEditName,
+        onKeyDown: handleKeyDown,
+        onBlur: handleBlur,
+        ctaButtons: [
+          {
+            label: isCreatingAnalysis ? 'Creating...' : 'Use in analysis',
+            onClick: handleUseInAnalysis,
+            disabled: isCreatingAnalysis || !datasource,
+          },
+        ],
+      }}
+    >
       <div className="space-y-6">
-        <DatasourceHeader
-          datasource={datasource}
-          isEditing={isEditing}
-          editName={editName}
-          hasFocusedRef={hasFocusedRef}
-          onEditClick={handleEditClick}
-          onNameChange={setEditName}
-          onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
-          onUseInAnalysis={handleUseInAnalysis}
-          isCreatingAnalysis={isCreatingAnalysis}
-        />
-
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-medium text-muted-foreground">
-              Preview data
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-muted-foreground">
+                Preview data
+              </p>
+              {datasource && (
+                <>
+                  <span className="text-muted-foreground/50">•</span>
+                  <p className="text-sm text-muted-foreground">
+                    {datasource.fileName}
+                  </p>
+                </>
+              )}
+            </div>
             <DataTableSearch
               searchValue={searchValue}
               onSearchChange={setSearchValue}
