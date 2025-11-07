@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
+import { insertFile, runQuery, useDuckDb } from 'duckdb-wasm-kit';
+import { toast } from 'sonner';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
@@ -39,6 +41,60 @@ function AnalysisPage() {
     queryFn: () => fetch(storageUrl!).then((res) => res.text()),
   });
 
+  // Initialize DuckDB at analysis level
+  const { db, loading: dbLoading, error: dbError } = useDuckDb();
+
+  // Create unique table name based on datasource name + random ID
+  const tableName = useMemo(() => {
+    if (!datasource) return undefined;
+    // Sanitize datasource name for use as table name
+    const sanitizedName = datasource.name
+      .replace(/[^a-zA-Z0-9_]/g, '_')
+      .toLowerCase();
+    const randomId = Math.random().toString(36).substring(2, 9);
+    return `${sanitizedName}_${randomId}`;
+  }, [datasource]);
+
+  const [tableLoaded, setTableLoaded] = useState(false);
+
+  // Load CSV into DuckDB once when DB and CSV data are ready
+  useEffect(() => {
+    if (!db || !csvData || !tableName || tableLoaded) return;
+
+    const loadData = async () => {
+      try {
+        // Drop table if it exists (in case we're reloading)
+        await runQuery(db, `DROP TABLE IF EXISTS "${tableName}"`);
+
+        // Create File from CSV string
+        const file = new File([csvData], 'data.csv', { type: 'text/csv' });
+
+        // Insert CSV into DuckDB with unique table name
+        await insertFile(db, file, tableName);
+        setTableLoaded(true);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : 'Failed to load CSV into DuckDB';
+        console.error('Failed to load CSV into DuckDB:', err);
+        toast.error('Failed to load data', {
+          description: errorMessage,
+        });
+      }
+    };
+
+    loadData();
+  }, [db, csvData, tableName, tableLoaded]);
+
+  // Handle DuckDB initialization errors
+  useEffect(() => {
+    if (dbError) {
+      console.error('DuckDB initialization error:', dbError);
+      toast.error('Failed to initialize DuckDB', {
+        description: dbError.message,
+      });
+    }
+  }, [dbError]);
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -65,8 +121,10 @@ function AnalysisPage() {
                 <VisualsList
                   sheetId={sheet._id}
                   datasourceId={datasource._id}
-                  csvData={csvData}
                   csvDataLoading={csvDataLoading}
+                  dbLoading={dbLoading}
+                  tableName={tableName}
+                  tableLoaded={tableLoaded}
                 />
                 <CreateChartDialog
                   open={createDialogOpen}

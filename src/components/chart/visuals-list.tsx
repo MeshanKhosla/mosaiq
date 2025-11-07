@@ -7,15 +7,19 @@ import { Button } from '~/components/ui/button';
 interface VisualsListProps {
   sheetId: Id<'sheets'>;
   datasourceId: Id<'datasources'>;
-  csvData: string | undefined;
   csvDataLoading: boolean;
+  dbLoading: boolean;
+  tableName: string | undefined;
+  tableLoaded: boolean;
 }
 
 export function VisualsList({
   sheetId,
   datasourceId,
-  csvData,
   csvDataLoading,
+  dbLoading,
+  tableName,
+  tableLoaded,
 }: VisualsListProps) {
   const sheet = useQuery(api.sheets.get, { id: sheetId });
   const datasource = useQuery(api.datasources.get, { id: datasourceId });
@@ -64,8 +68,10 @@ export function VisualsList({
             visual={visual}
             datasourceId={datasourceId}
             columns={datasource.columns}
-            csvData={csvData}
             csvDataLoading={csvDataLoading}
+            dbLoading={dbLoading}
+            tableName={tableName}
+            tableLoaded={tableLoaded}
           />
         </div>
       ))}

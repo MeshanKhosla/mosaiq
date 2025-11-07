@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { insertFile, useDuckDb, useDuckDbQuery } from 'duckdb-wasm-kit';
+import { useEffect } from 'react';
+import { useDuckDbQuery } from 'duckdb-wasm-kit';
+import { toast } from 'sonner';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
 import { Chart } from '~/components/chart';
 import BarChart from '~/charts/bar-chart';
@@ -11,8 +12,10 @@ interface ChartRendererProps {
   visual: Visual;
   datasourceId: Id<'datasources'>;
   columns: Array<Column>;
-  csvData: string | undefined;
   csvDataLoading: boolean;
+  dbLoading: boolean;
+  tableName: string | undefined;
+  tableLoaded: boolean;
 }
 
 const barChart = new BarChart();
@@ -21,36 +24,14 @@ export function ChartRenderer({
   visual,
   datasourceId,
   columns,
-  csvData,
   csvDataLoading,
+  dbLoading,
+  tableName,
+  tableLoaded,
 }: ChartRendererProps) {
-  const { db, loading: dbLoading, error: dbError } = useDuckDb();
-  const tableName = 'data';
-  const [tableLoaded, setTableLoaded] = useState(false);
-
-  // Load CSV into DuckDB when DB and CSV data are ready
-  useEffect(() => {
-    if (!db || !csvData || tableLoaded) return;
-
-    const loadData = async () => {
-      try {
-        // Create File from CSV string
-        const file = new File([csvData], 'data.csv', { type: 'text/csv' });
-
-        // Insert CSV into DuckDB
-        await insertFile(db, file, tableName);
-        setTableLoaded(true);
-      } catch (err) {
-        console.error('Failed to load CSV into DuckDB:', err);
-      }
-    };
-
-    loadData();
-  }, [db, csvData, tableName, tableLoaded]);
-
   // Generate query from visual axes
   const query =
-    visual.axes && tableLoaded
+    visual.axes && tableLoaded && tableName
       ? barChart.getDuckDbQuery(visual.axes, columns, tableName)
       : '';
 
@@ -60,6 +41,20 @@ export function ChartRenderer({
     loading: queryLoading,
     error: queryError,
   } = useDuckDbQuery(query || '');
+
+  // Handle query errors with useEffect to avoid rendering issues
+  useEffect(() => {
+    if (queryError) {
+      const errorMessage =
+        queryError instanceof Error
+          ? queryError.message
+          : 'Failed to execute query';
+      console.error('Query error:', queryError);
+      toast.error('Failed to execute query', {
+        description: errorMessage,
+      });
+    }
+  }, [queryError]);
 
   if (csvDataLoading) {
     return (
@@ -78,22 +73,6 @@ export function ChartRenderer({
   if (!tableLoaded) {
     return (
       <div className="text-sm text-muted-foreground">Loading chart data...</div>
-    );
-  }
-
-  if (dbError) {
-    return (
-      <div className="text-sm text-destructive">
-        Error initializing DuckDB: {dbError.message}
-      </div>
-    );
-  }
-
-  if (queryError) {
-    return (
-      <div className="text-sm text-destructive">
-        Error executing query: {queryError.message}
-      </div>
     );
   }
 
@@ -146,10 +125,14 @@ export function ChartRenderer({
       />
     );
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    console.error('Error parsing chart data:', err);
+    toast.error('Failed to parse chart data', {
+      description: errorMessage,
+    });
     return (
       <div className="text-sm text-destructive">
-        Error parsing chart data:{' '}
-        {err instanceof Error ? err.message : 'Unknown error'}
+        Error parsing chart data: {errorMessage}
       </div>
     );
   }
