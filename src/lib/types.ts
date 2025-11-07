@@ -7,7 +7,7 @@ import type { Doc } from '../../convex/_generated/dataModel';
 export type ColumnType = NonNullable<Doc<'datasources'>['columnTypes']>[string];
 
 /**
- * Data table row type extracted from the Convex schema
- * This is the type of individual items in the data array
+ * Data table row type - represents a single row of CSV data
+ * This matches the structure returned by getCsvData
  */
-export type DataTableRow = NonNullable<Doc<'datasources'>['data']>[number];
+export type DataTableRow = Record<string, string | number>;

@@ -33,7 +33,6 @@ type Datasource = {
   name: string;
   fileName: string;
   fileSize: number;
-  data?: Array<Record<string, string | number>> | undefined;
 };
 
 function DatasourcesPage() {
@@ -96,25 +95,6 @@ function DatasourcesPage() {
           );
         },
         cell: ({ row }) => row.original.fileName,
-      },
-      {
-        accessorKey: 'rows',
-        header: ({ column }) => {
-          const isSorted = column.getIsSorted();
-          return (
-            <Button
-              variant="ghost"
-              className="h-8 px-2 w-full justify-start hover:bg-transparent"
-              onClick={() => column.toggleSorting()}
-            >
-              Rows
-              {isSorted === 'asc' && <ArrowUp className="ml-2 h-4 w-4" />}
-              {isSorted === 'desc' && <ArrowDown className="ml-2 h-4 w-4" />}
-            </Button>
-          );
-        },
-        cell: ({ row }) => row.original.data?.length ?? 0,
-        accessorFn: (row) => row.data?.length ?? 0,
       },
       {
         accessorKey: 'fileSize',

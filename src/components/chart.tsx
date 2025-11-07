@@ -1,31 +1,22 @@
-import { useSuspenseQuery } from '@tanstack/react-query';
-import { convexQuery } from '@convex-dev/react-query';
 import ReactECharts from 'echarts-for-react';
-import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { useTheme } from '~/components/theme-provider';
 
 interface ChartProps {
   datasourceId: Id<'datasources'>;
+  chartData: {
+    labels: Array<string>;
+    values: Array<number>;
+    measureName: string;
+  };
 }
 
-export function Chart({ datasourceId }: ChartProps) {
+export function Chart({ chartData }: ChartProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const textColor = isDark ? 'hsl(220, 5%, 90%)' : 'hsl(240, 10%, 8%)';
   const labelColor = isDark ? 'hsl(220, 5%, 90%)' : 'hsl(240, 10%, 8%)';
   const borderColor = isDark ? 'hsl(220, 10%, 16%)' : 'hsl(240, 8%, 88%)';
-
-  const { data: chartData } = useSuspenseQuery(
-    convexQuery(api.datasources.getChartData, {
-      datasourceId,
-      groupBy: 'region',
-      measures: [{ field: 'revenue', aggregation: 'SUM' }],
-      orderBy: { field: 'revenue', direction: 'DESC' },
-    }) as any,
-  ) as {
-    data: { labels: Array<string>; values: Array<number>; measureName: string };
-  };
 
   if (chartData.labels.length === 0) {
     return (

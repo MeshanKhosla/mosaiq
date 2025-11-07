@@ -1,27 +1,57 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from 'convex/react';
+import { useLocation } from '@tanstack/react-router';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
+import { parseCsvToData } from '~/lib/file-utils';
 
 interface CsvTableProps {
   datasourceId: Id<'datasources'>;
 }
 
 export function CsvTable({ datasourceId }: CsvTableProps) {
-  const datasource = useQuery(api.datasources.get, { id: datasourceId });
+  const location = useLocation();
+  const storageUrl = useQuery(api.datasources.getStorageUrl, {
+    datasourceId,
+  });
+  const locationState = location.state as {
+    csvData?: Array<Record<string, string | number>>;
+  } | null;
+  const [csvData, setCsvData] = useState<
+    Array<Record<string, string | number>> | undefined
+  >(locationState?.csvData);
 
-  if (!datasource) {
+  useEffect(() => {
+    if (csvData !== undefined) {
+      return;
+    }
+
+    if (storageUrl) {
+      fetch(storageUrl)
+        .then((res) => (res.ok ? res.text() : null))
+        .then((text) => {
+          if (text) {
+            setCsvData(parseCsvToData(text));
+          } else {
+            setCsvData([]);
+          }
+        })
+        .catch(() => setCsvData([]));
+    }
+  }, [csvData, storageUrl]);
+
+  if (csvData === undefined) {
     return <div className="text-sm text-muted-foreground">Loading CSV...</div>;
   }
 
-  if (!datasource.data || datasource.data.length === 0) {
+  if (csvData.length === 0) {
     return (
       <div className="text-sm text-muted-foreground">No data available</div>
     );
   }
 
   // Get headers from first row
-  const headers =
-    datasource.data.length > 0 ? Object.keys(datasource.data[0]) : [];
+  const headers = Object.keys(csvData[0]);
 
   return (
     <div className="w-full overflow-auto">
@@ -39,7 +69,7 @@ export function CsvTable({ datasourceId }: CsvTableProps) {
           </tr>
         </thead>
         <tbody>
-          {datasource.data.map((row, rowIndex) => (
+          {csvData.map((row, rowIndex) => (
             <tr key={rowIndex} className="hover:!bg-accent">
               {headers.map((header, colIndex) => (
                 <td

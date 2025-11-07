@@ -7,6 +7,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { useQuery as useTanstackQuery } from '@tanstack/react-query';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
@@ -29,6 +30,7 @@ import { ColumnHeader } from '~/components/data-table/column-header';
 import { DataTableCell } from '~/components/data-table/table-cell';
 import { DataTableSkeleton } from '~/components/data-table/skeleton';
 import { DataTablePagination } from '~/components/data-table/pagination';
+import { parseCsvToData } from '~/lib/file-utils';
 
 interface DataTableProps {
   datasourceId: Id<'datasources'>;
@@ -41,26 +43,35 @@ export function DataTable({ datasourceId, searchValue = '' }: DataTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
   const datasource = useQuery(api.datasources.get, { id: datasourceId });
+  const storageUrl = useQuery(api.datasources.getStorageUrl, {
+    datasourceId,
+  });
+  const { data: csvData } = useTanstackQuery({
+    queryKey: ['csvData', datasourceId],
+    enabled: !!storageUrl,
+    queryFn: () =>
+      fetch(storageUrl!)
+        .then((res) => res.text())
+        .then(parseCsvToData),
+  });
   const updateColumnType = useMutation(api.datasources.updateColumnType);
-
   const columnTypes = datasource?.columnTypes ?? {};
 
-  // Create columns from data keys
   const columns = useMemo<
     Array<ColumnDef<Record<string, string | number>>>
   >(() => {
-    if (!datasource?.data || datasource.data.length === 0) {
+    if (!csvData || csvData.length === 0) {
       return [];
     }
 
-    const keys = Object.keys(datasource.data[0]);
+    const keys = Object.keys(csvData[0]);
     return keys.map((key) => {
       const columnType =
         (columnTypes[key] as ColumnType | undefined) || 'string';
       return {
-        id: key, // Explicitly set column ID
+        id: key,
         accessorKey: key,
-        enableHiding: true, // Explicitly enable hiding
+        enableHiding: true,
         header: ({ column }) => (
           <ColumnHeader
             column={column}
@@ -76,10 +87,10 @@ export function DataTable({ datasourceId, searchValue = '' }: DataTableProps) {
         },
       };
     });
-  }, [datasource, columnTypes, datasourceId, updateColumnType]);
+  }, [csvData, columnTypes, datasourceId, updateColumnType]);
 
   const table = useReactTable({
-    data: datasource?.data || [],
+    data: csvData ?? [],
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -103,7 +114,7 @@ export function DataTable({ datasourceId, searchValue = '' }: DataTableProps) {
     },
   });
 
-  if (!datasource) {
+  if (!datasource || csvData === undefined) {
     return <DataTableSkeleton />;
   }
 

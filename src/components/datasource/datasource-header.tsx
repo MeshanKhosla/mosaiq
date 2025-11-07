@@ -71,9 +71,7 @@ export function DatasourceHeader({
         </Button>
       </div>
       {datasource ? (
-        <p className="text-muted-foreground mt-2">
-          {datasource.fileName} • {datasource.data?.length ?? 0} rows
-        </p>
+        <p className="text-muted-foreground mt-2">{datasource.fileName}</p>
       ) : (
         <div className="mt-2 h-5 w-96 animate-pulse rounded bg-muted" />
       )}

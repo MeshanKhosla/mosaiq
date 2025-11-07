@@ -11,6 +11,7 @@ import { AnalysisLinksList } from '~/components/datasource/analysis-links-list';
 
 export const Route = createFileRoute('/datasource/$id')({
   component: DatasourcePage,
+  validateSearch: () => ({}),
 });
 
 function DatasourcePage() {

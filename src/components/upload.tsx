@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload as UploadIcon } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { useNavigate } from '@tanstack/react-router';
 import { api } from '../../convex/_generated/api';
 import type { ChangeEvent } from 'react';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
+import type { Id } from '../../convex/_generated/dataModel';
+import { Button } from '~/components/ui/button';
+import { parseCsvForColumnTypes } from '~/lib/file-utils';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB in bytes
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 export function Upload() {
   const navigate = useNavigate();
@@ -15,7 +16,12 @@ export function Upload() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const generateUploadUrl = useMutation(api.datasources.generateUploadUrl);
   const createDatasource = useMutation(api.datasources.create);
+
+  const handleFileInputClick = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleFileSelect = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -23,7 +29,6 @@ export function Upload() {
       return;
     }
 
-    // Validate file type
     if (!file.name.toLowerCase().endsWith('.csv')) {
       setError('Please select a CSV file');
       if (fileInputRef.current) {
@@ -32,7 +37,6 @@ export function Upload() {
       return;
     }
 
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       setError(
         `File size must be less than 5 MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)} MB`,
@@ -47,61 +51,117 @@ export function Upload() {
     setIsUploading(true);
 
     try {
-      // Read CSV content
       const csvContent = await file.text();
+      const columnTypes = parseCsvForColumnTypes(csvContent);
 
-      // Generate name from filename (remove .csv extension)
+      const uploadUrl = await generateUploadUrl();
+
+      const result = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type || 'text/csv' },
+        body: file,
+      });
+
+      if (!result.ok) {
+        throw new Error('Failed to upload file');
+      }
+
+      const { storageId } = await result.json();
+
       const name = file.name.replace(/\.csv$/i, '');
-
-      // Parse and store datasource
       const datasourceId = await createDatasource({
         name,
         fileName: file.name,
         fileSize: file.size,
-        csvContent,
+        storageId: storageId as Id<'_storage'>,
+        columnTypes,
       });
 
-      // Reset form
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
 
-      // Redirect to datasource page
-      await navigate({ to: '/datasource/$id', params: { id: datasourceId } });
+      navigate({
+        to: '/datasource/$id',
+        params: { id: datasourceId },
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload file');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-    } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="file">CSV File</Label>
-        <Input
-          id="file"
-          type="file"
-          accept=".csv"
-          ref={fileInputRef}
-          onChange={handleFileSelect}
-          disabled={isUploading}
-          className="flex-1"
-        />
-        {isUploading && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Uploading and processing...
-          </div>
-        )}
-        {error && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
+    <div className="relative pt-8 pb-8 min-h-[25vh]">
+      <div
+        className="absolute inset-0 -z-10 overflow-hidden"
+        style={{
+          background: `
+            radial-gradient(circle at 20% 10%, hsl(255, 70%, 55%) 0%, transparent 60%),
+            radial-gradient(circle at 80% 15%, hsl(255, 70%, 65%) 0%, transparent 60%),
+            radial-gradient(circle at 50% 5%, hsl(255, 70%, 55%) 0%, transparent 50%)
+          `,
+          opacity: 0.3,
+          filter: 'blur(120px)',
+        }}
+      />
+      <div
+        className="absolute inset-0 -z-10"
+        style={{
+          background: `
+            radial-gradient(ellipse 150% 100% at top, hsl(255, 70%, 55%) 0%, transparent 80%)
+          `,
+          opacity: 0.2,
+          filter: 'blur(80px)',
+        }}
+      />
+
+      <div className="w-full space-y-4 px-4">
+        <div className="flex flex-col items-center space-y-4 w-full">
+          <input
+            id="file-upload"
+            type="file"
+            accept=".csv"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            disabled={isUploading}
+            className="hidden"
+          />
+
+          <Button
+            type="button"
+            size="lg"
+            variant="outline"
+            disabled={isUploading}
+            onClick={handleFileInputClick}
+            className="w-full h-20 text-lg cursor-pointer relative overflow-hidden bg-card/80 dark:bg-card/60 backdrop-blur-md border-2 border-border/50 hover:border-ring/50 hover:bg-card/90 dark:hover:bg-card/70 transition-all"
+            style={{
+              boxShadow:
+                '0 0 40px hsl(255, 70%, 55%, 0.4), 0 0 80px hsl(255, 70%, 55%, 0.2), 0 0 120px hsl(255, 70%, 55%, 0.1)',
+            }}
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <UploadIcon className="mr-2 h-5 w-5" />
+                Choose CSV File
+              </>
+            )}
+          </Button>
+
+          {error && (
+            <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive border border-destructive/20 w-full">
+              {error}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

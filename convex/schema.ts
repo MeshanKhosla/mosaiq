@@ -6,10 +6,6 @@ export default defineSchema({
     name: v.string(),
     fileName: v.string(),
     fileSize: v.number(),
-    // Array of records where each record has string keys and string|number values
-    data: v.optional(
-      v.array(v.record(v.string(), v.union(v.string(), v.number()))),
-    ),
     // Record mapping column names to their types
     columnTypes: v.optional(
       v.record(
@@ -17,7 +13,7 @@ export default defineSchema({
         v.union(v.literal('string'), v.literal('number'), v.literal('date')),
       ),
     ),
-    storageId: v.optional(v.id('_storage')), // Legacy field for old datasources
+    storageId: v.id('_storage'),
     createdBy: v.string(),
   }).index('by_createdBy', ['createdBy']),
 
