@@ -17,18 +17,20 @@ import {
 interface ColumnHeaderProps {
   column: Column<Record<string, string | number>, unknown>;
   columnName: string;
+  columnId: string;
   columnType: ColumnType;
   datasourceId: Id<'datasources'>;
   updateColumnType: (args: {
     datasourceId: Id<'datasources'>;
-    columnName: string;
-    columnType: ColumnType;
-  }) => void;
+    columnId: string;
+    type: ColumnType;
+  }) => Promise<null>;
 }
 
 export function ColumnHeader({
   column,
   columnName,
+  columnId,
   columnType,
   datasourceId,
   updateColumnType,
@@ -75,8 +77,8 @@ export function ColumnHeader({
               onClick={() => {
                 updateColumnType({
                   datasourceId,
-                  columnName,
-                  columnType: 'string',
+                  columnId,
+                  type: 'string',
                 });
               }}
               disabled={columnType === 'string'}
@@ -87,8 +89,8 @@ export function ColumnHeader({
               onClick={() => {
                 updateColumnType({
                   datasourceId,
-                  columnName,
-                  columnType: 'number',
+                  columnId,
+                  type: 'number',
                 });
               }}
               disabled={columnType === 'number'}
@@ -99,8 +101,8 @@ export function ColumnHeader({
               onClick={() => {
                 updateColumnType({
                   datasourceId,
-                  columnName,
-                  columnType: 'date',
+                  columnId,
+                  type: 'date',
                 });
               }}
               disabled={columnType === 'date'}

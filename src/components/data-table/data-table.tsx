@@ -55,7 +55,19 @@ export function DataTable({ datasourceId, searchValue = '' }: DataTableProps) {
         .then(parseCsvToData),
   });
   const updateColumnType = useMutation(api.datasources.updateColumnType);
-  const columnTypes = datasource?.columnTypes ?? {};
+  const datasourceColumns = datasource?.columns ?? [];
+
+  // Create a map from column name to column for quick lookup
+  const columnMap = useMemo(() => {
+    const map = new Map<
+      string,
+      { _id: string; name: string; type: ColumnType }
+    >();
+    for (const col of datasourceColumns) {
+      map.set(col.name, col);
+    }
+    return map;
+  }, [datasourceColumns]);
 
   const columns = useMemo<
     Array<ColumnDef<Record<string, string | number>>>
@@ -66,8 +78,9 @@ export function DataTable({ datasourceId, searchValue = '' }: DataTableProps) {
 
     const keys = Object.keys(csvData[0]);
     return keys.map((key) => {
-      const columnType =
-        (columnTypes[key] as ColumnType | undefined) || 'string';
+      const columnDef = columnMap.get(key);
+      const columnType = columnDef?.type ?? 'string';
+      const columnId = columnDef?._id ?? '';
       return {
         id: key,
         accessorKey: key,
@@ -76,6 +89,7 @@ export function DataTable({ datasourceId, searchValue = '' }: DataTableProps) {
           <ColumnHeader
             column={column}
             columnName={key}
+            columnId={columnId}
             columnType={columnType}
             datasourceId={datasourceId}
             updateColumnType={updateColumnType}
@@ -87,7 +101,7 @@ export function DataTable({ datasourceId, searchValue = '' }: DataTableProps) {
         },
       };
     });
-  }, [csvData, columnTypes, datasourceId, updateColumnType]);
+  }, [csvData, columnMap, datasourceId, updateColumnType]);
 
   const table = useReactTable({
     data: csvData ?? [],

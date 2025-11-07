@@ -6,12 +6,16 @@ export default defineSchema({
     name: v.string(),
     fileName: v.string(),
     fileSize: v.number(),
-    // Record mapping column names to their types
-    columnTypes: v.optional(
-      v.record(
-        v.string(),
-        v.union(v.literal('string'), v.literal('number'), v.literal('date')),
-      ),
+    columns: v.array(
+      v.object({
+        _id: v.string(),
+        name: v.string(),
+        type: v.union(
+          v.literal('string'),
+          v.literal('number'),
+          v.literal('date'),
+        ),
+      }),
     ),
     storageId: v.id('_storage'),
     createdBy: v.string(),
@@ -52,5 +56,11 @@ export default defineSchema({
       height: v.number(),
     }),
     createdBy: v.string(),
+    axes: v.optional(
+      v.object({
+        dimensions: v.optional(v.array(v.string())),
+        measures: v.optional(v.array(v.string())),
+      }),
+    ),
   }),
 });

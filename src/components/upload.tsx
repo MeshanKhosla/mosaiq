@@ -54,6 +54,13 @@ export function Upload() {
       const csvContent = await file.text();
       const columnTypes = parseCsvForColumnTypes(csvContent);
 
+      // Convert columnTypes Record to columns array with IDs
+      const columns = Object.entries(columnTypes).map(([name, type]) => ({
+        _id: crypto.randomUUID(),
+        name,
+        type,
+      }));
+
       const uploadUrl = await generateUploadUrl();
 
       const result = await fetch(uploadUrl, {
@@ -74,7 +81,7 @@ export function Upload() {
         fileName: file.name,
         fileSize: file.size,
         storageId: storageId as Id<'_storage'>,
-        columnTypes,
+        columns,
       });
 
       if (fileInputRef.current) {

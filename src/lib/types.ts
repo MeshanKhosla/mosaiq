@@ -2,9 +2,11 @@ import type { Doc } from '../../convex/_generated/dataModel';
 
 /**
  * Column type extracted from the Convex schema
- * This is the type of values in the columnTypes record
+ * This is the type of values in the columns array
  */
-export type ColumnType = NonNullable<Doc<'datasources'>['columnTypes']>[string];
+export type ColumnType = NonNullable<
+  Doc<'datasources'>['columns']
+>[number]['type'];
 
 /**
  * Data table row type - represents a single row of CSV data

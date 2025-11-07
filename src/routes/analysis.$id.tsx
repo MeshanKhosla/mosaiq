@@ -16,10 +16,10 @@ function AnalysisPage() {
   const analysis = useQuery(api.analyses.get, { id: analysisId });
 
   const datasourceId = analysis?.datasourceIds[0];
-  const datasource = useQuery(
-    api.datasources.get,
-    datasourceId ? { id: datasourceId } : 'skip',
-  );
+  // const datasource = useQuery(
+  //   api.datasources.get,
+  //   datasourceId ? { id: datasourceId } : 'skip',
+  // );
   const storageUrl = useQuery(
     api.datasources.getStorageUrl,
     datasourceId
@@ -36,6 +36,8 @@ function AnalysisPage() {
         .then((res) => res.text())
         .then(parseCsvToData),
   });
+
+  console.log(csvData);
 
   return (
     <AppLayout>

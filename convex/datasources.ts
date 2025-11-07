@@ -48,9 +48,16 @@ export const create = mutation({
     fileName: v.string(),
     fileSize: v.number(),
     storageId: v.id('_storage'),
-    columnTypes: v.record(
-      v.string(),
-      v.union(v.literal('string'), v.literal('number'), v.literal('date')),
+    columns: v.array(
+      v.object({
+        _id: v.string(),
+        name: v.string(),
+        type: v.union(
+          v.literal('string'),
+          v.literal('number'),
+          v.literal('date'),
+        ),
+      }),
     ),
   },
   handler: async (ctx, args) => {
@@ -61,7 +68,7 @@ export const create = mutation({
       fileName: args.fileName,
       fileSize: args.fileSize,
       storageId: args.storageId,
-      columnTypes: args.columnTypes,
+      columns: args.columns,
       createdBy: user._id,
     });
   },
@@ -85,91 +92,11 @@ export const getStorageUrl = query({
   },
 });
 
-// function parseCsvToData(
-//   csvContent: string,
-// ): Array<Record<string, string | number>> {
-//   const lines = csvContent.split(/\r?\n/).filter((line) => line.trim() !== '');
-
-//   if (lines.length === 0) {
-//     return [];
-//   }
-
-//   const headers = parseCsvLine(lines[0]);
-//   const data: Array<Record<string, string | number>> = [];
-
-//   for (let i = 1; i < lines.length; i++) {
-//     const values = parseCsvLine(lines[i]);
-
-//     if (values.length !== headers.length) {
-//       continue;
-//     }
-
-//     const row: Record<string, string | number> = {};
-//     for (let j = 0; j < headers.length; j++) {
-//       const header = headers[j];
-//       let value: string | number = values[j] || '';
-//       const trimmedValue = String(value).trim();
-
-//       if (trimmedValue !== '') {
-//         const numValue = Number(trimmedValue);
-//         if (!isNaN(numValue) && trimmedValue !== '') {
-//           value = numValue;
-//         }
-//       }
-
-//       row[header] = value;
-//     }
-//     data.push(row);
-//   }
-
-//   return data;
-// }
-
-// export const getCsvData = action({
-//   args: {
-//     datasourceId: v.id('datasources'),
-//   },
-//   returns: v.array(v.record(v.string(), v.union(v.string(), v.number()))),
-//   handler: async (
-//     ctx,
-//     args,
-//   ): Promise<Array<Record<string, string | number>>> => {
-//     const user = await authComponent.getAuthUser(ctx);
-//     const datasource = await ctx.runQuery(api.datasources.get, {
-//       id: args.datasourceId,
-//     });
-
-//     if (!datasource || datasource.createdBy !== user._id) {
-//       return [];
-//     }
-
-//     const storageUrl = await ctx.runQuery(api.datasources.getStorageUrl, {
-//       datasourceId: args.datasourceId,
-//     });
-
-//     if (!storageUrl) {
-//       return [];
-//     }
-
-//     const response = await fetch(storageUrl);
-//     if (!response.ok) {
-//       return [];
-//     }
-
-//     const csvContent = await response.text();
-//     return parseCsvToData(csvContent);
-//   },
-// });
-
 export const updateColumnType = mutation({
   args: {
     datasourceId: v.id('datasources'),
-    columnName: v.string(),
-    columnType: v.union(
-      v.literal('string'),
-      v.literal('number'),
-      v.literal('date'),
-    ),
+    columnId: v.string(),
+    type: v.union(v.literal('string'), v.literal('number'), v.literal('date')),
   },
   handler: async (ctx, args) => {
     const user = await authComponent.getAuthUser(ctx);
@@ -179,11 +106,15 @@ export const updateColumnType = mutation({
       throw new Error('Datasource not found or unauthorized');
     }
 
-    const columnTypes = datasource.columnTypes || {};
-    columnTypes[args.columnName] = args.columnType;
+    const columns = datasource.columns;
+    const column = columns.find((c) => c._id === args.columnId);
+    if (!column) {
+      throw new Error('Column not found');
+    }
+    column.type = args.type;
 
     await ctx.db.patch(args.datasourceId, {
-      columnTypes,
+      columns: columns,
     });
   },
 });
