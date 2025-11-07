@@ -49,38 +49,12 @@ export default defineSchema({
       v.literal('pie_chart'),
     ),
     title: v.string(),
-    sheetId: v.id('sheets'),
-    datasourceId: v.id('datasources'),
     position: v.object({
       x: v.number(),
       y: v.number(),
       width: v.number(),
       height: v.number(),
     }),
-    config: v.object({
-      // Dimension for grouping (X-axis for bar/line, categories for pie, columns for table)
-      dimension: v.optional(v.string()),
-      // Measures with aggregations (Y-axis for bar/line, values for pie)
-      measures: v.optional(
-        v.array(
-          v.object({
-            column: v.string(),
-            aggregation: v.union(
-              v.literal('SUM'),
-              v.literal('AVG'),
-              v.literal('COUNT'),
-              v.literal('MIN'),
-              v.literal('MAX'),
-              v.literal('NONE'),
-            ),
-          }),
-        ),
-      ),
-      // For table type: which columns to display
-      columns: v.optional(v.array(v.string())),
-    }),
     createdBy: v.string(),
-  })
-    .index('by_sheetId', ['sheetId'])
-    .index('by_createdBy', ['createdBy']),
+  }),
 });
