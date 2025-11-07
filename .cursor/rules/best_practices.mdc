@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+---
+
+Follow best practices from the libraries used. For example, follow Convex, ShadCN, Tanstack, React best practices always. Also follow the style of code that is in the current package.
+
+You should run this after any change that could impact code:
+
+```sh
+bun run build
+bun run lint --fix
+bun convex dev --once
+```

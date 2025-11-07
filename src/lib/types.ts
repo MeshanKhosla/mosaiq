@@ -13,3 +13,5 @@ export type ColumnType = NonNullable<
  * This matches the structure returned by getCsvData
  */
 export type DataTableRow = Record<string, string | number>;
+
+export type Axes = Doc<'visuals'>['axes'];

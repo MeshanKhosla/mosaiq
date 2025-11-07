@@ -58,8 +58,8 @@ export default defineSchema({
     createdBy: v.string(),
     axes: v.optional(
       v.object({
-        dimensions: v.optional(v.array(v.string())),
-        measures: v.optional(v.array(v.string())),
+        dimensions: v.optional(v.array(v.string())), // Ids of columns
+        measures: v.optional(v.array(v.string())), // Ids of columns
       }),
     ),
   }),
