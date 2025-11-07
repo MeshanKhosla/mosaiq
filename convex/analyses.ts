@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import { authComponent } from './auth';
+import { internal } from './_generated/api';
 
 export const list = query({
   args: {},
@@ -101,10 +102,18 @@ export const create = mutation({
       throw new Error('Datasource not found or unauthorized');
     }
 
-    return await ctx.db.insert('analyses', {
+    const analysisId = await ctx.db.insert('analyses', {
       datasourceIds: [args.datasourceId],
       name: args.name.trim(),
       createdBy: user._id,
     });
+
+    // Automatically create a default sheet for the analysis
+    await ctx.scheduler.runAfter(0, internal.sheets.create, {
+      analysisId,
+      name: 'Sheet 1',
+    });
+
+    return analysisId;
   },
 });

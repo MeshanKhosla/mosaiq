@@ -12,7 +12,9 @@ import type * as analyses from "../analyses.js";
 import type * as auth from "../auth.js";
 import type * as datasources from "../datasources.js";
 import type * as http from "../http.js";
+import type * as sheets from "../sheets.js";
 import type * as utils_csv_parser from "../utils/csv_parser.js";
+import type * as visuals from "../visuals.js";
 
 import type {
   ApiFromModules,
@@ -33,7 +35,9 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   datasources: typeof datasources;
   http: typeof http;
+  sheets: typeof sheets;
   "utils/csv_parser": typeof utils_csv_parser;
+  visuals: typeof visuals;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 

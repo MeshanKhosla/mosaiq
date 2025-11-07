@@ -42,6 +42,7 @@ export default defineSchema({
   }).index('by_createdBy', ['createdBy']),
 
   visuals: defineTable({
+    sheetId: v.id('sheets'),
     type: v.union(
       v.literal('table'),
       v.literal('bar_chart'),
@@ -62,5 +63,7 @@ export default defineSchema({
         measures: v.optional(v.array(v.string())), // Ids of columns
       }),
     ),
-  }),
+  })
+    .index('by_sheetId', ['sheetId'])
+    .index('by_createdBy', ['createdBy']),
 });
