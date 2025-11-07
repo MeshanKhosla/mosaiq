@@ -1,8 +1,6 @@
 import { v } from 'convex/values';
-import { action, mutation, query } from './_generated/server';
+import { mutation, query } from './_generated/server';
 import { authComponent } from './auth';
-import { parseCsvLine } from './utils/csv_parser';
-import { api } from './_generated/api';
 
 export const list = query({
   args: {},
