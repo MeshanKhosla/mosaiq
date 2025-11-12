@@ -23,6 +23,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '~/components/ui/sidebar';
 import { ThemeToggle } from '~/components/theme-toggle';
 import { authClient } from '~/lib/auth-client';
@@ -49,6 +50,7 @@ export function AppSidebar() {
   const router = useRouterState();
   const queryClient = useQueryClient();
   const currentPath = router.location.pathname;
+  const { setOpenMobile, isMobile } = useSidebar();
   const { data: user } = useSuspenseQuery(
     convexQuery(api.auth.getCurrentUser, {}),
   );
@@ -92,7 +94,15 @@ export function AppSidebar() {
                     asChild
                     isActive={currentPath === item.url}
                   >
-                    <Link to={item.url}>
+                    <Link
+                      to={item.url}
+                      onClick={() => {
+                        // Close mobile sidebar when navigating
+                        if (isMobile) {
+                          setOpenMobile(false);
+                        }
+                      }}
+                    >
                       <item.icon />
                       <span>{item.title}</span>
                     </Link>

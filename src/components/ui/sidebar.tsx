@@ -60,6 +60,19 @@ function useSidebar() {
   return context;
 }
 
+const getSidebarStateFromCookie = (): boolean | null => {
+  if (typeof document === 'undefined') return null;
+  const cookies = document.cookie.split(';');
+  const sidebarCookie = cookies.find((cookie) =>
+    cookie.trim().startsWith(`${SIDEBAR_COOKIE_NAME}=`),
+  );
+  if (sidebarCookie) {
+    const value = sidebarCookie.split('=')[1]?.trim();
+    return value === 'true';
+  }
+  return null;
+};
+
 const SidebarProvider = forwardRef<
   HTMLDivElement,
   ComponentProps<'div'> & {
@@ -83,9 +96,12 @@ const SidebarProvider = forwardRef<
     const isMobile = useIsMobile();
     const [openMobile, setOpenMobile] = useState(false);
 
-    // This is the internal state of the sidebar.
-    // We use openProp and setOpenProp for control from outside the component.
-    const [_open, _setOpen] = useState(defaultOpen);
+    // Read the initial state from cookie, or fall back to defaultOpen
+    // Using a lazy initializer function so cookie is read only once on mount
+    const [_open, _setOpen] = useState(() => {
+      const cookieState = getSidebarStateFromCookie();
+      return cookieState !== null ? cookieState : defaultOpen;
+    });
     const open = openProp ?? _open;
     const setOpen = useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
