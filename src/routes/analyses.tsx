@@ -140,7 +140,7 @@ function AnalysesPage() {
           {!analyses ? (
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:!bg-transparent">
                   <TableHead>
                     <Skeleton className="h-5 w-24" />
                   </TableHead>
@@ -154,7 +154,7 @@ function AnalysesPage() {
               </TableHeader>
               <TableBody>
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
+                  <TableRow key={i} className="hover:!bg-transparent">
                     <TableCell>
                       <Skeleton className="h-5 w-full" />
                     </TableCell>
