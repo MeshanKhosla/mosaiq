@@ -53,37 +53,40 @@ export const getBySheet = query({
   args: {
     sheetId: v.id('sheets'),
   },
-  returns: v.array(
-    v.object({
-      _id: v.id('visuals'),
-      _creationTime: v.number(),
-      sheetId: v.id('sheets'),
-      type: v.union(
-        v.literal('table'),
-        v.literal('bar_chart'),
-        v.literal('line_chart'),
-        v.literal('pie_chart'),
-      ),
-      title: v.string(),
-      position: v.object({
-        x: v.number(),
-        y: v.number(),
-        width: v.number(),
-        height: v.number(),
-      }),
-      createdBy: v.string(),
-      axes: v.optional(
-        v.object({
-          dimensions: v.optional(v.array(v.string())),
-          measures: v.optional(v.array(v.string())),
+  returns: v.union(
+    v.array(
+      v.object({
+        _id: v.id('visuals'),
+        _creationTime: v.number(),
+        sheetId: v.id('sheets'),
+        type: v.union(
+          v.literal('table'),
+          v.literal('bar_chart'),
+          v.literal('line_chart'),
+          v.literal('pie_chart'),
+        ),
+        title: v.string(),
+        position: v.object({
+          x: v.number(),
+          y: v.number(),
+          width: v.number(),
+          height: v.number(),
         }),
-      ),
-    }),
+        createdBy: v.string(),
+        axes: v.optional(
+          v.object({
+            dimensions: v.optional(v.array(v.string())),
+            measures: v.optional(v.array(v.string())),
+          }),
+        ),
+      }),
+    ),
+    v.null(),
   ),
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
-      return [];
+      return;
     }
 
     // Verify sheet exists and belongs to user

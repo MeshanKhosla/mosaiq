@@ -7,7 +7,7 @@ export const list = query({
   handler: async (ctx) => {
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
-      return [];
+      return;
     }
     const userId = user._id;
     return await ctx.db

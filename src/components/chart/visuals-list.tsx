@@ -26,7 +26,7 @@ export function VisualsList({
   const visuals = useQuery(api.visuals.getBySheet, { sheetId });
   const deleteVisual = useMutation(api.visuals.deleteVisual);
 
-  if (!sheet || !datasource || visuals === undefined) {
+  if (!sheet || !datasource || visuals === undefined || visuals === null) {
     return (
       <div className="text-sm text-muted-foreground">Loading visuals...</div>
     );

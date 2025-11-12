@@ -166,7 +166,7 @@ function DatasourcePage() {
           <DataTable datasourceId={datasourceId} searchValue={searchValue} />
         </div>
 
-        <AnalysisLinksList analyses={analyses} />
+        <AnalysisLinksList analyses={analyses ?? undefined} />
       </div>
     </AppLayout>
   );

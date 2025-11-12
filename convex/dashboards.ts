@@ -54,19 +54,22 @@ export const get = query({
 
 export const list = query({
   args: {},
-  returns: v.array(
-    v.object({
-      _id: v.id('dashboards'),
-      _creationTime: v.number(),
-      name: v.string(),
-      sourceAnalysisId: v.id('analyses'),
-      createdBy: v.string(),
-    }),
+  returns: v.union(
+    v.array(
+      v.object({
+        _id: v.id('dashboards'),
+        _creationTime: v.number(),
+        name: v.string(),
+        sourceAnalysisId: v.id('analyses'),
+        createdBy: v.string(),
+      }),
+    ),
+    v.null(),
   ),
   handler: async (ctx) => {
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
-      return [];
+      return;
     }
     const userId = user._id;
     return await ctx.db

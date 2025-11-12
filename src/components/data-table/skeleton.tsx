@@ -14,7 +14,7 @@ export function DataTableSkeleton() {
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="hover:!bg-transparent">
               {Array.from({ length: 5 }).map((_, i) => (
                 <TableHead key={i}>
                   <Skeleton className="h-5 w-24" />
@@ -24,7 +24,7 @@ export function DataTableSkeleton() {
           </TableHeader>
           <TableBody>
             {Array.from({ length: 10 }).map((_row, rowIndex) => (
-              <TableRow key={rowIndex}>
+              <TableRow key={rowIndex} className="hover:!bg-transparent">
                 {Array.from({ length: 5 }).map((_col, colIndex) => (
                   <TableCell key={colIndex}>
                     <Skeleton className="h-5 w-full" />
