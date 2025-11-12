@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
-import { insertFile, runQuery, useDuckDb } from 'duckdb-wasm-kit';
+import { insertFile, useDuckDb } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
@@ -51,36 +51,27 @@ function AnalysisPage() {
     queryFn: () => fetch(storageUrl!).then((res) => res.text()),
   });
 
-  // Initialize DuckDB at analysis level
   const { db, loading: dbLoading, error: dbError } = useDuckDb();
 
-  // Create unique table name based on datasource name + random ID
-  const tableName = useMemo(() => {
-    if (!datasource) return undefined;
-    // Sanitize datasource name for use as table name
-    const sanitizedName = datasource.name
-      .replace(/[^a-zA-Z0-9_]/g, '_')
-      .toLowerCase();
-    const randomId = Math.random().toString(36).substring(2, 9);
-    return `${sanitizedName}_${randomId}`;
-  }, [datasource]);
+  let tableName: string | undefined;
+  if (datasource) {
+    tableName = `${analysisId}_${datasource.name.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()}`;
+  }
 
   const [tableLoaded, setTableLoaded] = useState(false);
 
-  // Load CSV into DuckDB once when DB and CSV data are ready
   useEffect(() => {
     if (!db || !csvData || !tableName || tableLoaded) return;
 
     const loadData = async () => {
       try {
-        // Drop table if it exists (in case we're reloading)
-        await runQuery(db, `DROP TABLE IF EXISTS "${tableName}"`);
-
-        // Create File from CSV string
         const file = new File([csvData], 'data.csv', { type: 'text/csv' });
 
-        // Insert CSV into DuckDB with unique table name
-        await insertFile(db, file, tableName);
+        try {
+          await insertFile(db, file, tableName);
+        } catch (err) {
+          // No-op, file already exists
+        }
         setTableLoaded(true);
       } catch (err) {
         const errorMessage =
@@ -94,16 +85,6 @@ function AnalysisPage() {
 
     loadData();
   }, [db, csvData, tableName, tableLoaded]);
-
-  // Handle DuckDB initialization errors
-  useEffect(() => {
-    if (dbError) {
-      console.error('DuckDB initialization error:', dbError);
-      toast.error('Failed to initialize DuckDB', {
-        description: dbError.message,
-      });
-    }
-  }, [dbError]);
 
   const handlePublishToDashboard = async () => {
     if (!analysis) {
@@ -134,6 +115,10 @@ function AnalysisPage() {
       setIsPublishing(false);
     }
   };
+
+  if (dbError) {
+    return <div>Failed to initialize DuckDB: {dbError.message}</div>;
+  }
 
   return (
     <AppLayout
