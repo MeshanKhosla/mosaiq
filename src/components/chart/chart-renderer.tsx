@@ -1,135 +1,116 @@
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { useDuckDbQuery } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
+import type { ColorPalette } from '~/lib/types';
 import { Chart } from '~/components/chart';
 import BarChart from '~/charts/bar-chart';
+import { arrowTo2Series } from '~/lib/utils';
+import { useTheme } from '~/components/theme-provider';
 
 type Visual = Doc<'visuals'>;
 type Column = Doc<'datasources'>['columns'][number];
 
-interface ChartRendererProps {
+const barChart = new BarChart();
+
+export function ChartRenderer(props: {
   visual: Visual;
   datasourceId: Id<'datasources'>;
   columns: Array<Column>;
   csvDataLoading: boolean;
   dbLoading: boolean;
-  tableName: string | undefined;
+  tableName?: string;
   tableLoaded: boolean;
-}
+}) {
+  const { visual, columns, csvDataLoading, dbLoading, tableName, tableLoaded } =
+    props;
 
-const barChart = new BarChart();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
-export function ChartRenderer({
-  visual,
-  datasourceId,
-  columns,
-  csvDataLoading,
-  dbLoading,
-  tableName,
-  tableLoaded,
-}: ChartRendererProps) {
-  // Generate query from visual axes
-  const query =
-    visual.axes && tableLoaded && tableName
-      ? barChart.getDuckDbQuery(visual.axes, columns, tableName)
-      : '';
+  const colors = {
+    textColor: isDark ? 'hsl(220, 5%, 90%)' : 'hsl(240, 10%, 8%)',
+    labelColor: isDark ? 'hsl(220, 5%, 90%)' : 'hsl(240, 10%, 8%)',
+    borderColor: isDark ? 'hsl(220, 10%, 16%)' : 'hsl(240, 8%, 88%)',
+    tooltipBg: isDark ? 'hsl(220, 12%, 11%)' : 'hsl(34, 10%, 97%)',
+    backgroundColor: 'transparent',
+    seriesColor: '#3b82f6',
+    seriesEmphasisColor: '#2563eb',
+  } as ColorPalette;
 
-  // Execute query
+  const query = useMemo(() => {
+    if (visual.axes && tableLoaded && tableName) {
+      try {
+        return barChart.getDuckDbQuery(visual.axes, columns, tableName);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        toast.error('Chart config error', { description: msg });
+        return '';
+      }
+    }
+    return '';
+  }, [visual.axes, tableLoaded, tableName, columns]);
+
   const {
     arrow,
     loading: queryLoading,
     error: queryError,
-  } = useDuckDbQuery(query || '');
+  } = useDuckDbQuery(query);
 
-  // Handle query errors with useEffect to avoid rendering issues
-  useEffect(() => {
-    if (queryError) {
-      const errorMessage =
-        queryError instanceof Error
-          ? queryError.message
-          : 'Failed to execute query';
-      console.error('Query error:', queryError);
-      toast.error('Failed to execute query', {
-        description: errorMessage,
-      });
-    }
-  }, [queryError]);
-
-  if (csvDataLoading) {
+  if (queryError) {
+    return (
+      <div className="text-sm text-muted-foreground">
+        Failed to execute query: {queryError.message}
+      </div>
+    );
+  }
+  if (csvDataLoading)
     return (
       <div className="text-sm text-muted-foreground">Loading datasource...</div>
     );
-  }
-
-  if (dbLoading) {
+  if (dbLoading)
     return (
       <div className="text-sm text-muted-foreground">
         Loading duckdb binary...
       </div>
     );
-  }
-
-  if (!tableLoaded) {
+  if (!tableLoaded)
     return (
       <div className="text-sm text-muted-foreground">Loading chart data...</div>
     );
-  }
-
-  if (queryLoading) {
+  if (queryLoading)
     return (
       <div className="text-sm text-muted-foreground">Executing query...</div>
     );
-  }
-
-  if (!arrow || !visual.axes) {
+  if (!arrow || !visual.axes)
     return (
       <div className="text-sm text-muted-foreground">No data available</div>
     );
-  }
 
-  // Parse Arrow data to extract labels and values
   try {
-    const table = arrow;
-    const numRows = table.numRows;
-    const labels: Array<string> = [];
-    const values: Array<number> = [];
+    const { labels, values } = arrowTo2Series(arrow);
 
-    // Iterate through rows - first column is dimension, second is value
-    for (let i = 0; i < numRows; i++) {
-      const row = table.get(i);
-      if (row) {
-        const rowArray = row.toArray();
-        // First column is dimension, second is value
-        if (rowArray.length >= 2) {
-          labels.push(String(rowArray[0] || ''));
-          values.push(Number(rowArray[1]) || 0);
-        }
-      }
-    }
+    const measureId = visual.axes.measures?.[0];
+    const measureColumn = columns.find((c) => c._id === measureId);
+    const measureName = measureColumn?.name ?? 'Value';
+    const dimensionId = visual.axes.dimensions?.[0];
+    const dimensionColumn = columns.find((c) => c._id === dimensionId);
+    const dimensionName = dimensionColumn?.name ?? 'Category';
 
-    // Get measure column name for display
-    const measureColumn = columns.find(
-      (col) => col._id === visual.axes?.measures?.[0],
+    const options = barChart.getOptions(
+      visual.axes,
+      labels,
+      values,
+      measureName,
+      dimensionName,
+      colors,
     );
-    const measureName = measureColumn?.name || 'Value';
 
-    return (
-      <Chart
-        datasourceId={datasourceId}
-        chartData={{
-          labels,
-          values,
-          measureName,
-        }}
-      />
-    );
+    return <Chart options={options} />;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     console.error('Error parsing chart data:', err);
-    toast.error('Failed to parse chart data', {
-      description: errorMessage,
-    });
+    toast.error('Failed to parse chart data', { description: errorMessage });
     return (
       <div className="text-sm text-destructive">
         Error parsing chart data: {errorMessage}

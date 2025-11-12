@@ -1,4 +1,4 @@
-import type { Axes } from '~/lib/types';
+import type { Axes, ColorPalette } from '~/lib/types';
 import type { Doc } from '../../convex/_generated/dataModel';
 
 export type ChartRequirements = {
@@ -50,6 +50,26 @@ class BaseChart {
    */
   validateAxes(axes: Axes): true | string {
     axes;
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Gets the input to the Echarts options prop
+   */
+  getOptions(
+    axes: Axes,
+    labels: Array<string>,
+    values: Array<number>,
+    measureName: string,
+    dimensionName: string,
+    colors: ColorPalette,
+  ): Record<string, any> {
+    axes;
+    labels;
+    values;
+    measureName;
+    dimensionName;
+    colors;
     throw new Error('Not implemented');
   }
 }

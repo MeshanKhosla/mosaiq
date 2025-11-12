@@ -15,3 +15,13 @@ export type ColumnType = NonNullable<
 export type DataTableRow = Record<string, string | number>;
 
 export type Axes = Doc<'visuals'>['axes'];
+
+export type ColorPalette = {
+  textColor: string;
+  labelColor: string;
+  borderColor: string;
+  tooltipBg: string;
+  backgroundColor: string;
+  seriesColor: string;
+  seriesEmphasisColor: string;
+};

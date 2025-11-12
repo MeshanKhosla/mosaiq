@@ -1,4 +1,4 @@
-import type { Axes } from '~/lib/types';
+import type { Axes, ColorPalette } from '~/lib/types';
 import type { ChartRequirements } from '~/charts/base-chart';
 import type { Doc } from '../../convex/_generated/dataModel';
 import BaseChart from '~/charts/base-chart';
@@ -97,6 +97,91 @@ class BarChart extends BaseChart {
           max: 1,
         },
       },
+    };
+  }
+
+  getOptions(
+    axes: Axes,
+    labels: Array<string>,
+    values: Array<number>,
+    measureName: string,
+    dimensionName: string,
+    colors: ColorPalette,
+  ): Record<string, any> {
+    axes;
+    const shouldRotate =
+      labels.length > 12 || labels.some((s) => s.length > 12);
+    return {
+      backgroundColor: colors.backgroundColor,
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: colors.tooltipBg,
+        borderColor: colors.borderColor,
+        textStyle: { color: colors.textColor },
+        formatter: (params: Array<{ name: string; value: number }>) => {
+          const p = params[0];
+          const v = Number(p.value);
+          return `${p.name}<br/>${isFinite(v) ? v.toLocaleString() : '-'}`;
+        },
+      },
+      transitionDuration: 0,
+      showDelay: 0,
+      hideDelay: 0,
+      grid: {
+        left: '3%',
+        right: '3%',
+        bottom: shouldRotate ? 60 : 30,
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: labels,
+        axisTick: {
+          alignWithLabel: true,
+          lineStyle: { color: colors.borderColor },
+        },
+        axisLabel: { rotate: shouldRotate ? 30 : 0 },
+        name: dimensionName + ' by ' + measureName,
+        nameGap: 30,
+        nameLocation: 'middle',
+        nameTextStyle: {
+          color: colors.textColor,
+        },
+      },
+      yAxis: {
+        type: 'value',
+        splitLine: { lineStyle: { type: 'dashed', color: colors.borderColor } },
+        axisLabel: {
+          formatter: (val: number) =>
+            isFinite(val) ? val.toLocaleString() : '0',
+        },
+        name: measureName,
+        nameGap: 50,
+        nameLocation: 'middle',
+        nameTextStyle: {
+          color: colors.textColor,
+        },
+      },
+      series: [
+        {
+          name: measureName,
+          type: 'bar',
+          data: values,
+          barMaxWidth: 40,
+          itemStyle: { borderRadius: [4, 4, 0, 0], color: colors.seriesColor },
+          emphasis: { focus: 'series' },
+          label: {
+            show: values.length <= 20,
+            position: 'top',
+            formatter: (p: { value: number }) =>
+              isFinite(Number(p.value)) ? Number(p.value).toLocaleString() : '',
+            color: colors.labelColor,
+          },
+        },
+      ],
+      animationDuration: 150,
+      animationEasing: 'quartOut',
     };
   }
 }
