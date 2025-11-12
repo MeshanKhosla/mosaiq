@@ -1,11 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useQuery } from 'convex/react';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
 
 export const Route = createFileRoute('/dashboard/$id')({
   component: DashboardPage,
+  loader: async ({ context, params }) => {
+    const dashboardId = params.id as Id<'dashboards'>;
+    return await context.queryClient.ensureQueryData(
+      convexQuery(api.dashboards.get, { id: dashboardId }),
+    );
+  },
 });
 
 function DashboardPage() {

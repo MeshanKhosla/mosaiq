@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
@@ -11,6 +12,12 @@ import { AnalysisLinksList } from '~/components/datasource/analysis-links-list';
 export const Route = createFileRoute('/datasource/$id')({
   component: DatasourcePage,
   validateSearch: () => ({}),
+  loader: async ({ context, params }) => {
+    const datasourceId = params.id as Id<'datasources'>;
+    return await context.queryClient.ensureQueryData(
+      convexQuery(api.datasources.get, { id: datasourceId }),
+    );
+  },
 });
 
 function DatasourcePage() {

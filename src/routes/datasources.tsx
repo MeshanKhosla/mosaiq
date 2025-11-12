@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Link, createFileRoute } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useQuery } from 'convex/react';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
@@ -25,6 +26,11 @@ import { Button } from '~/components/ui/button';
 
 export const Route = createFileRoute('/datasources')({
   component: DatasourcesPage,
+  loader: async ({ context }) => {
+    return await context.queryClient.ensureQueryData(
+      convexQuery(api.datasources.list, {}),
+    );
+  },
 });
 
 type Datasource = {
@@ -36,7 +42,6 @@ type Datasource = {
 };
 
 function DatasourcesPage() {
-  const navigate = useNavigate();
   const datasources = useQuery(api.datasources.list);
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -225,24 +230,22 @@ function DatasourcesPage() {
               </TableHeader>
               <TableBody>
                 {table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    className="cursor-pointer hover:!bg-accent"
-                    onClick={() =>
-                      navigate({
-                        to: '/datasource/$id',
-                        params: { id: row.original._id },
-                      })
-                    }
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext(),
-                        )}
-                      </TableCell>
-                    ))}
+                  <TableRow key={row.id} className="hover:!bg-accent">
+                    <Link
+                      to="/datasource/$id"
+                      params={{ id: row.original._id }}
+                      className="contents"
+                      preload="intent"
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                    </Link>
                   </TableRow>
                 ))}
               </TableBody>

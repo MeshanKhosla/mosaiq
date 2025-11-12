@@ -4,6 +4,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
 import { insertFile, runQuery, useDuckDb } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
@@ -13,6 +14,12 @@ import { Button } from '~/components/ui/button';
 
 export const Route = createFileRoute('/analysis/$id')({
   component: AnalysisPage,
+  loader: async ({ context, params }) => {
+    const analysisId = params.id as Id<'analyses'>;
+    return await context.queryClient.ensureQueryData(
+      convexQuery(api.analyses.get, { id: analysisId }),
+    );
+  },
 });
 
 function AnalysisPage() {
