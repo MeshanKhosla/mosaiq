@@ -92,9 +92,42 @@ export function ChartRenderer(props: {
     return (
       <div className="text-sm text-muted-foreground">Executing query...</div>
     );
+  // Check if axes are configured
+  const requirements =
+    visual.type !== 'table' ? barChart.getRequirements() : null;
+  const hasRequiredAxes = requirements
+    ? (visual.axes?.dimensions?.length ?? 0) >=
+        requirements.wells.dimensions.min &&
+      (visual.axes?.measures?.length ?? 0) >= requirements.wells.measures.min
+    : true;
+
+  if (!hasRequiredAxes && requirements) {
+    const dimText =
+      requirements.wells.dimensions.min === requirements.wells.dimensions.max
+        ? `${requirements.wells.dimensions.min} dimension${requirements.wells.dimensions.min !== 1 ? 's' : ''}`
+        : `${requirements.wells.dimensions.min}-${requirements.wells.dimensions.max} dimensions`;
+    const measText =
+      requirements.wells.measures.min === requirements.wells.measures.max
+        ? `${requirements.wells.measures.min} measure${requirements.wells.measures.min !== 1 ? 's' : ''}`
+        : `${requirements.wells.measures.min}-${requirements.wells.measures.max} measures`;
+
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="text-center text-sm text-muted-foreground">
+          <p className="font-medium">
+            Required: {dimText} and {measText}
+          </p>
+          <p className="mt-1 text-xs">Configure axes in the toolbar above</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!arrow || !visual.axes)
     return (
-      <div className="text-sm text-muted-foreground">No data available</div>
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="text-sm text-muted-foreground">No data available</div>
+      </div>
     );
 
   try {

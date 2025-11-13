@@ -205,8 +205,8 @@ export function VisualToolbar({
   };
 
   return (
-    <div className="border-b border-border bg-background/50 backdrop-blur-sm">
-      <div className="flex items-center gap-2 p-3">
+    <div className="border-b border-border bg-background/50 backdrop-blur-sm -mx-6">
+      <div className="flex items-center gap-2 px-4 py-1.5">
         {/* Visual Type Buttons */}
         <div className="flex items-center gap-1 border-r border-border pr-3">
           {visualTypes.map(({ type, label, icon: Icon }) => (

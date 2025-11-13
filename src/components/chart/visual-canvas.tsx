@@ -1,4 +1,5 @@
 import { useQuery } from 'convex/react';
+import { useRef } from 'react';
 import { api } from '../../../convex/_generated/api';
 import { VisualContainer } from './visual-container';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
@@ -28,6 +29,7 @@ export function VisualCanvas({
   selectedVisualId,
   onVisualSelect,
 }: VisualCanvasProps) {
+  const canvasRef = useRef<HTMLDivElement>(null);
   const visuals = useQuery(api.visuals.getBySheet, { sheetId });
 
   if (visuals === undefined || visuals === null) {
@@ -59,8 +61,15 @@ export function VisualCanvas({
 
   return (
     <div
-      className="relative h-full w-full overflow-auto bg-muted/20"
+      ref={canvasRef}
+      className="relative -mx-6 px-4 py-6"
       onClick={handleCanvasClick}
+      style={{
+        minHeight: '100%',
+        width: '100%',
+        // Ensure canvas can grow infinitely downward
+        height: 'auto',
+      }}
     >
       {visuals.map((visual) => (
         <VisualContainer
@@ -74,6 +83,7 @@ export function VisualCanvas({
           tableLoaded={tableLoaded}
           isSelected={selectedVisualId === visual._id}
           onSelect={() => onVisualSelect?.(visual._id)}
+          canvasRef={canvasRef}
         />
       ))}
     </div>

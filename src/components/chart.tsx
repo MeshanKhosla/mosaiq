@@ -7,17 +7,20 @@ interface ChartProps {
 }
 
 export function Chart({ options, width, height }: ChartProps) {
-  // Calculate chart dimensions, accounting for padding
-  const chartWidth = width ? width - 48 : undefined; // 24px padding on each side
-  const chartHeight = height ? height - 120 : 400; // Account for header (48px) + padding (48px) + some margin
+  // Use full dimensions - ECharts grid handles spacing
+  // Account for thin header (~28px)
+  const chartWidth = width || '100%';
+  const chartHeight = height ? Math.max(height - 28, 200) : 400;
 
   return (
-    <div className="w-full rounded-lg border bg-card p-6">
+    <div className="w-full h-full">
       <ReactECharts
         option={options}
         style={{
-          height: `${chartHeight}px`,
-          width: chartWidth ? `${chartWidth}px` : '100%',
+          height:
+            typeof chartHeight === 'number' ? `${chartHeight}px` : chartHeight,
+          width:
+            typeof chartWidth === 'number' ? `${chartWidth}px` : chartWidth,
         }}
         opts={{ renderer: 'svg' }}
       />

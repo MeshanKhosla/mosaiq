@@ -111,23 +111,10 @@ class BarChart extends BaseChart {
     height?: number,
   ): Record<string, any> {
     axes;
+    width;
+    height;
     const shouldRotate =
       labels.length > 12 || labels.some((s) => s.length > 12);
-
-    // Calculate dynamic nameGap based on chart dimensions
-    // For xAxis: scale with width (default 30, scales proportionally)
-    // For yAxis: scale with height (default 50, scales proportionally)
-    const defaultWidth = 400; // Default chart width
-    const defaultHeight = 300; // Default chart height
-    const defaultXNameGap = 30;
-    const defaultYNameGap = 50;
-
-    const xNameGap = width
-      ? Math.max(20, Math.min(60, (width / defaultWidth) * defaultXNameGap))
-      : defaultXNameGap;
-    const yNameGap = height
-      ? Math.max(30, Math.min(80, (height / defaultHeight) * defaultYNameGap))
-      : defaultYNameGap;
 
     return {
       backgroundColor: colors.backgroundColor,
@@ -147,9 +134,10 @@ class BarChart extends BaseChart {
       showDelay: 0,
       hideDelay: 0,
       grid: {
-        left: '3%',
-        right: '3%',
-        bottom: shouldRotate ? 60 : 30,
+        left: '80px',
+        right: '5%',
+        top: '10%',
+        bottom: shouldRotate ? '20%' : '15%',
         containLabel: true,
       },
       xAxis: {
@@ -161,7 +149,6 @@ class BarChart extends BaseChart {
         },
         axisLabel: { rotate: shouldRotate ? 30 : 0 },
         name: dimensionName + ' by ' + measureName,
-        nameGap: xNameGap,
         nameLocation: 'middle',
         nameTextStyle: {
           color: colors.textColor,
@@ -175,7 +162,6 @@ class BarChart extends BaseChart {
             isFinite(val) ? val.toLocaleString() : '0',
         },
         name: measureName,
-        nameGap: yNameGap,
         nameLocation: 'middle',
         nameTextStyle: {
           color: colors.textColor,

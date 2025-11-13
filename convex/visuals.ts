@@ -202,6 +202,28 @@ export const updatePosition = mutation({
   },
 });
 
+export const updateTitle = mutation({
+  args: {
+    id: v.id('visuals'),
+    title: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+
+    const visual = await ctx.db.get(args.id);
+    if (!visual || visual.createdBy !== user._id) {
+      throw new Error('Visual not found or unauthorized');
+    }
+
+    await ctx.db.patch(args.id, {
+      title: args.title.trim(),
+    });
+
+    return null;
+  },
+});
+
 export const deleteVisual = mutation({
   args: {
     id: v.id('visuals'),

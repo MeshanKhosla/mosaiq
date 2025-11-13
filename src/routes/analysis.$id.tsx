@@ -214,7 +214,7 @@ function AnalysisPage() {
                 setSelectedVisualId(visual?._id || null)
               }
             />
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-auto">
               <VisualCanvas
                 sheetId={sheet._id}
                 datasourceId={datasource._id}
