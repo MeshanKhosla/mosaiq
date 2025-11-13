@@ -63,6 +63,8 @@ class BaseChart {
     measureName: string,
     dimensionName: string,
     colors: ColorPalette,
+    width?: number,
+    height?: number,
   ): Record<string, any> {
     axes;
     labels;
@@ -70,6 +72,8 @@ class BaseChart {
     measureName;
     dimensionName;
     colors;
+    width;
+    height;
     throw new Error('Not implemented');
   }
 }

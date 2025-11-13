@@ -21,9 +21,19 @@ export function ChartRenderer(props: {
   dbLoading: boolean;
   tableName?: string;
   tableLoaded: boolean;
+  width?: number;
+  height?: number;
 }) {
-  const { visual, columns, csvDataLoading, dbLoading, tableName, tableLoaded } =
-    props;
+  const {
+    visual,
+    columns,
+    csvDataLoading,
+    dbLoading,
+    tableName,
+    tableLoaded,
+    width,
+    height,
+  } = props;
 
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -104,9 +114,11 @@ export function ChartRenderer(props: {
       measureName,
       dimensionName,
       colors,
+      width,
+      height,
     );
 
-    return <Chart options={options} />;
+    return <Chart options={options} width={width} height={height} />;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     console.error('Error parsing chart data:', err);

@@ -22,3 +22,13 @@ export const DATE_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
   hour: '2-digit',
   minute: '2-digit',
 };
+
+/**
+ * Default visual size (width and height in pixels)
+ */
+export const DEFAULT_VISUAL_SIZE = 400;
+
+/**
+ * Minimum visual size (width and height in pixels)
+ */
+export const MIN_VISUAL_SIZE = 400;

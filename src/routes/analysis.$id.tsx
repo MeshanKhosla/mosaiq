@@ -7,10 +7,11 @@ import { toast } from 'sonner';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
+import type { VisualType } from '~/components/chart/visual-toolbar';
+import { DEFAULT_VISUAL_SIZE } from '~/lib/constants';
 import { AppLayout } from '~/components/app-layout';
-import { CreateChartDialog } from '~/components/chart/create-chart-dialog';
-import { VisualsList } from '~/components/chart/visuals-list';
-import { Button } from '~/components/ui/button';
+import { VisualToolbar } from '~/components/chart/visual-toolbar';
+import { VisualCanvas } from '~/components/chart/visual-canvas';
 
 export const Route = createFileRoute('/analysis/$id')({
   component: AnalysisPage,
@@ -29,8 +30,14 @@ function AnalysisPage() {
   const analysis = useQuery(api.analyses.get, { id: analysisId });
   const sheet = useQuery(api.sheets.getByAnalysis, { analysisId });
   const createDashboard = useMutation(api.dashboards.create);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const createVisual = useMutation(api.visuals.create);
+  const visuals = useQuery(
+    api.visuals.getBySheet,
+    sheet ? { sheetId: sheet._id } : 'skip',
+  );
   const [isPublishing, setIsPublishing] = useState(false);
+  const [selectedVisualId, setSelectedVisualId] =
+    useState<Id<'visuals'> | null>(null);
 
   const datasourceId = analysis?.datasourceIds[0];
   const datasource = useQuery(
@@ -86,6 +93,58 @@ function AnalysisPage() {
     loadData();
   }, [db, csvData, tableName, tableLoaded]);
 
+  // Calculate default position for new visual (staggered grid)
+  const getDefaultPosition = (): {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } => {
+    const gridCols = 3;
+    const gridGap = 20;
+    const visualCount = visuals?.length ?? 0;
+    const col = visualCount % gridCols;
+    const row = Math.floor(visualCount / gridCols);
+    return {
+      x: col * (DEFAULT_VISUAL_SIZE + gridGap) + gridGap,
+      y: row * (DEFAULT_VISUAL_SIZE + gridGap) + gridGap,
+      width: DEFAULT_VISUAL_SIZE,
+      height: DEFAULT_VISUAL_SIZE,
+    };
+  };
+
+  const handleCreateVisual = async (
+    type: VisualType,
+    axes?: { dimensions?: Array<string>; measures?: Array<string> },
+  ) => {
+    if (!sheet) return;
+
+    const defaultTitle = type
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    try {
+      const visualId = await createVisual({
+        sheetId: sheet._id,
+        type,
+        title: defaultTitle,
+        position: getDefaultPosition(),
+        axes: type === 'table' ? undefined : axes,
+      });
+      setSelectedVisualId(visualId);
+    } catch (error) {
+      console.error('Failed to create visual:', error);
+      toast.error('Failed to create visual', {
+        description:
+          error instanceof Error ? error.message : 'An unknown error occurred',
+      });
+    }
+  };
+
+  const selectedVisual =
+    visuals?.find((v) => v._id === selectedVisualId) || null;
+
   const handlePublishToDashboard = async () => {
     if (!analysis) {
       return;
@@ -120,6 +179,17 @@ function AnalysisPage() {
     return <div>Failed to initialize DuckDB: {dbError.message}</div>;
   }
 
+  if (!analysis) {
+    return (
+      <AppLayout>
+        <div>
+          <div className="h-9 w-64 animate-pulse rounded bg-muted" />
+          <div className="mt-2 h-5 w-96 animate-pulse rounded bg-muted" />
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout
       breadcrumbEditingProps={{
@@ -132,51 +202,32 @@ function AnalysisPage() {
         ],
       }}
     >
-      <div className="space-y-6">
-        {analysis ? (
+      <div className="flex h-[calc(100vh-8rem)] flex-col -mt-6">
+        {sheet && datasource && (
           <>
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight">
-                  {analysis.name}
-                </h1>
-                <p className="text-muted-foreground">
-                  Analysis with {analysis.datasourceIds.length} datasource
-                  {analysis.datasourceIds.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-              {sheet && datasource && (
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                  Create Bar Chart
-                </Button>
-              )}
+            <VisualToolbar
+              onCreateVisual={handleCreateVisual}
+              sheetId={sheet._id}
+              columns={datasource.columns}
+              selectedVisual={selectedVisual}
+              onVisualSelect={(visual) =>
+                setSelectedVisualId(visual?._id || null)
+              }
+            />
+            <div className="flex-1 overflow-hidden">
+              <VisualCanvas
+                sheetId={sheet._id}
+                datasourceId={datasource._id}
+                columns={datasource.columns}
+                csvDataLoading={csvDataLoading}
+                dbLoading={dbLoading}
+                tableName={tableName}
+                tableLoaded={tableLoaded}
+                selectedVisualId={selectedVisualId}
+                onVisualSelect={setSelectedVisualId}
+              />
             </div>
-            {sheet && datasource && (
-              <>
-                <VisualsList
-                  sheetId={sheet._id}
-                  datasourceId={datasource._id}
-                  csvDataLoading={csvDataLoading}
-                  dbLoading={dbLoading}
-                  tableName={tableName}
-                  tableLoaded={tableLoaded}
-                />
-                <CreateChartDialog
-                  open={createDialogOpen}
-                  onOpenChange={setCreateDialogOpen}
-                  sheetId={sheet._id}
-                  columns={datasource.columns}
-                />
-              </>
-            )}
           </>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <div className="h-9 w-64 animate-pulse rounded bg-muted" />
-              <div className="mt-2 h-5 w-96 animate-pulse rounded bg-muted" />
-            </div>
-          </div>
         )}
       </div>
     </AppLayout>

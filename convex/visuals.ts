@@ -175,6 +175,33 @@ export const updateAxes = mutation({
   },
 });
 
+export const updatePosition = mutation({
+  args: {
+    id: v.id('visuals'),
+    position: v.object({
+      x: v.number(),
+      y: v.number(),
+      width: v.number(),
+      height: v.number(),
+    }),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+
+    const visual = await ctx.db.get(args.id);
+    if (!visual || visual.createdBy !== user._id) {
+      throw new Error('Visual not found or unauthorized');
+    }
+
+    await ctx.db.patch(args.id, {
+      position: args.position,
+    });
+
+    return null;
+  },
+});
+
 export const deleteVisual = mutation({
   args: {
     id: v.id('visuals'),
