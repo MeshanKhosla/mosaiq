@@ -57,7 +57,6 @@ export function DataTable({ datasourceId, searchValue = '' }: DataTableProps) {
   const updateColumnType = useMutation(api.datasources.updateColumnType);
   const datasourceColumns = datasource?.columns ?? [];
 
-  // Create a map from column name to column for quick lookup
   const columnMap = useMemo(() => {
     const map = new Map<
       string,

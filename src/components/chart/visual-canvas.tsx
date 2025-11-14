@@ -53,7 +53,6 @@ export function VisualCanvas({
   }
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only deselect if clicking directly on the canvas, not on a visual
     if (e.target === e.currentTarget) {
       onVisualSelect?.(null);
     }
@@ -67,7 +66,6 @@ export function VisualCanvas({
       style={{
         minHeight: '100%',
         width: '100%',
-        // Ensure canvas can grow infinitely downward
         height: 'auto',
       }}
     >

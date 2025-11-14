@@ -212,7 +212,6 @@ export function VisualToolbar({
       });
 
       if (existingVisuals !== undefined && existingVisuals !== null) {
-        // Update the visual's axes in the list
         const updatedVisuals = existingVisuals.map((v) =>
           v._id === args.id
             ? {
@@ -301,8 +300,7 @@ export function VisualToolbar({
 
   return (
     <div className="border-b border-border bg-background/50 backdrop-blur-sm -mx-6">
-      <div className="flex items-center gap-2 px-4 py-1.5">
-        {/* Visual Type Buttons */}
+      <div className="flex items-center gap-2 px-3 py-1.5">
         <div className="flex items-center gap-1 border-r border-border pr-3">
           {visualTypes.map(({ type, label, icon: Icon }) => (
             <Button
@@ -318,7 +316,6 @@ export function VisualToolbar({
           ))}
         </div>
 
-        {/* Field Wells Section */}
         {selectedVisual && selectedVisual.type !== 'table' && (
           <FieldWells
             selectedVisual={selectedVisual}
@@ -332,7 +329,6 @@ export function VisualToolbar({
           />
         )}
 
-        {/* Filters Section - for future filter controls */}
         <div className="text-xs px-1 text-muted-foreground">
           <span className="font-medium uppercase tracking-wide">Filters</span>
         </div>

@@ -42,7 +42,6 @@ function AnalysisPage() {
           .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
           .join(' ');
 
-        // Create temporary visual with temporary ID
         const tempId = `temp-${Date.now()}-${Math.random()}` as Id<'visuals'>;
         const tempVisual = {
           _id: tempId,
@@ -51,11 +50,10 @@ function AnalysisPage() {
           type: args.type,
           title: defaultTitle,
           position: args.position,
-          createdBy: '', // Will be replaced by server
+          createdBy: '',
           axes: args.type === 'table' ? undefined : args.axes,
         };
 
-        // Add the temporary visual to the list
         const updatedVisuals = [...existingVisuals, tempVisual];
         localStore.setQuery(
           api.visuals.getBySheet,
@@ -111,7 +109,7 @@ function AnalysisPage() {
         try {
           await insertFile(db, file, tableName);
         } catch (err) {
-          // No-op, file already exists
+          // File already exists
         }
         setTableLoaded(true);
       } catch (err) {
@@ -127,7 +125,6 @@ function AnalysisPage() {
     loadData();
   }, [db, csvData, tableName, tableLoaded]);
 
-  // Calculate default position for new visual (staggered grid)
   const getDefaultPosition = (): {
     x: number;
     y: number;
@@ -167,7 +164,6 @@ function AnalysisPage() {
         position,
         axes: type === 'table' ? undefined : axes,
       });
-      // Select the newly created visual
       setSelectedVisualId(visualId);
     } catch (error) {
       console.error('Failed to create visual:', error);

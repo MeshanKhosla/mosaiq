@@ -13,7 +13,6 @@ import { useTheme } from '~/components/theme-provider';
 type Visual = Doc<'visuals'>;
 type Column = Doc<'datasources'>['columns'][number];
 
-// Helper to get chart instance by visual type
 function getChartInstance(type: VisualType): BaseChart | null {
   if (type === 'table') return null;
 
@@ -21,8 +20,6 @@ function getChartInstance(type: VisualType): BaseChart | null {
     return new BarChart();
   }
 
-  // For other chart types, return bar chart as fallback for now
-  // TODO: Add other chart types (line_chart, pie_chart)
   return new BarChart();
 }
 
@@ -65,16 +62,14 @@ export function ChartRenderer(props: {
     return getChartInstance(visual.type);
   }, [visual.type]);
 
-  // Validate axes using chart's validateAxes method
   const validationResult = useMemo(() => {
-    if (!chartInstance || !visual.axes) {
-      return visual.axes ? null : 'No axes configured';
+    if (!chartInstance) {
+      return 'Chart not constructed';
     }
     return chartInstance.validateAxes(visual.axes);
   }, [chartInstance, visual.axes]);
 
   const query = useMemo(() => {
-    // Only generate query if axes are valid
     if (
       validationResult === true &&
       visual.axes &&
@@ -132,8 +127,7 @@ export function ChartRenderer(props: {
       <div className="text-sm text-muted-foreground">Executing query...</div>
     );
 
-  // Display validation error if axes are invalid
-  if (validationResult !== true && validationResult !== null) {
+  if (validationResult !== true) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <div className="text-center text-sm text-muted-foreground">
@@ -144,7 +138,7 @@ export function ChartRenderer(props: {
     );
   }
 
-  if (!arrow || !visual.axes || validationResult !== true)
+  if (!arrow || !visual.axes)
     return (
       <div className="flex h-full w-full items-center justify-center">
         <div className="text-sm text-muted-foreground">No data available</div>
