@@ -1,17 +1,9 @@
-import { useState } from 'react';
 import { BarChart3, LineChart, PieChart, Table, X } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
 import type { ChartRequirements } from '~/charts/base-chart';
 import { Button } from '~/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '~/components/ui/select';
 import {
   Popover,
   PopoverContent,
@@ -70,13 +62,32 @@ export function VisualToolbar({
   onCreateVisual,
   columns,
   selectedVisual,
+  sheetId,
 }: VisualToolbarProps) {
-  const [creatingChartType, setCreatingChartType] = useState<VisualType | null>(
-    null,
+  const updateAxes = useMutation(api.visuals.updateAxes).withOptimisticUpdate(
+    (localStore, args) => {
+      const existingVisuals = localStore.getQuery(api.visuals.getBySheet, {
+        sheetId,
+      });
+
+      if (existingVisuals !== undefined && existingVisuals !== null) {
+        // Update the visual's axes in the list
+        const updatedVisuals = existingVisuals.map((v) =>
+          v._id === args.id
+            ? {
+                ...v,
+                axes: args.axes,
+              }
+            : v,
+        );
+        localStore.setQuery(
+          api.visuals.getBySheet,
+          { sheetId },
+          updatedVisuals,
+        );
+      }
+    },
   );
-  const [tempDimension, setTempDimension] = useState<string>('');
-  const [tempMeasure, setTempMeasure] = useState<string>('');
-  const updateAxes = useMutation(api.visuals.updateAxes);
 
   const dimensionColumns = columns.filter(
     (col) => col.type === 'string' || col.type === 'date',
@@ -84,32 +95,7 @@ export function VisualToolbar({
   const measureColumns = columns.filter((col) => col.type === 'number');
 
   const handleCreateVisual = (type: VisualType) => {
-    if (type === 'table') {
-      onCreateVisual(type);
-      return;
-    }
-
-    // For charts, show quick config
-    setCreatingChartType(type);
-  };
-
-  const handleConfirmChart = () => {
-    if (!creatingChartType || !tempDimension || !tempMeasure) return;
-
-    onCreateVisual(creatingChartType, {
-      dimensions: [tempDimension],
-      measures: [tempMeasure],
-    });
-
-    setCreatingChartType(null);
-    setTempDimension('');
-    setTempMeasure('');
-  };
-
-  const handleCancelChart = () => {
-    setCreatingChartType(null);
-    setTempDimension('');
-    setTempMeasure('');
+    onCreateVisual(type);
   };
 
   const handleToggleDimension = (columnId: string, checked: boolean) => {
@@ -222,53 +208,6 @@ export function VisualToolbar({
             </Button>
           ))}
         </div>
-
-        {/* Quick Chart Config */}
-        {creatingChartType && (
-          <div className="flex items-center gap-2 border-r border-border pr-3">
-            <span className="text-xs text-muted-foreground">
-              {creatingChartType
-                .split('_')
-                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                .join(' ')}
-              :
-            </span>
-            <Select value={tempDimension} onValueChange={setTempDimension}>
-              <SelectTrigger className="h-8 w-40">
-                <SelectValue placeholder="Dimension" />
-              </SelectTrigger>
-              <SelectContent>
-                {dimensionColumns.map((col) => (
-                  <SelectItem key={col._id} value={col._id}>
-                    {col.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={tempMeasure} onValueChange={setTempMeasure}>
-              <SelectTrigger className="h-8 w-40">
-                <SelectValue placeholder="Measure" />
-              </SelectTrigger>
-              <SelectContent>
-                {measureColumns.map((col) => (
-                  <SelectItem key={col._id} value={col._id}>
-                    {col.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              size="sm"
-              onClick={handleConfirmChart}
-              disabled={!tempDimension || !tempMeasure}
-            >
-              Create
-            </Button>
-            <Button size="sm" variant="ghost" onClick={handleCancelChart}>
-              Cancel
-            </Button>
-          </div>
-        )}
 
         {/* Field Wells Section */}
         {selectedVisual &&

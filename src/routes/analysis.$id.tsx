@@ -30,7 +30,41 @@ function AnalysisPage() {
   const analysis = useQuery(api.analyses.get, { id: analysisId });
   const sheet = useQuery(api.sheets.getByAnalysis, { analysisId });
   const createDashboard = useMutation(api.dashboards.create);
-  const createVisual = useMutation(api.visuals.create);
+  const createVisual = useMutation(api.visuals.create).withOptimisticUpdate(
+    (localStore, args) => {
+      const existingVisuals = localStore.getQuery(api.visuals.getBySheet, {
+        sheetId: args.sheetId,
+      });
+
+      if (existingVisuals !== undefined && existingVisuals !== null) {
+        const defaultTitle = args.type
+          .split('_')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+
+        // Create temporary visual with temporary ID
+        const tempId = `temp-${Date.now()}-${Math.random()}` as Id<'visuals'>;
+        const tempVisual = {
+          _id: tempId,
+          _creationTime: Date.now(),
+          sheetId: args.sheetId,
+          type: args.type,
+          title: defaultTitle,
+          position: args.position,
+          createdBy: '', // Will be replaced by server
+          axes: args.type === 'table' ? undefined : args.axes,
+        };
+
+        // Add the temporary visual to the list
+        const updatedVisuals = [...existingVisuals, tempVisual];
+        localStore.setQuery(
+          api.visuals.getBySheet,
+          { sheetId: args.sheetId },
+          updatedVisuals,
+        );
+      }
+    },
+  );
   const visuals = useQuery(
     api.visuals.getBySheet,
     sheet ? { sheetId: sheet._id } : 'skip',
@@ -125,13 +159,15 @@ function AnalysisPage() {
       .join(' ');
 
     try {
+      const position = getDefaultPosition();
       const visualId = await createVisual({
         sheetId: sheet._id,
         type,
         title: defaultTitle,
-        position: getDefaultPosition(),
+        position,
         axes: type === 'table' ? undefined : axes,
       });
+      // Select the newly created visual
       setSelectedVisualId(visualId);
     } catch (error) {
       console.error('Failed to create visual:', error);
