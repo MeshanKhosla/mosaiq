@@ -23,6 +23,8 @@ export function Chart({ options, width, height }: ChartProps) {
             typeof chartWidth === 'number' ? `${chartWidth}px` : chartWidth,
         }}
         opts={{ renderer: 'svg' }}
+        notMerge={false}
+        lazyUpdate={false}
       />
     </div>
   );

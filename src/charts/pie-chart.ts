@@ -111,14 +111,40 @@ class PieChart extends BaseChart {
   ): Record<string, any> {
     axes;
     dimensionName;
-    width;
-    height;
 
     // Convert labels and values to ECharts pie chart data format
     const pieData = labels.map((label, index) => ({
       name: label,
       value: values[index] ?? 0,
     }));
+
+    // Determine legend position based on chart size
+    // For small charts, use bottom legend; for larger charts, use left vertical legend
+    const isSmallChart = (width && width < 400) || (height && height < 300);
+    const legendPosition = isSmallChart
+      ? {
+          orient: 'horizontal',
+          left: 'center',
+          bottom: '5%',
+          textStyle: {
+            color: colors.textColor,
+          },
+          itemGap: 10,
+        }
+      : {
+          orient: 'vertical',
+          left: 'left',
+          top: 'middle',
+          textStyle: {
+            color: colors.textColor,
+          },
+          itemGap: 8,
+        };
+
+    // Adjust radius based on chart size and legend position
+    const radius = isSmallChart
+      ? ['30%', '60%'] // Smaller radius when legend is at bottom
+      : ['40%', '70%']; // Larger radius when legend is on left
 
     return {
       backgroundColor: colors.backgroundColor,
@@ -138,21 +164,14 @@ class PieChart extends BaseChart {
           return `${params.name}<br/>${isFinite(v) ? v.toLocaleString() : '-'} (${percent}%)`;
         },
       },
-      legend: {
-        orient: 'vertical',
-        left: 'left',
-        top: 'middle',
-        textStyle: {
-          color: colors.textColor,
-        },
-        itemGap: 8,
-      },
+      legend: legendPosition,
       series: [
         {
           name: measureName,
           type: 'pie',
-          radius: ['40%', '70%'],
-          avoidLabelOverlap: false,
+          radius: radius,
+          center: isSmallChart ? ['50%', '45%'] : ['60%', '50%'], // Adjust center when legend is at bottom
+          avoidLabelOverlap: true, // Enable smart label positioning
           itemStyle: {
             borderRadius: 4,
             borderColor: colors.backgroundColor,
@@ -161,9 +180,24 @@ class PieChart extends BaseChart {
           label: {
             show: true,
             formatter: (params: { name: string; percent: number }) => {
-              return `${params.name}: ${params.percent.toFixed(1)}%`;
+              // Show shorter format for small slices to prevent overlap
+              return params.percent > 3
+                ? `${params.name}: ${params.percent.toFixed(1)}%`
+                : `${params.percent.toFixed(1)}%`;
             },
             color: colors.labelColor,
+            overflow: 'truncate',
+            width: 80, // Limit label width
+          },
+          labelLine: {
+            show: true,
+            length: 15,
+            length2: 10,
+            lineStyle: {
+              color: colors.borderColor,
+            },
+            // Hide label lines for very small slices
+            showAbove: false,
           },
           emphasis: {
             label: {
@@ -175,12 +209,6 @@ class PieChart extends BaseChart {
               shadowBlur: 10,
               shadowOffsetX: 0,
               shadowColor: 'rgba(0, 0, 0, 0.5)',
-            },
-          },
-          labelLine: {
-            show: true,
-            lineStyle: {
-              color: colors.borderColor,
             },
           },
           data: pieData,
