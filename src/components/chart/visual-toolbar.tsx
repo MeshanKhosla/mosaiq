@@ -333,10 +333,8 @@ export function VisualToolbar({
         )}
 
         {/* Filters Section - for future filter controls */}
-        <div className="border-r border-border pr-3">
-          <div className="text-xs text-muted-foreground">
-            <span className="font-medium uppercase tracking-wide">Filters</span>
-          </div>
+        <div className="text-xs px-1 text-muted-foreground">
+          <span className="font-medium uppercase tracking-wide">Filters</span>
         </div>
       </div>
     </div>
