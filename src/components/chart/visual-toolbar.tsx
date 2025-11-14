@@ -2,7 +2,6 @@ import { BarChart3, LineChart, PieChart, Table, X } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
-import type { ChartRequirements } from '~/charts/base-chart';
 import { Button } from '~/components/ui/button';
 import {
   Popover,
@@ -11,7 +10,6 @@ import {
 } from '~/components/ui/popover';
 import { Checkbox } from '~/components/ui/checkbox';
 import { Label } from '~/components/ui/label';
-import BarChart from '~/charts/bar-chart';
 
 export type VisualType = 'table' | 'bar_chart' | 'line_chart' | 'pie_chart';
 
@@ -38,25 +36,6 @@ const visualTypes: Array<{
   { type: 'line_chart', label: 'Line Chart', icon: LineChart },
   { type: 'pie_chart', label: 'Pie Chart', icon: PieChart },
 ];
-
-// Helper to get chart instance and requirements
-function getChartRequirements(chartType: VisualType): ChartRequirements | null {
-  if (chartType === 'table') return null;
-
-  if (chartType === 'bar_chart') {
-    const chart = new BarChart();
-    return chart.getRequirements();
-  }
-
-  // For other chart types, return default requirements for now
-  // TODO: Add other chart types (line_chart, pie_chart)
-  return {
-    wells: {
-      dimensions: { min: 1, max: 1 },
-      measures: { min: 1, max: 1 },
-    },
-  };
-}
 
 export function VisualToolbar({
   onCreateVisual,
@@ -102,16 +81,8 @@ export function VisualToolbar({
     if (!selectedVisual) return;
 
     const currentDimensions = selectedVisual.axes?.dimensions || [];
-    const requirements = getChartRequirements(selectedVisual.type);
 
     if (checked) {
-      // Check if we've reached max
-      if (
-        requirements &&
-        currentDimensions.length >= requirements.wells.dimensions.max
-      ) {
-        return;
-      }
       if (currentDimensions.includes(columnId)) return;
 
       updateAxes({
@@ -122,14 +93,6 @@ export function VisualToolbar({
         },
       });
     } else {
-      // Check if we're at min
-      if (
-        requirements &&
-        currentDimensions.length <= requirements.wells.dimensions.min
-      ) {
-        return;
-      }
-
       updateAxes({
         id: selectedVisual._id,
         axes: {
@@ -144,16 +107,8 @@ export function VisualToolbar({
     if (!selectedVisual) return;
 
     const currentMeasures = selectedVisual.axes?.measures || [];
-    const requirements = getChartRequirements(selectedVisual.type);
 
     if (checked) {
-      // Check if we've reached max
-      if (
-        requirements &&
-        currentMeasures.length >= requirements.wells.measures.max
-      ) {
-        return;
-      }
       if (currentMeasures.includes(columnId)) return;
 
       updateAxes({
@@ -164,14 +119,6 @@ export function VisualToolbar({
         },
       });
     } else {
-      // Check if we're at min
-      if (
-        requirements &&
-        currentMeasures.length <= requirements.wells.measures.min
-      ) {
-        return;
-      }
-
       updateAxes({
         id: selectedVisual._id,
         axes: {
@@ -213,21 +160,8 @@ export function VisualToolbar({
         {selectedVisual &&
           selectedVisual.type !== 'table' &&
           (() => {
-            const requirements = getChartRequirements(selectedVisual.type);
             const currentDimensions = selectedVisual.axes?.dimensions || [];
             const currentMeasures = selectedVisual.axes?.measures || [];
-            const dimMaxReached = requirements
-              ? currentDimensions.length >= requirements.wells.dimensions.max
-              : false;
-            const measMaxReached = requirements
-              ? currentMeasures.length >= requirements.wells.measures.max
-              : false;
-            const dimMinReached = requirements
-              ? currentDimensions.length <= requirements.wells.dimensions.min
-              : false;
-            const measMinReached = requirements
-              ? currentMeasures.length <= requirements.wells.measures.min
-              : false;
 
             return (
               <div className="flex-1 border-r border-border pr-3">
@@ -249,8 +183,7 @@ export function VisualToolbar({
                               {col.name}
                               <button
                                 onClick={() => handleRemoveDimension(dimId)}
-                                disabled={dimMinReached}
-                                className={`hover:text-destructive ${dimMinReached ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                className="hover:text-destructive"
                               >
                                 <X className="h-3 w-3" />
                               </button>
@@ -263,9 +196,8 @@ export function VisualToolbar({
                               variant="ghost"
                               size="sm"
                               className="h-6 border-dashed text-xs"
-                              disabled={dimMaxReached}
                             >
-                              + {dimMaxReached ? '(max)' : ''}
+                              +
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
@@ -278,7 +210,6 @@ export function VisualToolbar({
                                 const isSelected = currentDimensions.includes(
                                   col._id,
                                 );
-                                const isDisabled = !isSelected && dimMaxReached;
                                 return (
                                   <div
                                     key={col._id}
@@ -293,16 +224,10 @@ export function VisualToolbar({
                                           checked === true,
                                         )
                                       }
-                                      disabled={isDisabled}
-                                      className={isDisabled ? 'opacity-50' : ''}
                                     />
                                     <Label
                                       htmlFor={`dim-${col._id}`}
-                                      className={`text-sm font-normal cursor-pointer flex-1 ${
-                                        isDisabled
-                                          ? 'opacity-50 cursor-not-allowed'
-                                          : ''
-                                      }`}
+                                      className="text-sm font-normal cursor-pointer flex-1"
                                     >
                                       {col.name}
                                     </Label>
@@ -327,8 +252,7 @@ export function VisualToolbar({
                               {col.name}
                               <button
                                 onClick={() => handleRemoveMeasure(measId)}
-                                disabled={measMinReached}
-                                className={`hover:text-destructive ${measMinReached ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                className="hover:text-destructive"
                               >
                                 <X className="h-3 w-3" />
                               </button>
@@ -341,9 +265,8 @@ export function VisualToolbar({
                               variant="ghost"
                               size="sm"
                               className="h-6 border-dashed text-xs"
-                              disabled={measMaxReached}
                             >
-                              + {measMaxReached ? '(max)' : ''}
+                              +
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
@@ -356,8 +279,6 @@ export function VisualToolbar({
                                 const isSelected = currentMeasures.includes(
                                   col._id,
                                 );
-                                const isDisabled =
-                                  !isSelected && measMaxReached;
                                 return (
                                   <div
                                     key={col._id}
@@ -372,16 +293,10 @@ export function VisualToolbar({
                                           checked === true,
                                         )
                                       }
-                                      disabled={isDisabled}
-                                      className={isDisabled ? 'opacity-50' : ''}
                                     />
                                     <Label
                                       htmlFor={`meas-${col._id}`}
-                                      className={`text-sm font-normal cursor-pointer flex-1 ${
-                                        isDisabled
-                                          ? 'opacity-50 cursor-not-allowed'
-                                          : ''
-                                      }`}
+                                      className="text-sm font-normal cursor-pointer flex-1"
                                     >
                                       {col.name}
                                     </Label>
@@ -404,11 +319,6 @@ export function VisualToolbar({
           <div className="text-xs text-muted-foreground">
             <span className="font-medium uppercase tracking-wide">Filters</span>
           </div>
-        </div>
-
-        {/* Additional Controls */}
-        <div className="text-xs text-muted-foreground">
-          <span className="font-medium uppercase tracking-wide">More</span>
         </div>
       </div>
     </div>

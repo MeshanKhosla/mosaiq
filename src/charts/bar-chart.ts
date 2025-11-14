@@ -58,15 +58,14 @@ class BarChart extends BaseChart {
   validateAxes(axes: Axes): true | string {
     const requirements = this.getRequirements();
 
-    if (!axes) {
-      return 'Axes are required';
-    }
-
-    const dimensions = axes.dimensions ?? [];
-    const measures = axes.measures ?? [];
-
+    const dimensions = axes?.dimensions ?? [];
+    const measures = axes?.measures ?? [];
     const dimCount = dimensions.length;
     const measureCount = measures.length;
+
+    if (dimCount === 0 && measureCount === 0) {
+      return `Required: Dimensions: ${requirements.wells.dimensions.min}, Measures: ${requirements.wells.measures.min}`;
+    }
 
     if (
       dimCount < requirements.wells.dimensions.min ||

@@ -3,6 +3,8 @@ import { useDuckDbQuery } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
 import type { ColorPalette } from '~/lib/types';
+import type { VisualType } from './visual-toolbar';
+import type BaseChart from '~/charts/base-chart';
 import { Chart } from '~/components/chart';
 import BarChart from '~/charts/bar-chart';
 import { arrowTo2Series } from '~/lib/utils';
@@ -11,7 +13,18 @@ import { useTheme } from '~/components/theme-provider';
 type Visual = Doc<'visuals'>;
 type Column = Doc<'datasources'>['columns'][number];
 
-const barChart = new BarChart();
+// Helper to get chart instance by visual type
+function getChartInstance(type: VisualType): BaseChart | null {
+  if (type === 'table') return null;
+
+  if (type === 'bar_chart') {
+    return new BarChart();
+  }
+
+  // For other chart types, return bar chart as fallback for now
+  // TODO: Add other chart types (line_chart, pie_chart)
+  return new BarChart();
+}
 
 export function ChartRenderer(props: {
   visual: Visual;
@@ -48,10 +61,29 @@ export function ChartRenderer(props: {
     seriesEmphasisColor: '#2563eb',
   } as ColorPalette;
 
+  const chartInstance = useMemo(() => {
+    return getChartInstance(visual.type);
+  }, [visual.type]);
+
+  // Validate axes using chart's validateAxes method
+  const validationResult = useMemo(() => {
+    if (!chartInstance || !visual.axes) {
+      return visual.axes ? null : 'No axes configured';
+    }
+    return chartInstance.validateAxes(visual.axes);
+  }, [chartInstance, visual.axes]);
+
   const query = useMemo(() => {
-    if (visual.axes && tableLoaded && tableName) {
+    // Only generate query if axes are valid
+    if (
+      validationResult === true &&
+      visual.axes &&
+      tableLoaded &&
+      tableName &&
+      chartInstance
+    ) {
       try {
-        return barChart.getDuckDbQuery(visual.axes, columns, tableName);
+        return chartInstance.getDuckDbQuery(visual.axes, columns, tableName);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         toast.error('Chart config error', { description: msg });
@@ -59,7 +91,14 @@ export function ChartRenderer(props: {
       }
     }
     return '';
-  }, [visual.axes, tableLoaded, tableName, columns]);
+  }, [
+    validationResult,
+    visual.axes,
+    tableLoaded,
+    tableName,
+    columns,
+    chartInstance,
+  ]);
 
   const {
     arrow,
@@ -92,43 +131,33 @@ export function ChartRenderer(props: {
     return (
       <div className="text-sm text-muted-foreground">Executing query...</div>
     );
-  // Check if axes are configured
-  const requirements =
-    visual.type !== 'table' ? barChart.getRequirements() : null;
-  const hasRequiredAxes = requirements
-    ? (visual.axes?.dimensions?.length ?? 0) >=
-        requirements.wells.dimensions.min &&
-      (visual.axes?.measures?.length ?? 0) >= requirements.wells.measures.min
-    : true;
 
-  if (!hasRequiredAxes && requirements) {
-    const dimText =
-      requirements.wells.dimensions.min === requirements.wells.dimensions.max
-        ? `${requirements.wells.dimensions.min} dimension${requirements.wells.dimensions.min !== 1 ? 's' : ''}`
-        : `${requirements.wells.dimensions.min}-${requirements.wells.dimensions.max} dimensions`;
-    const measText =
-      requirements.wells.measures.min === requirements.wells.measures.max
-        ? `${requirements.wells.measures.min} measure${requirements.wells.measures.min !== 1 ? 's' : ''}`
-        : `${requirements.wells.measures.min}-${requirements.wells.measures.max} measures`;
-
+  // Display validation error if axes are invalid
+  if (validationResult !== true && validationResult !== null) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <div className="text-center text-sm text-muted-foreground">
-          <p className="font-medium">
-            Required: {dimText} and {measText}
-          </p>
+          <p className="font-medium text-red-400">{validationResult}</p>
           <p className="mt-1 text-xs">Configure axes in the toolbar above</p>
         </div>
       </div>
     );
   }
 
-  if (!arrow || !visual.axes)
+  if (!arrow || !visual.axes || validationResult !== true)
     return (
       <div className="flex h-full w-full items-center justify-center">
         <div className="text-sm text-muted-foreground">No data available</div>
       </div>
     );
+
+  if (!chartInstance) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="text-sm text-muted-foreground">Invalid chart type</div>
+      </div>
+    );
+  }
 
   try {
     const { labels, values } = arrowTo2Series(arrow);
@@ -140,7 +169,7 @@ export function ChartRenderer(props: {
     const dimensionColumn = columns.find((c) => c._id === dimensionId);
     const dimensionName = dimensionColumn?.name ?? 'Category';
 
-    const options = barChart.getOptions(
+    const options = chartInstance.getOptions(
       visual.axes,
       labels,
       values,
