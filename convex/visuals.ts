@@ -11,7 +11,7 @@ export const create = mutation({
       v.literal('line_chart'),
       v.literal('pie_chart'),
     ),
-    title: v.string(),
+    title: v.optional(v.string()),
     position: v.object({
       x: v.number(),
       y: v.number(),
@@ -39,7 +39,7 @@ export const create = mutation({
     const visualId = await ctx.db.insert('visuals', {
       sheetId: args.sheetId,
       type: args.type,
-      title: args.title.trim(),
+      title: args.title?.trim(),
       position: args.position,
       createdBy: user._id,
       axes: args.axes,
@@ -65,7 +65,7 @@ export const getBySheet = query({
           v.literal('line_chart'),
           v.literal('pie_chart'),
         ),
-        title: v.string(),
+        title: v.optional(v.string()),
         position: v.object({
           x: v.number(),
           y: v.number(),
@@ -118,7 +118,7 @@ export const get = query({
         v.literal('line_chart'),
         v.literal('pie_chart'),
       ),
-      title: v.string(),
+      title: v.optional(v.string()),
       position: v.object({
         x: v.number(),
         y: v.number(),

@@ -1,16 +1,36 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Rnd } from 'react-rnd';
 import { useMutation } from 'convex/react';
 import { X } from 'lucide-react';
 import { api } from '../../../convex/_generated/api';
 import { ChartRenderer } from './chart-renderer';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
+import type BaseChart from '~/charts/base-chart';
+import type { VisualType } from './visual-toolbar';
 import { MIN_VISUAL_SIZE } from '~/lib/constants';
 import { DataTable } from '~/components/data-table/data-table';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
+import BarChart from '~/charts/bar-chart';
+import PieChart from '~/charts/pie-chart';
+import LineChart from '~/charts/line-chart';
 
 type Column = Doc<'datasources'>['columns'][number];
+
+function getChartInstance(type: VisualType): BaseChart | null {
+  switch (type) {
+    case 'table':
+      return null;
+    case 'bar_chart':
+      return new BarChart();
+    case 'pie_chart':
+      return new PieChart();
+    case 'line_chart':
+      return new LineChart();
+    default:
+      return new BarChart();
+  }
+}
 
 interface VisualContainerProps {
   visual: Doc<'visuals'>;
@@ -94,7 +114,6 @@ export function VisualContainer({
       });
 
       if (existingVisuals !== undefined && existingVisuals !== null) {
-        // Update the visual's title in the list
         const updatedVisuals = existingVisuals.map((v) =>
           v._id === args.id
             ? {
@@ -111,15 +130,54 @@ export function VisualContainer({
       }
     },
   );
+
+  // Compute display title: use stored title, or compute from axes, or fallback to type name
+  const displayTitle = useMemo(() => {
+    if (visual.title) {
+      return visual.title;
+    }
+
+    // Check if axes are valid
+    if (visual.type !== 'table' && visual.axes) {
+      const chartInstance = getChartInstance(visual.type);
+      const isValid = chartInstance?.validateAxes(visual.axes) === true;
+
+      if (
+        isValid &&
+        visual.axes.dimensions &&
+        visual.axes.measures &&
+        visual.axes.dimensions.length > 0 &&
+        visual.axes.measures.length > 0
+      ) {
+        const dimensionNames = visual.axes.dimensions
+          .map((id) => columns.find((c) => c._id === id)?.name)
+          .filter((name): name is string => name !== undefined);
+        const measureNames = visual.axes.measures
+          .map((id) => columns.find((c) => c._id === id)?.name)
+          .filter((name): name is string => name !== undefined);
+
+        if (dimensionNames.length > 0 && measureNames.length > 0) {
+          return `${dimensionNames.join(', ')} by ${measureNames.join(', ')}`;
+        }
+      }
+    }
+
+    // Fallback to visual type name
+    return visual.type
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }, [visual.title, visual.type, visual.axes, columns]);
+
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [titleValue, setTitleValue] = useState(visual.title);
+  const [titleValue, setTitleValue] = useState(displayTitle);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync title when visual changes
   useEffect(() => {
-    setTitleValue(visual.title);
-  }, [visual.title]);
+    setTitleValue(displayTitle);
+  }, [displayTitle]);
 
   // Focus input when editing starts
   useEffect(() => {
@@ -131,23 +189,23 @@ export function VisualContainer({
 
   const handleTitleBlur = useCallback(() => {
     setIsEditingTitle(false);
-    if (titleValue.trim() && titleValue !== visual.title) {
+    if (titleValue.trim() && titleValue !== displayTitle) {
       updateTitle({ id: visual._id, title: titleValue });
     } else {
-      setTitleValue(visual.title);
+      setTitleValue(displayTitle);
     }
-  }, [titleValue, visual._id, visual.title, updateTitle]);
+  }, [titleValue, visual._id, displayTitle, updateTitle]);
 
   const handleTitleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
         e.currentTarget.blur();
       } else if (e.key === 'Escape') {
-        setTitleValue(visual.title);
+        setTitleValue(displayTitle);
         setIsEditingTitle(false);
       }
     },
-    [visual.title],
+    [displayTitle],
   );
 
   const handleDrag = useCallback((_e: any, d: { x: number; y: number }) => {
@@ -313,7 +371,7 @@ export function VisualContainer({
                 setIsEditingTitle(true);
               }}
             >
-              {visual.title}
+              {displayTitle}
             </h3>
           )}
           <Button

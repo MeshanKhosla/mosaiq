@@ -37,18 +37,13 @@ function AnalysisPage() {
       });
 
       if (existingVisuals !== undefined && existingVisuals !== null) {
-        const defaultTitle = args.type
-          .split('_')
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-
         const tempId = `temp-${Date.now()}-${Math.random()}` as Id<'visuals'>;
         const tempVisual = {
           _id: tempId,
           _creationTime: Date.now(),
           sheetId: args.sheetId,
           type: args.type,
-          title: defaultTitle,
+          title: args.title,
           position: args.position,
           createdBy: '',
           axes: args.type === 'table' ? undefined : args.axes,
@@ -150,17 +145,11 @@ function AnalysisPage() {
   ) => {
     if (!sheet) return;
 
-    const defaultTitle = type
-      .split('_')
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-
     try {
       const position = getDefaultPosition();
       const visualId = await createVisual({
         sheetId: sheet._id,
         type,
-        title: defaultTitle,
         position,
         axes: type === 'table' ? undefined : axes,
       });
