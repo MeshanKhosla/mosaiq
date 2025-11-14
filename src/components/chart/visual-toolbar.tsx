@@ -242,52 +242,42 @@ export function VisualToolbar({
     if (!selectedVisual) return;
 
     const currentDimensions = selectedVisual.axes?.dimensions || [];
+    const newDimensions = checked
+      ? [...currentDimensions, columnId]
+      : currentDimensions.filter((id) => id !== columnId);
 
-    if (checked) {
-      if (currentDimensions.includes(columnId)) return;
+    if (checked && currentDimensions.includes(columnId)) return;
 
-      updateAxes({
-        id: selectedVisual._id,
-        axes: {
-          dimensions: [...currentDimensions, columnId],
-          measures: selectedVisual.axes?.measures || [],
-        },
-      });
-    } else {
-      updateAxes({
-        id: selectedVisual._id,
-        axes: {
-          dimensions: currentDimensions.filter((id) => id !== columnId),
-          measures: selectedVisual.axes?.measures || [],
-        },
-      });
-    }
+    const newAxes = {
+      dimensions: newDimensions,
+      measures: selectedVisual.axes?.measures || [],
+    };
+
+    updateAxes({
+      id: selectedVisual._id,
+      axes: newAxes,
+    });
   };
 
   const handleToggleMeasure = (columnId: string, checked: boolean) => {
     if (!selectedVisual) return;
 
     const currentMeasures = selectedVisual.axes?.measures || [];
+    const newMeasures = checked
+      ? [...currentMeasures, columnId]
+      : currentMeasures.filter((id) => id !== columnId);
 
-    if (checked) {
-      if (currentMeasures.includes(columnId)) return;
+    if (checked && currentMeasures.includes(columnId)) return;
 
-      updateAxes({
-        id: selectedVisual._id,
-        axes: {
-          dimensions: selectedVisual.axes?.dimensions || [],
-          measures: [...currentMeasures, columnId],
-        },
-      });
-    } else {
-      updateAxes({
-        id: selectedVisual._id,
-        axes: {
-          dimensions: selectedVisual.axes?.dimensions || [],
-          measures: currentMeasures.filter((id) => id !== columnId),
-        },
-      });
-    }
+    const newAxes = {
+      dimensions: selectedVisual.axes?.dimensions || [],
+      measures: newMeasures,
+    };
+
+    updateAxes({
+      id: selectedVisual._id,
+      axes: newAxes,
+    });
   };
 
   const handleRemoveDimension = (columnId: string) => {

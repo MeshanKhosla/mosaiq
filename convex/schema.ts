@@ -49,7 +49,7 @@ export default defineSchema({
       v.literal('line_chart'),
       v.literal('pie_chart'),
     ),
-    title: v.string(),
+    title: v.optional(v.string()),
     position: v.object({
       x: v.number(),
       y: v.number(),
