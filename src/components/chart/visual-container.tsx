@@ -150,18 +150,15 @@ export function VisualContainer({
     [visual.title],
   );
 
-  const handleDrag = useCallback(
-    (_e: any, d: { x: number; y: number }) => {
-      // Update local state immediately for smooth dragging
-      // Bounds are handled by react-rnd's bounds prop
-      setLocalPosition((prev: typeof visual.position) => ({
-        ...prev,
-        x: d.x,
-        y: Math.max(0, d.y), // Prevent dragging above canvas (y < 0)
-      }));
-    },
-    [],
-  );
+  const handleDrag = useCallback((_e: any, d: { x: number; y: number }) => {
+    // Update local state immediately for smooth dragging
+    // Don't clamp during drag to prevent jitter - bounds enforced on drag stop
+    setLocalPosition((prev: typeof visual.position) => ({
+      ...prev,
+      x: d.x,
+      y: Math.max(0, d.y), // Prevent dragging above canvas (y < 0)
+    }));
+  }, []);
 
   const handleDragStop = useCallback(
     (_e: any, d: { x: number; y: number }) => {
@@ -169,13 +166,29 @@ export function VisualContainer({
         clearTimeout(debounceTimerRef.current);
       }
 
+      // Constrain X to canvas bounds, allow infinite Y movement
+      let clampedX = d.x;
+      const clampedY = Math.max(0, d.y); // Prevent dragging above canvas (y < 0)
+
+      if (canvasRef?.current) {
+        const canvasRect = canvasRef.current.getBoundingClientRect();
+        const padding = 12; // px-3 = 0.75rem = 12px
+        const minX = 0;
+        const maxX = canvasRect.width - localPosition.width - padding * 2;
+
+        // Clamp X to stay within canvas bounds
+        clampedX = Math.max(minX, Math.min(clampedX, maxX));
+      } else {
+        // Fallback: prevent negative X
+        clampedX = Math.max(0, clampedX);
+      }
+
       // Update optimistically immediately
-      // Bounds are already enforced by react-rnd's bounds prop
       updatePosition({
         id: visual._id,
         position: {
-          x: d.x,
-          y: Math.max(0, d.y), // Prevent dragging above canvas (y < 0)
+          x: clampedX,
+          y: clampedY,
           width: localPosition.width,
           height: localPosition.height,
         },
@@ -186,6 +199,7 @@ export function VisualContainer({
       localPosition.width,
       localPosition.height,
       updatePosition,
+      canvasRef,
     ],
   );
 
@@ -263,7 +277,6 @@ export function VisualContainer({
       onDragStop={handleDragStop}
       onResize={handleResize}
       onResizeStop={handleResizeStop}
-      bounds={canvasRef?.current || undefined}
       minWidth={MIN_VISUAL_SIZE}
       minHeight={MIN_VISUAL_SIZE}
       className="group"
