@@ -61,13 +61,8 @@ export function VisualCanvas({
   return (
     <div
       ref={canvasRef}
-      className="relative -mx-6 px-4 py-6"
+      className="relative w-full min-h-full px-3 py-6"
       onClick={handleCanvasClick}
-      style={{
-        minHeight: '100%',
-        width: '100%',
-        height: 'auto',
-      }}
     >
       {visuals.map((visual) => (
         <VisualContainer
