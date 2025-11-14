@@ -7,6 +7,8 @@ import type { VisualType } from './visual-toolbar';
 import type BaseChart from '~/charts/base-chart';
 import { Chart } from '~/components/chart';
 import BarChart from '~/charts/bar-chart';
+import PieChart from '~/charts/pie-chart';
+import LineChart from '~/charts/line-chart';
 import { arrowTo2Series } from '~/lib/utils';
 import { useTheme } from '~/components/theme-provider';
 
@@ -14,13 +16,18 @@ type Visual = Doc<'visuals'>;
 type Column = Doc<'datasources'>['columns'][number];
 
 function getChartInstance(type: VisualType): BaseChart | null {
-  if (type === 'table') return null;
-
-  if (type === 'bar_chart') {
-    return new BarChart();
+  switch (type) {
+    case 'table':
+      return null;
+    case 'bar_chart':
+      return new BarChart();
+    case 'pie_chart':
+      return new PieChart();
+    case 'line_chart':
+      return new LineChart();
+    default:
+      return new BarChart();
   }
-
-  return new BarChart();
 }
 
 export function ChartRenderer(props: {

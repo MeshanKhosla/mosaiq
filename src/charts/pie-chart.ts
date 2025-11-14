@@ -1,0 +1,195 @@
+import type { Axes, ColorPalette } from '~/lib/types';
+import type { ChartRequirements } from '~/charts/base-chart';
+import type { Doc } from '../../convex/_generated/dataModel';
+import BaseChart from '~/charts/base-chart';
+
+type Column = Doc<'datasources'>['columns'][number];
+
+class PieChart extends BaseChart {
+  getDuckDbQuery(
+    axes: Axes,
+    columns: Array<Column>,
+    tableName: string = 'data',
+  ): string {
+    if (!axes || !axes.dimensions || !axes.measures) {
+      throw new Error('Axes must have dimensions and measures');
+    }
+
+    const { dimensions, measures } = axes;
+
+    if (dimensions.length === 0 || measures.length === 0) {
+      throw new Error('Axes must have at least one dimension and one measure');
+    }
+
+    // Map column IDs to column names
+    const dimensionColumn = columns.find((col) => col._id === dimensions[0]);
+    const measureColumn = columns.find((col) => col._id === measures[0]);
+
+    if (!dimensionColumn || !measureColumn) {
+      throw new Error('Column not found');
+    }
+
+    // Escape column names with double quotes if they contain special characters
+    const escapeColumnName = (name: string): string => {
+      // If name contains spaces, special characters, or is a reserved word, quote it
+      if (
+        /[^a-zA-Z0-9_]/.test(name) ||
+        /^\d/.test(name) ||
+        ['select', 'from', 'where', 'group', 'order', 'by', 'as'].includes(
+          name.toLowerCase(),
+        )
+      ) {
+        return `"${name.replace(/"/g, '""')}"`;
+      }
+      return name;
+    };
+
+    const dimensionName = escapeColumnName(dimensionColumn.name);
+    const measureName = escapeColumnName(measureColumn.name);
+
+    // Generate SQL query for pie chart
+    // SELECT dimension, SUM(measure) as value
+    // FROM table
+    // GROUP BY dimension
+    // ORDER BY value DESC
+    return `SELECT ${dimensionName}, SUM(${measureName}) as value FROM ${escapeColumnName(tableName)} GROUP BY ${dimensionName} ORDER BY value DESC`;
+  }
+
+  validateAxes(axes: Axes): true | string {
+    const requirements = this.getRequirements();
+
+    const dimensions = axes?.dimensions ?? [];
+    const measures = axes?.measures ?? [];
+    const dimCount = dimensions.length;
+    const measureCount = measures.length;
+
+    if (dimCount === 0 && measureCount === 0) {
+      return `Required: Dimensions: ${requirements.wells.dimensions.min}, Measures: ${requirements.wells.measures.min}`;
+    }
+
+    if (
+      dimCount < requirements.wells.dimensions.min ||
+      dimCount > requirements.wells.dimensions.max
+    ) {
+      return `Pie chart requires exactly ${requirements.wells.dimensions.min} dimension, but ${dimCount} provided`;
+    }
+
+    if (
+      measureCount < requirements.wells.measures.min ||
+      measureCount > requirements.wells.measures.max
+    ) {
+      return `Pie chart requires exactly ${requirements.wells.measures.min} measure, but ${measureCount} provided`;
+    }
+
+    return true;
+  }
+
+  getRequirements(): ChartRequirements {
+    return {
+      wells: {
+        dimensions: {
+          min: 1,
+          max: 1,
+        },
+        measures: {
+          min: 1,
+          max: 1,
+        },
+      },
+    };
+  }
+
+  getOptions(
+    axes: Axes,
+    labels: Array<string>,
+    values: Array<number>,
+    measureName: string,
+    dimensionName: string,
+    colors: ColorPalette,
+    width?: number,
+    height?: number,
+  ): Record<string, any> {
+    axes;
+    dimensionName;
+    width;
+    height;
+
+    // Convert labels and values to ECharts pie chart data format
+    const pieData = labels.map((label, index) => ({
+      name: label,
+      value: values[index] ?? 0,
+    }));
+
+    return {
+      backgroundColor: colors.backgroundColor,
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: colors.tooltipBg,
+        borderColor: colors.borderColor,
+        textStyle: { color: colors.textColor },
+        formatter: (params: {
+          name: string;
+          value: number;
+          percent: number;
+        }) => {
+          const v = Number(params.value);
+          const total = values.reduce((sum, val) => sum + val, 0);
+          const percent = total > 0 ? ((v / total) * 100).toFixed(1) : '0';
+          return `${params.name}<br/>${isFinite(v) ? v.toLocaleString() : '-'} (${percent}%)`;
+        },
+      },
+      legend: {
+        orient: 'vertical',
+        left: 'left',
+        top: 'middle',
+        textStyle: {
+          color: colors.textColor,
+        },
+        itemGap: 8,
+      },
+      series: [
+        {
+          name: measureName,
+          type: 'pie',
+          radius: ['40%', '70%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 4,
+            borderColor: colors.backgroundColor,
+            borderWidth: 2,
+          },
+          label: {
+            show: true,
+            formatter: (params: { name: string; percent: number }) => {
+              return `${params.name}: ${params.percent.toFixed(1)}%`;
+            },
+            color: colors.labelColor,
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: 14,
+              fontWeight: 'bold',
+            },
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)',
+            },
+          },
+          labelLine: {
+            show: true,
+            lineStyle: {
+              color: colors.borderColor,
+            },
+          },
+          data: pieData,
+        },
+      ],
+      animationDuration: 150,
+      animationEasing: 'quartOut',
+    };
+  }
+}
+
+export default PieChart;
