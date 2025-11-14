@@ -76,6 +76,46 @@ class BaseChart {
     height;
     throw new Error('Not implemented');
   }
+
+  /**
+   * Optional method to calculate grid padding dynamically.
+   * Subclasses can override this to provide custom padding calculations.
+   * @param labels - Array of label strings
+   * @param values - Array of numeric values
+   * @param measureName - Name of the measure
+   * @param dimensionName - Name of the dimension
+   * @param width - Chart width
+   * @param height - Chart height
+   * @returns Grid padding configuration object
+   */
+  calculateGridPadding(
+    labels: Array<string>,
+    values: Array<number>,
+    measureName: string,
+    dimensionName: string,
+    width?: number,
+    height?: number,
+  ): {
+    left: string;
+    right: string;
+    top: string;
+    bottom: string;
+  } {
+    labels;
+    values;
+    measureName;
+    dimensionName;
+    width;
+    height;
+    // Default implementation returns standard padding
+    // Subclasses should override for custom behavior
+    return {
+      left: '60px',
+      right: '5%',
+      top: '10%',
+      bottom: '15%',
+    };
+  }
 }
 
 export default BaseChart;

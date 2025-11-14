@@ -106,14 +106,10 @@ class BarChart extends BaseChart {
     measureName: string,
     dimensionName: string,
     colors: ColorPalette,
-    width?: number,
-    height?: number,
+    _width?: number,
+    _height?: number,
   ): Record<string, any> {
     axes;
-    width;
-    height;
-    const shouldRotate =
-      labels.length > 12 || labels.some((s) => s.length > 12);
 
     return {
       backgroundColor: colors.backgroundColor,
@@ -133,10 +129,6 @@ class BarChart extends BaseChart {
       showDelay: 0,
       hideDelay: 0,
       grid: {
-        left: '80px',
-        right: '5%',
-        top: '10%',
-        bottom: shouldRotate ? '20%' : '15%',
         containLabel: true,
       },
       xAxis: {
@@ -146,9 +138,13 @@ class BarChart extends BaseChart {
           alignWithLabel: true,
           lineStyle: { color: colors.borderColor },
         },
-        axisLabel: { rotate: shouldRotate ? 30 : 0 },
-        name: dimensionName + ' by ' + measureName,
-        nameLocation: 'middle',
+        axisLabel: {
+          interval: 'auto',
+          overflow: 'truncate',
+        },
+        name: dimensionName,
+        nameLocation: 'middle', // Position at bottom center
+        nameGap: 25, // Spacing between axis name and tick labels
         nameTextStyle: {
           color: colors.textColor,
         },
@@ -159,9 +155,12 @@ class BarChart extends BaseChart {
         axisLabel: {
           formatter: (val: number) =>
             isFinite(val) ? val.toLocaleString() : '0',
+          overflow: 'truncate',
         },
         name: measureName,
-        nameLocation: 'middle',
+        nameLocation: 'middle', // Position on left side
+        nameRotate: 90, // Rotate vertically
+        nameGap: 50, // Spacing between axis name and tick labels (more for rotated text)
         nameTextStyle: {
           color: colors.textColor,
         },
