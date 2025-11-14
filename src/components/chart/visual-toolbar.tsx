@@ -9,7 +9,6 @@ import {
   PopoverTrigger,
 } from '~/components/ui/popover';
 import { Checkbox } from '~/components/ui/checkbox';
-import { Label } from '~/components/ui/label';
 
 export type VisualType = 'table' | 'bar_chart' | 'line_chart' | 'pie_chart';
 
@@ -36,6 +35,169 @@ const visualTypes: Array<{
   { type: 'line_chart', label: 'Line Chart', icon: LineChart },
   { type: 'pie_chart', label: 'Pie Chart', icon: PieChart },
 ];
+
+interface FieldWellsProps {
+  selectedVisual: Doc<'visuals'>;
+  columns: Array<Column>;
+  dimensionColumns: Array<Column>;
+  measureColumns: Array<Column>;
+  onToggleDimension: (columnId: string, checked: boolean) => void;
+  onToggleMeasure: (columnId: string, checked: boolean) => void;
+  onRemoveDimension: (columnId: string) => void;
+  onRemoveMeasure: (columnId: string) => void;
+}
+
+function FieldWells({
+  selectedVisual,
+  columns,
+  dimensionColumns,
+  measureColumns,
+  onToggleDimension,
+  onToggleMeasure,
+  onRemoveDimension,
+  onRemoveMeasure,
+}: FieldWellsProps) {
+  const currentDimensions = selectedVisual.axes?.dimensions || [];
+  const currentMeasures = selectedVisual.axes?.measures || [];
+
+  return (
+    <div className="flex-1 border-r border-border pr-3">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Field Wells
+        </span>
+        <div className="flex gap-2">
+          <div className="flex items-center gap-1 rounded border border-dashed border-border px-2 py-1 text-xs min-w-[120px]">
+            <span className="text-muted-foreground shrink-0">Dimensions</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 shrink-0 border-dashed text-xs p-0"
+                >
+                  +
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="bottom"
+                align="start"
+                className="max-h-60 w-56 overflow-auto p-2"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                <div className="space-y-1">
+                  {dimensionColumns.map((col) => {
+                    const isSelected = currentDimensions.includes(col._id);
+                    return (
+                      <label
+                        key={col._id}
+                        htmlFor={`dim-${col._id}`}
+                        className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent cursor-pointer"
+                      >
+                        <Checkbox
+                          id={`dim-${col._id}`}
+                          checked={isSelected}
+                          onCheckedChange={(checked) =>
+                            onToggleDimension(col._id, checked === true)
+                          }
+                        />
+                        <span className="text-sm font-normal flex-1">
+                          {col.name}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+            <div className="flex flex-wrap gap-1">
+              {currentDimensions.map((dimId) => {
+                const col = columns.find((c) => c._id === dimId);
+                return col ? (
+                  <span
+                    key={dimId}
+                    className="flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs shrink-0"
+                  >
+                    {col.name}
+                    <button
+                      onClick={() => onRemoveDimension(dimId)}
+                      className="hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ) : null;
+              })}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 rounded border border-dashed border-border px-2 py-1 text-xs min-w-[120px]">
+            <span className="text-muted-foreground shrink-0">Measures</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 shrink-0 border-dashed text-xs p-0"
+                >
+                  +
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="bottom"
+                align="start"
+                className="max-h-60 w-56 overflow-auto p-2"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                <div className="space-y-1">
+                  {measureColumns.map((col) => {
+                    const isSelected = currentMeasures.includes(col._id);
+                    return (
+                      <label
+                        key={col._id}
+                        htmlFor={`meas-${col._id}`}
+                        className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent cursor-pointer"
+                      >
+                        <Checkbox
+                          id={`meas-${col._id}`}
+                          checked={isSelected}
+                          onCheckedChange={(checked) =>
+                            onToggleMeasure(col._id, checked === true)
+                          }
+                        />
+                        <span className="text-sm font-normal flex-1">
+                          {col.name}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
+            <div className="flex flex-wrap gap-1">
+              {currentMeasures.map((measId) => {
+                const col = columns.find((c) => c._id === measId);
+                return col ? (
+                  <span
+                    key={measId}
+                    className="flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs shrink-0"
+                  >
+                    {col.name}
+                    <button
+                      onClick={() => onRemoveMeasure(measId)}
+                      className="hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ) : null;
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function VisualToolbar({
   onCreateVisual,
@@ -157,162 +319,18 @@ export function VisualToolbar({
         </div>
 
         {/* Field Wells Section */}
-        {selectedVisual &&
-          selectedVisual.type !== 'table' &&
-          (() => {
-            const currentDimensions = selectedVisual.axes?.dimensions || [];
-            const currentMeasures = selectedVisual.axes?.measures || [];
-
-            return (
-              <div className="flex-1 border-r border-border pr-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Field Wells
-                  </span>
-                  <div className="flex gap-2">
-                    <div className="flex items-center gap-1 rounded border border-dashed border-border px-2 py-1 text-xs min-w-[120px]">
-                      <span className="text-muted-foreground">Dimensions:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {currentDimensions.map((dimId) => {
-                          const col = columns.find((c) => c._id === dimId);
-                          return col ? (
-                            <span
-                              key={dimId}
-                              className="flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs"
-                            >
-                              {col.name}
-                              <button
-                                onClick={() => handleRemoveDimension(dimId)}
-                                className="hover:text-destructive"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </span>
-                          ) : null;
-                        })}
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 border-dashed text-xs"
-                            >
-                              +
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            align="start"
-                            className="max-h-60 w-56 overflow-auto p-2"
-                            onOpenAutoFocus={(e) => e.preventDefault()}
-                          >
-                            <div className="space-y-1">
-                              {dimensionColumns.map((col) => {
-                                const isSelected = currentDimensions.includes(
-                                  col._id,
-                                );
-                                return (
-                                  <div
-                                    key={col._id}
-                                    className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
-                                  >
-                                    <Checkbox
-                                      id={`dim-${col._id}`}
-                                      checked={isSelected}
-                                      onCheckedChange={(checked) =>
-                                        handleToggleDimension(
-                                          col._id,
-                                          checked === true,
-                                        )
-                                      }
-                                    />
-                                    <Label
-                                      htmlFor={`dim-${col._id}`}
-                                      className="text-sm font-normal cursor-pointer flex-1"
-                                    >
-                                      {col.name}
-                                    </Label>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 rounded border border-dashed border-border px-2 py-1 text-xs min-w-[120px]">
-                      <span className="text-muted-foreground">Measures:</span>
-                      <div className="flex flex-wrap gap-1">
-                        {currentMeasures.map((measId) => {
-                          const col = columns.find((c) => c._id === measId);
-                          return col ? (
-                            <span
-                              key={measId}
-                              className="flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs"
-                            >
-                              {col.name}
-                              <button
-                                onClick={() => handleRemoveMeasure(measId)}
-                                className="hover:text-destructive"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </span>
-                          ) : null;
-                        })}
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 border-dashed text-xs"
-                            >
-                              +
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            align="start"
-                            className="max-h-60 w-56 overflow-auto p-2"
-                            onOpenAutoFocus={(e) => e.preventDefault()}
-                          >
-                            <div className="space-y-1">
-                              {measureColumns.map((col) => {
-                                const isSelected = currentMeasures.includes(
-                                  col._id,
-                                );
-                                return (
-                                  <div
-                                    key={col._id}
-                                    className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
-                                  >
-                                    <Checkbox
-                                      id={`meas-${col._id}`}
-                                      checked={isSelected}
-                                      onCheckedChange={(checked) =>
-                                        handleToggleMeasure(
-                                          col._id,
-                                          checked === true,
-                                        )
-                                      }
-                                    />
-                                    <Label
-                                      htmlFor={`meas-${col._id}`}
-                                      className="text-sm font-normal cursor-pointer flex-1"
-                                    >
-                                      {col.name}
-                                    </Label>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+        {selectedVisual && selectedVisual.type !== 'table' && (
+          <FieldWells
+            selectedVisual={selectedVisual}
+            columns={columns}
+            dimensionColumns={dimensionColumns}
+            measureColumns={measureColumns}
+            onToggleDimension={handleToggleDimension}
+            onToggleMeasure={handleToggleMeasure}
+            onRemoveDimension={handleRemoveDimension}
+            onRemoveMeasure={handleRemoveMeasure}
+          />
+        )}
 
         {/* Filters Section - for future filter controls */}
         <div className="border-r border-border pr-3">
