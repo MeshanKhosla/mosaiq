@@ -9,7 +9,9 @@ const getBaseURL = () => {
   }
   // For SSR, try to use environment variable or default
   const siteUrl =
-    (import.meta as any).env?.VITE_SITE_URL || 'http://localhost:3000';
+    (import.meta as any).env?.VITE_SITE_URL_PROD ||
+    (import.meta as any).env?.VITE_SITE_URL ||
+    'http://localhost:3000';
   return `${siteUrl}/api/auth`;
 };
 
