@@ -319,7 +319,7 @@ export function VisualToolbar({
           />
         )}
 
-        <div className="text-xs px-1 text-muted-foreground">
+        <div className="ml-auto text-xs px-1 text-muted-foreground">
           <span className="font-medium uppercase tracking-wide">Filters</span>
         </div>
       </div>
