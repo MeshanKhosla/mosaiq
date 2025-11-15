@@ -1,64 +1,54 @@
-import { Outlet, createFileRoute, redirect } from '@tanstack/react-router';
-import { convexQuery } from '@convex-dev/react-query';
+import { useEffect } from 'react';
+import {
+  Outlet,
+  createFileRoute,
+  redirect,
+  useLocation,
+  useNavigate,
+} from '@tanstack/react-router';
+import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { fetchAuth } from '~/routes/__root';
 
 export const Route = createFileRoute('/dashboard/$id')({
   component: DashboardLayout,
-  beforeLoad: async ({ context, params, location }) => {
+  beforeLoad: async () => {
     const { userId } = await fetchAuth();
     if (!userId) {
       throw redirect({ to: '/' });
     }
-
-    const dashboardId = params.id as Id<'dashboards'>;
-
-    const pathname = location.pathname || location.href || '';
-    const isSheetRoute = /\/dashboard\/[^/]+\/sheet\/[^/]+/.test(pathname);
-
-    if (isSheetRoute) {
-      return;
-    }
-
-    const dashboard = await context.queryClient.ensureQueryData(
-      convexQuery(api.dashboards.getForViewer, { id: dashboardId }),
-    );
-
-    if (!dashboard) {
-      return;
-    }
-
-    const analysis = await context.queryClient.ensureQueryData(
-      convexQuery(api.analyses.getForViewer, {
-        id: dashboard.sourceAnalysisId,
-      }),
-    );
-
-    if (!analysis) {
-      return;
-    }
-
-    const sheets = await context.queryClient.ensureQueryData(
-      convexQuery(api.sheets.getByAnalysisForViewer, {
-        analysisId: dashboard.sourceAnalysisId,
-      }),
-    );
-
-    if (!sheets || sheets.length === 0) {
-      return;
-    }
-
-    throw redirect({
-      to: '/dashboard/$id/sheet/$sheetId',
-      params: {
-        id: dashboardId,
-        sheetId: sheets[0]._id,
-      },
-    });
   },
 });
 
 function DashboardLayout() {
+  const { id } = Route.useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const dashboardId = id as Id<'dashboards'>;
+  const dashboard = useQuery(api.dashboards.getForViewer, { id: dashboardId });
+  const analysis = useQuery(
+    api.analyses.getForViewer,
+    dashboard ? { id: dashboard.sourceAnalysisId } : 'skip',
+  );
+  const sheets = useQuery(
+    api.sheets.getByAnalysisForViewer,
+    analysis ? { analysisId: analysis._id } : 'skip',
+  );
+
+  useEffect(() => {
+    const isBaseRoute = location.pathname === `/dashboard/${dashboardId}`;
+    if (isBaseRoute && sheets && sheets.length > 0) {
+      navigate({
+        to: '/dashboard/$id/sheet/$sheetId',
+        params: {
+          id: dashboardId,
+          sheetId: sheets[0]._id,
+        },
+        replace: true,
+      });
+    }
+  }, [sheets, dashboardId, navigate, location.pathname]);
+
   return <Outlet />;
 }

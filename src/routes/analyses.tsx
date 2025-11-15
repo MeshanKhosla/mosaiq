@@ -14,6 +14,7 @@ import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { AppLayout } from '~/components/app-layout';
 import { fetchAuth } from '~/routes/__root';
+
 import {
   Table,
   TableBody,
@@ -25,6 +26,41 @@ import {
 import { Skeleton } from '~/components/ui/skeleton';
 import { Button } from '~/components/ui/button';
 
+function AnalysisLink({
+  analysisId,
+  children,
+}: {
+  analysisId: Id<'analyses'>;
+  children: React.ReactNode;
+}) {
+  const sheets = useQuery(api.sheets.getAllByAnalysis, { analysisId });
+  const firstSheetId = sheets && sheets.length > 0 ? sheets[0]._id : null;
+
+  if (firstSheetId) {
+    return (
+      <Link
+        to="/analysis/$id/sheet/$sheetId"
+        params={{ id: analysisId, sheetId: firstSheetId }}
+        className="contents"
+        preload="intent"
+      >
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      to="/analysis/$id"
+      params={{ id: analysisId }}
+      className="contents"
+      preload="intent"
+    >
+      {children}
+    </Link>
+  );
+}
+
 export const Route = createFileRoute('/analyses')({
   component: AnalysesPage,
   beforeLoad: async () => {
@@ -34,7 +70,7 @@ export const Route = createFileRoute('/analyses')({
     }
   },
   loader: async ({ context }) => {
-    return await context.queryClient.ensureQueryData(
+    await context.queryClient.ensureQueryData(
       convexQuery(api.analyses.list, {}),
     );
   },
@@ -200,12 +236,7 @@ function AnalysesPage() {
               <TableBody>
                 {table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id} className="hover:!bg-accent">
-                    <Link
-                      to="/analysis/$id"
-                      params={{ id: row.original._id }}
-                      className="contents"
-                      preload="intent"
-                    >
+                    <AnalysisLink analysisId={row.original._id}>
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
                           {flexRender(
@@ -214,7 +245,7 @@ function AnalysesPage() {
                           )}
                         </TableCell>
                       ))}
-                    </Link>
+                    </AnalysisLink>
                   </TableRow>
                 ))}
               </TableBody>

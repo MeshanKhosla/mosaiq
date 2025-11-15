@@ -15,6 +15,7 @@ import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { authClient } from '~/lib/auth-client';
 import { AppLayout } from '~/components/app-layout';
 import { fetchAuth } from '~/routes/__root';
+
 import {
   Table,
   TableBody,
@@ -26,6 +27,45 @@ import {
 import { Skeleton } from '~/components/ui/skeleton';
 import { Button } from '~/components/ui/button';
 
+function DashboardLink({
+  dashboardId,
+  sourceAnalysisId,
+  children,
+}: {
+  dashboardId: Id<'dashboards'>;
+  sourceAnalysisId: Id<'analyses'>;
+  children: React.ReactNode;
+}) {
+  const sheets = useQuery(api.sheets.getByAnalysisForViewer, {
+    analysisId: sourceAnalysisId,
+  });
+  const firstSheetId = sheets && sheets.length > 0 ? sheets[0]._id : null;
+
+  if (firstSheetId) {
+    return (
+      <Link
+        to="/dashboard/$id/sheet/$sheetId"
+        params={{ id: dashboardId, sheetId: firstSheetId }}
+        className="contents"
+        preload="intent"
+      >
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      to="/dashboard/$id"
+      params={{ id: dashboardId }}
+      className="contents"
+      preload="intent"
+    >
+      {children}
+    </Link>
+  );
+}
+
 export const Route = createFileRoute('/dashboards')({
   component: DashboardsPage,
   beforeLoad: async () => {
@@ -35,7 +75,7 @@ export const Route = createFileRoute('/dashboards')({
     }
   },
   loader: async ({ context }) => {
-    return await context.queryClient.ensureQueryData(
+    await context.queryClient.ensureQueryData(
       convexQuery(api.dashboards.list, {}),
     );
   },
@@ -226,11 +266,9 @@ function DashboardsPage() {
               <TableBody>
                 {table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id} className="hover:!bg-accent">
-                    <Link
-                      to="/dashboard/$id"
-                      params={{ id: row.original._id }}
-                      className="contents"
-                      preload="intent"
+                    <DashboardLink
+                      dashboardId={row.original._id}
+                      sourceAnalysisId={row.original.sourceAnalysisId}
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
@@ -240,7 +278,7 @@ function DashboardsPage() {
                           )}
                         </TableCell>
                       ))}
-                    </Link>
+                    </DashboardLink>
                   </TableRow>
                 ))}
               </TableBody>
