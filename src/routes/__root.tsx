@@ -20,6 +20,7 @@ import type { ConvexReactClient } from 'convex/react';
 import type { QueryClient } from '@tanstack/react-query';
 import { authClient } from '~/lib/auth-client';
 import { ThemeProvider } from '~/components/theme-provider';
+import { DuckDBProvider } from '~/components/duckdb-provider';
 import appCss from '~/styles/app.css?url';
 
 // Get auth information for SSR using available cookies
@@ -100,15 +101,17 @@ function RootComponent() {
       client={context.convexClient}
       authClient={authClient}
     >
-      <RootDocument>
-        <Outlet />
-        {import.meta.env.DEV && (
-          <ReactQueryDevtools
-            initialIsOpen={false}
-            buttonPosition="bottom-left"
-          />
-        )}
-      </RootDocument>
+      <DuckDBProvider>
+        <RootDocument>
+          <Outlet />
+          {import.meta.env.DEV && (
+            <ReactQueryDevtools
+              initialIsOpen={false}
+              buttonPosition="bottom-left"
+            />
+          )}
+        </RootDocument>
+      </DuckDBProvider>
     </ConvexBetterAuthProvider>
   );
 }
