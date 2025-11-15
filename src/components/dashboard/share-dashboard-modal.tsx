@@ -101,7 +101,7 @@ export function ShareDashboardModal({
         to: '/dashboard/$id',
         params: { id: dashboardId },
       });
-      
+
       // Close modal after navigation completes
       onOpenChange(false);
     } catch (error) {
