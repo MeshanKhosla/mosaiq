@@ -86,7 +86,7 @@ export function ShareDashboardModal({
 
     setIsCreating(true);
     try {
-      const dashboardId = await createDashboardWithSharing({
+      const { dashboardId, sheetId } = await createDashboardWithSharing({
         analysisId,
         name: dashboardName.trim(),
         isPublic: permissionType === 'public',
@@ -98,8 +98,8 @@ export function ShareDashboardModal({
       });
 
       await navigate({
-        to: '/dashboard/$id',
-        params: { id: dashboardId },
+        to: '/dashboard/$id/sheet/$sheetId',
+        params: { id: dashboardId, sheetId },
       });
 
       // Close modal after navigation completes

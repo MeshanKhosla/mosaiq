@@ -7,7 +7,10 @@ export const create = mutation({
     analysisId: v.id('analyses'),
     name: v.string(),
   },
-  returns: v.id('dashboards'),
+  returns: v.object({
+    dashboardId: v.id('dashboards'),
+    sheetId: v.id('sheets'),
+  }),
   handler: async (ctx, args) => {
     const user = await authComponent.getAuthUser(ctx);
 
@@ -17,12 +20,29 @@ export const create = mutation({
       throw new Error('Analysis not found or unauthorized');
     }
 
-    return await ctx.db.insert('dashboards', {
+    const dashboardId = await ctx.db.insert('dashboards', {
       name: args.name.trim(),
       sourceAnalysisId: args.analysisId,
       createdBy: user._id,
       isPublic: false,
     });
+
+    // Get the first sheet from the source analysis
+    const sheets = await ctx.db
+      .query('sheets')
+      .withIndex('by_analysisId', (q) => q.eq('analysisId', args.analysisId))
+      .collect();
+
+    if (sheets.length === 0) {
+      throw new Error('Analysis has no sheets');
+    }
+
+    const sortedSheets = sheets.sort(
+      (a, b) => a._creationTime - b._creationTime,
+    );
+    const sheetId = sortedSheets[0]._id;
+
+    return { dashboardId, sheetId };
   },
 });
 
@@ -33,7 +53,10 @@ export const createWithSharing = mutation({
     isPublic: v.optional(v.boolean()),
     sharedWithEmails: v.optional(v.array(v.string())),
   },
-  returns: v.id('dashboards'),
+  returns: v.object({
+    dashboardId: v.id('dashboards'),
+    sheetId: v.id('sheets'),
+  }),
   handler: async (ctx, args) => {
     const user = await authComponent.getAuthUser(ctx);
 
@@ -63,7 +86,22 @@ export const createWithSharing = mutation({
       }
     }
 
-    return dashboardId;
+    // Get the first sheet from the source analysis
+    const sheets = await ctx.db
+      .query('sheets')
+      .withIndex('by_analysisId', (q) => q.eq('analysisId', args.analysisId))
+      .collect();
+
+    if (sheets.length === 0) {
+      throw new Error('Analysis has no sheets');
+    }
+
+    const sortedSheets = sheets.sort(
+      (a, b) => a._creationTime - b._creationTime,
+    );
+    const sheetId = sortedSheets[0]._id;
+
+    return { dashboardId, sheetId };
   },
 });
 
