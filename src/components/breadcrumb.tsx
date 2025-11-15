@@ -198,7 +198,7 @@ export function Breadcrumb({
       {ctaButtons.length > 0 && (
         <div className="flex items-center gap-2">
           {ctaButtons.map((button, index) => {
-            const isOutlined = button.variant === 'outline';
+            const isOutlined = button.variant !== 'default';
             const buttonClassName = isOutlined
               ? 'px-3 py-1 text-sm font-medium rounded-md border border-[hsl(var(--ring))] bg-background text-[hsl(var(--ring))] shadow-sm hover:bg-[hsl(var(--ring))]/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
               : 'px-3 py-1 text-sm font-medium rounded-md bg-[hsl(var(--ring))] text-white hover:bg-[hsl(var(--ring))]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
