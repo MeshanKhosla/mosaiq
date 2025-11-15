@@ -34,7 +34,7 @@ export const Route = createFileRoute('/datasources')({
     }
   },
   loader: async ({ context }) => {
-    return await context.queryClient.ensureQueryData(
+    await context.queryClient.ensureQueryData(
       convexQuery(api.datasources.list, {}),
     );
   },
