@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -14,6 +14,7 @@ import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { authClient } from '~/lib/auth-client';
 import { AppLayout } from '~/components/app-layout';
+import { DashboardLink } from '~/components/dashboard-link';
 import { fetchAuth } from '~/routes/__root';
 
 import {
@@ -26,45 +27,6 @@ import {
 } from '~/components/ui/table';
 import { Skeleton } from '~/components/ui/skeleton';
 import { Button } from '~/components/ui/button';
-
-function DashboardLink({
-  dashboardId,
-  sourceAnalysisId,
-  children,
-}: {
-  dashboardId: Id<'dashboards'>;
-  sourceAnalysisId: Id<'analyses'>;
-  children: React.ReactNode;
-}) {
-  const sheets = useQuery(api.sheets.getByAnalysisForViewer, {
-    analysisId: sourceAnalysisId,
-  });
-  const firstSheetId = sheets && sheets.length > 0 ? sheets[0]._id : null;
-
-  if (firstSheetId) {
-    return (
-      <Link
-        to="/dashboard/$id/sheet/$sheetId"
-        params={{ id: dashboardId, sheetId: firstSheetId }}
-        className="contents"
-        preload="intent"
-      >
-        {children}
-      </Link>
-    );
-  }
-
-  return (
-    <Link
-      to="/dashboard/$id"
-      params={{ id: dashboardId }}
-      className="contents"
-      preload="intent"
-    >
-      {children}
-    </Link>
-  );
-}
 
 export const Route = createFileRoute('/dashboards')({
   component: DashboardsPage,
@@ -269,6 +231,7 @@ function DashboardsPage() {
                     <DashboardLink
                       dashboardId={row.original._id}
                       sourceAnalysisId={row.original.sourceAnalysisId}
+                      className="contents"
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
