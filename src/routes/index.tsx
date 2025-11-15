@@ -56,7 +56,6 @@ function HomePage() {
       .slice(0, 5);
   }, [datasources]);
 
-  // Show loading state while checking authentication
   if (isPending) {
     return (
       <AppLayout>
@@ -72,20 +71,19 @@ function HomePage() {
     );
   }
 
-  // Show sign-in prompt when not authenticated
   if (!session) {
     return (
       <AppLayout>
         <div className="space-y-4">
-          <div className="flex items-center justify-center min-h-[60vh]">
+          <Upload />
+          <div className="flex items-center justify-center">
             <Card className="w-full max-w-md">
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl mb-2">
                   Welcome to Mosaiq
                 </CardTitle>
                 <CardDescription>
-                  Please sign in to access your dashboards, analyses, and
-                  datasources.
+                  Sign in to upload and analyze your data
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

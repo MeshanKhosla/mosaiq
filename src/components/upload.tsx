@@ -8,6 +8,7 @@ import type { ChangeEvent } from 'react';
 import type { Id } from '../../convex/_generated/dataModel';
 import { Button } from '~/components/ui/button';
 import { useDuckDbContext } from '~/components/duckdb-provider';
+import { authClient } from '~/lib/auth-client';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -66,6 +67,7 @@ async function parseCsvColumnTypesWithDuckDB(
 
 export function Upload() {
   const navigate = useNavigate();
+  const { data: session } = authClient.useSession();
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,12 +77,24 @@ export function Upload() {
   const createDatasource = useMutation(api.datasources.create);
 
   const handleFileInputClick = () => {
+    if (!session) {
+      navigate({ to: '/signin' });
+      return;
+    }
     fileInputRef.current?.click();
   };
 
   const handleFileSelect = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
+      return;
+    }
+
+    if (!session) {
+      navigate({ to: '/signin' });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
 
@@ -211,7 +225,7 @@ export function Upload() {
             type="button"
             size="lg"
             variant="outline"
-            disabled={isUploading}
+            disabled={isUploading || !session}
             onClick={handleFileInputClick}
             className="w-full h-20 text-lg cursor-pointer relative overflow-hidden bg-card/80 dark:bg-card/60 backdrop-blur-md border-2 border-border/50 hover:border-ring/50 hover:bg-card/90 dark:hover:bg-card/70 transition-all"
             style={{
@@ -223,6 +237,11 @@ export function Upload() {
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 Uploading...
+              </>
+            ) : !session ? (
+              <>
+                <UploadIcon className="mr-2 h-5 w-5" />
+                Sign in to upload CSV
               </>
             ) : (
               <>
