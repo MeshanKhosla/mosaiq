@@ -333,6 +333,8 @@ export function VisualContainer({
       minWidth={MIN_VISUAL_SIZE}
       minHeight={MIN_VISUAL_SIZE}
       className="group"
+      dragHandleClassName="visual-drag-handle"
+      cancel="input, button"
       style={{
         zIndex: 1,
       }}
@@ -347,7 +349,7 @@ export function VisualContainer({
         }}
       >
         {/* Thin header with editable title */}
-        <div className="flex items-center justify-between border-b border-border px-2 py-1">
+        <div className="visual-drag-handle flex items-center gap-2 border-b border-border px-2 py-1 cursor-move">
           {isEditingTitle ? (
             <Input
               ref={titleInputRef}
@@ -355,12 +357,12 @@ export function VisualContainer({
               onChange={(e) => setTitleValue(e.target.value)}
               onBlur={handleTitleBlur}
               onKeyDown={handleTitleKeyDown}
-              className="h-6 text-xs font-medium"
+              className="h-6 text-xs font-medium flex-1"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
             <h3
-              className="flex-1 cursor-pointer truncate text-xs font-medium px-1 py-0.5 rounded hover:bg-muted/50"
+              className="inline-block cursor-pointer text-xs font-medium px-1 py-0.5 rounded hover:bg-muted/50 shrink-0"
               onDoubleClick={(e) => {
                 e.stopPropagation();
                 setIsEditingTitle(true);
@@ -369,6 +371,7 @@ export function VisualContainer({
               {displayTitle}
             </h3>
           )}
+          <div className="flex-1" />
           <Button
             variant="ghost"
             size="sm"
@@ -376,7 +379,7 @@ export function VisualContainer({
               e.stopPropagation();
               handleDelete();
             }}
-            className="h-5 w-5 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+            className="h-5 w-5 p-0 opacity-0 transition-opacity group-hover:opacity-100 shrink-0"
             title="Delete visual"
           >
             <X className="h-3 w-3" />

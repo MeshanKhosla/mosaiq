@@ -8,11 +8,13 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import type { SortingState } from '@tanstack/react-table';
+import { ArrowDown, ArrowUp } from 'lucide-react';
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
 import type { ColorPalette } from '~/lib/types';
 import type { VisualType } from './visual-toolbar';
 import type BaseChart from '~/charts/base-chart';
+import { Button } from '~/components/ui/button';
 import { Chart } from '~/components/chart';
 import BarChart from '~/charts/bar-chart';
 import PieChart from '~/charts/pie-chart';
@@ -40,11 +42,27 @@ function TableVisualRenderer({ arrow }: { arrow: any }) {
     [arrow],
   );
 
-  const tableColumns = useMemo(() => {
+  const tableColumns = useMemo<Array<ColumnDef<Record<string, any>>>>(() => {
     return columnNames.map((name: string) => ({
       id: name,
       accessorKey: name,
-      header: name,
+      header: ({ column }: { column: any }) => {
+        const isSorted = column.getIsSorted();
+        return (
+          <Button
+            variant="ghost"
+            className="h-8 px-2 w-full justify-start hover:bg-transparent"
+            onClick={(e) => {
+              e.stopPropagation();
+              column.toggleSorting();
+            }}
+          >
+            {name}
+            {isSorted === 'asc' && <ArrowUp className="ml-2 h-4 w-4" />}
+            {isSorted === 'desc' && <ArrowDown className="ml-2 h-4 w-4" />}
+          </Button>
+        );
+      },
       cell: ({ row }: { row: any }) => {
         const value = row.getValue(name);
         if (value === null || value === undefined) {
@@ -78,7 +96,11 @@ function TableVisualRenderer({ arrow }: { arrow: any }) {
   });
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden">
+    <div
+      className="flex h-full w-full flex-col overflow-hidden"
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <div className="flex-1 overflow-auto">
         <Table>
           <TableHeader>
@@ -124,7 +146,7 @@ function TableVisualRenderer({ arrow }: { arrow: any }) {
           </TableBody>
         </Table>
       </div>
-      <div className="border-t">
+      <div className="border-t" onClick={(e) => e.stopPropagation()}>
         <DataTablePagination table={table} />
       </div>
     </div>
