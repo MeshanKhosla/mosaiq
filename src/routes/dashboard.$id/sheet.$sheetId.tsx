@@ -8,12 +8,19 @@ import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
+import { fetchAuth } from '~/routes/__root';
 import { VisualCanvas } from '~/components/chart/visual-canvas';
 import { DashboardSheetTabs } from '~/components/chart/dashboard-sheet-tabs';
 import { useDuckDbContext } from '~/components/duckdb-provider';
 
 export const Route = createFileRoute('/dashboard/$id/sheet/$sheetId')({
   component: DashboardSheetPage,
+  beforeLoad: async () => {
+    const { userId } = await fetchAuth();
+    if (!userId) {
+      throw redirect({ to: '/' });
+    }
+  },
   loader: async ({ context, params }) => {
     const dashboardId = params.id as Id<'dashboards'>;
     const sheetId = params.sheetId as Id<'sheets'>;

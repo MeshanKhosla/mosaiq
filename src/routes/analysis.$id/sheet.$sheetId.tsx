@@ -10,6 +10,7 @@ import type { Id } from '../../../convex/_generated/dataModel';
 import type { VisualType } from '~/components/chart/visual-toolbar';
 import { DEFAULT_VISUAL_SIZE } from '~/lib/constants';
 import { AppLayout } from '~/components/app-layout';
+import { fetchAuth } from '~/routes/__root';
 import { VisualToolbar } from '~/components/chart/visual-toolbar';
 import { VisualCanvas } from '~/components/chart/visual-canvas';
 import { SheetTabs } from '~/components/chart/sheet-tabs';
@@ -18,6 +19,12 @@ import { useDuckDbContext } from '~/components/duckdb-provider';
 
 export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
   component: SheetPage,
+  beforeLoad: async () => {
+    const { userId } = await fetchAuth();
+    if (!userId) {
+      throw redirect({ to: '/' });
+    }
+  },
   loader: async ({ context, params }) => {
     const analysisId = params.id as Id<'analyses'>;
     const sheetId = params.sheetId as Id<'sheets'>;

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { Link, createFileRoute, redirect } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -13,6 +13,7 @@ import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { AppLayout } from '~/components/app-layout';
+import { fetchAuth } from '~/routes/__root';
 import {
   Table,
   TableBody,
@@ -26,6 +27,12 @@ import { Button } from '~/components/ui/button';
 
 export const Route = createFileRoute('/analyses')({
   component: AnalysesPage,
+  beforeLoad: async () => {
+    const { userId } = await fetchAuth();
+    if (!userId) {
+      throw redirect({ to: '/' });
+    }
+  },
   loader: async ({ context }) => {
     return await context.queryClient.ensureQueryData(
       convexQuery(api.analyses.list, {}),

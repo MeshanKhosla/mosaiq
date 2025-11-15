@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
-import { convexQuery } from '@convex-dev/react-query';
-import { api } from '../../convex/_generated/api';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
@@ -14,25 +11,20 @@ export const Route = createFileRoute('/signup')({
 
 function SignUp() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { data: user } = useSuspenseQuery(
-    convexQuery(api.auth.getCurrentUser, {}),
-  );
+  const { data: session } = authClient.useSession();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already signed in
   useEffect(() => {
-    if (user) {
+    if (session) {
       navigate({ to: '/' });
     }
-  }, [user, navigate]);
+  }, [session, navigate]);
 
-  // Don't render if already signed in (will redirect)
-  if (user) {
+  if (session) {
     return null;
   }
 
@@ -51,11 +43,6 @@ function SignUp() {
       if (result.error) {
         setError(result.error.message || 'Sign up failed');
       } else {
-        // Refetch the user query immediately to update the UI
-        await queryClient.refetchQueries({
-          queryKey: convexQuery(api.auth.getCurrentUser, {}).queryKey,
-        });
-        // Auto sign in after successful sign up
         navigate({ to: '/' });
       }
     } catch (err) {

@@ -3,6 +3,7 @@ import { useQuery } from 'convex/react';
 import { ChevronRight } from 'lucide-react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
+import { authClient } from '~/lib/auth-client';
 
 const routeMap: Record<string, string> = {
   '/': 'Home',
@@ -67,7 +68,7 @@ export function Breadcrumb({
     analysisId ? { id: analysisId } : 'skip',
   );
 
-  const currentUser = useQuery(api.auth.getCurrentUser, {});
+  const { data: session } = authClient.useSession();
 
   const dashboard = useQuery(
     api.dashboards.getForViewer,
@@ -115,7 +116,7 @@ export function Breadcrumb({
       });
       breadcrumbItems.push({
         label: analysis.name,
-        isEditable: currentUser?._id === analysis.createdBy,
+        isEditable: session?.user.id === analysis.createdBy,
       });
     }
   } else if (pathname.startsWith('/datasource/')) {
