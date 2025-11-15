@@ -39,16 +39,16 @@
   --secondary-foreground: 240 10% 8%;
   --muted: 34 8% 93%;
   --muted-foreground: 240 5% 45%;
-  /* Subtle purple/indigo accent - noticeable but not overwhelming */
-  --accent: 255 65% 95%;
-  --accent-foreground: 255 70% 35%;
+  /* Teal/cyan accent - professional and modern */
+  --accent: 180 40% 95%;
+  --accent-foreground: 180 70% 30%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
   --border: 240 8% 88%;
   --input: 240 8% 88%;
   /* Accent color for focus rings */
-  --ring: 255 70% 55%;
-  --chart-1: 255 70% 55%;
+  --ring: 180 70% 50%;
+  --chart-1: 180 70% 50%;
   --chart-2: 173 58% 39%;
   --chart-3: 197 37% 24%;
   --chart-4: 43 74% 66%;
@@ -57,12 +57,12 @@
   /* Sidebar with subtle warmth */
   --sidebar: 34 10% 95%;
   --sidebar-foreground: 240 8% 22%;
-  --sidebar-primary: 255 70% 35%;
+  --sidebar-primary: 180 70% 30%;
   --sidebar-primary-foreground: 34 12% 96%;
-  --sidebar-accent: 255 50% 96%;
-  --sidebar-accent-foreground: 255 70% 35%;
+  --sidebar-accent: 180 35% 96%;
+  --sidebar-accent-foreground: 180 70% 30%;
   --sidebar-border: 240 8% 88%;
-  --sidebar-ring: 255 70% 55%;
+  --sidebar-ring: 180 70% 50%;
 }
 
 .dark {
@@ -82,16 +82,16 @@
   --secondary-foreground: 220 5% 90%;
   --muted: 220 10% 13%;
   --muted-foreground: 220 4% 65%;
-  /* Subtle purple/indigo accent for dark mode */
-  --accent: 255 30% 18%;
-  --accent-foreground: 255 70% 75%;
+  /* Teal/cyan accent for dark mode */
+  --accent: 180 30% 18%;
+  --accent-foreground: 180 70% 70%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
   --border: 220 10% 16%;
   --input: 220 10% 16%;
   /* Accent color for focus rings in dark mode */
-  --ring: 255 70% 65%;
-  --chart-1: 255 70% 65%;
+  --ring: 180 70% 60%;
+  --chart-1: 180 70% 60%;
   --chart-2: 160 60% 45%;
   --chart-3: 30 80% 55%;
   --chart-4: 280 65% 60%;
@@ -99,12 +99,12 @@
   /* Sidebar with slate background */
   --sidebar: 220 14% 10%;
   --sidebar-foreground: 220 4% 90%;
-  --sidebar-primary: 255 70% 65%;
+  --sidebar-primary: 180 70% 60%;
   --sidebar-primary-foreground: 220 13% 9%;
-  --sidebar-accent: 255 25% 15%;
-  --sidebar-accent-foreground: 255 70% 75%;
+  --sidebar-accent: 180 25% 15%;
+  --sidebar-accent-foreground: 180 70% 70%;
   --sidebar-border: 220 10% 16%;
-  --sidebar-ring: 255 70% 65%;
+  --sidebar-ring: 180 70% 60%;
 }
 
 @theme inline {
