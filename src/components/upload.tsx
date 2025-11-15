@@ -176,9 +176,9 @@ export function Upload() {
         className="absolute inset-0 -z-10 overflow-hidden"
         style={{
           background: `
-            radial-gradient(circle at 20% 10%, hsl(255, 70%, 55%) 0%, transparent 60%),
-            radial-gradient(circle at 80% 15%, hsl(255, 70%, 65%) 0%, transparent 60%),
-            radial-gradient(circle at 50% 5%, hsl(255, 70%, 55%) 0%, transparent 50%)
+            radial-gradient(circle at 20% 10%, hsl(var(--ring)) 0%, transparent 60%),
+            radial-gradient(circle at 80% 15%, hsl(var(--chart-1)) 0%, transparent 60%),
+            radial-gradient(circle at 50% 5%, hsl(var(--ring)) 0%, transparent 50%)
           `,
           opacity: 0.3,
           filter: 'blur(120px)',
@@ -188,7 +188,7 @@ export function Upload() {
         className="absolute inset-0 -z-10"
         style={{
           background: `
-            radial-gradient(ellipse 150% 100% at top, hsl(255, 70%, 55%) 0%, transparent 80%)
+            radial-gradient(ellipse 150% 100% at top, hsl(var(--ring)) 0%, transparent 80%)
           `,
           opacity: 0.2,
           filter: 'blur(80px)',
@@ -216,7 +216,7 @@ export function Upload() {
             className="w-full h-20 text-lg cursor-pointer relative overflow-hidden bg-card/80 dark:bg-card/60 backdrop-blur-md border-2 border-border/50 hover:border-ring/50 hover:bg-card/90 dark:hover:bg-card/70 transition-all"
             style={{
               boxShadow:
-                '0 0 40px hsl(255, 70%, 55%, 0.4), 0 0 80px hsl(255, 70%, 55%, 0.2), 0 0 120px hsl(255, 70%, 55%, 0.1)',
+                '0 0 40px hsl(var(--ring) / 0.4), 0 0 80px hsl(var(--ring) / 0.2), 0 0 120px hsl(var(--ring) / 0.1)',
             }}
           >
             {isUploading ? (
