@@ -234,6 +234,8 @@ function AnalysisPage() {
               onVisualSelect={(visual) =>
                 setSelectedVisualId(visual?._id || null)
               }
+              tableName={tableName}
+              tableLoaded={tableLoaded}
             />
             <div className="flex-1 overflow-auto">
               <VisualCanvas

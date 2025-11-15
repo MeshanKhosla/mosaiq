@@ -10,6 +10,10 @@ class TableChart extends BaseChart {
     axes: Axes,
     columns: Array<Column>,
     tableName: string = 'data',
+    filters?: Array<{
+      columnId: string;
+      selectedValues: Array<string | number>;
+    }>,
   ): string {
     if (!axes || !axes.measures) {
       throw new Error('Axes must have measures');
@@ -78,12 +82,13 @@ class TableChart extends BaseChart {
 
     const escapedTableName = escapeColumnName(tableName);
     const selectClause = selectParts.join(', ');
+    const whereClause = this.buildWhereClause(filters, columns);
     const groupByClause =
       groupByParts.length > 0 ? ` GROUP BY ${groupByParts.join(', ')}` : '';
     const orderByClause =
       orderByParts.length > 0 ? ` ORDER BY ${orderByParts.join(', ')}` : '';
 
-    return `SELECT ${selectClause} FROM ${escapedTableName}${groupByClause}${orderByClause}`;
+    return `SELECT ${selectClause} FROM ${escapedTableName}${whereClause}${groupByClause}${orderByClause}`;
   }
 
   validateAxes(axes: Axes): true | string {

@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { internalMutation, query } from './_generated/server';
+import { internalMutation, mutation, query } from './_generated/server';
 import { authComponent } from './auth';
 
 export const create = internalMutation({
@@ -34,6 +34,14 @@ export const getByAnalysis = query({
       name: v.string(),
       analysisId: v.id('analyses'),
       createdBy: v.string(),
+      filters: v.optional(
+        v.array(
+          v.object({
+            columnId: v.string(),
+            selectedValues: v.array(v.union(v.string(), v.number())),
+          }),
+        ),
+      ),
     }),
     v.null(),
   ),
@@ -70,6 +78,14 @@ export const get = query({
       name: v.string(),
       analysisId: v.id('analyses'),
       createdBy: v.string(),
+      filters: v.optional(
+        v.array(
+          v.object({
+            columnId: v.string(),
+            selectedValues: v.array(v.union(v.string(), v.number())),
+          }),
+        ),
+      ),
     }),
     v.null(),
   ),
@@ -83,5 +99,35 @@ export const get = query({
       return null;
     }
     return sheet;
+  },
+});
+
+export const updateFilters = mutation({
+  args: {
+    sheetId: v.id('sheets'),
+    filters: v.array(
+      v.object({
+        columnId: v.string(),
+        selectedValues: v.array(v.union(v.string(), v.number())),
+      }),
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      throw new Error('Not authenticated');
+    }
+
+    const sheet = await ctx.db.get(args.sheetId);
+    if (!sheet || sheet.createdBy !== user._id) {
+      throw new Error('Sheet not found or access denied');
+    }
+
+    await ctx.db.patch(args.sheetId, {
+      filters: args.filters.length > 0 ? args.filters : undefined,
+    });
+
+    return null;
   },
 });

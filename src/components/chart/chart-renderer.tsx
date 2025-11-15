@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useQuery } from 'convex/react';
 import { useDuckDbQuery } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
 import {
@@ -9,6 +10,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp } from 'lucide-react';
+import { api } from '../../../convex/_generated/api';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
 import type { ColorPalette } from '~/lib/types';
@@ -178,6 +180,7 @@ export function ChartRenderer(props: {
   tableLoaded: boolean;
   width?: number;
   height?: number;
+  sheetId: Id<'sheets'>;
 }) {
   const {
     visual,
@@ -188,7 +191,11 @@ export function ChartRenderer(props: {
     tableLoaded,
     width,
     height,
+    sheetId,
   } = props;
+
+  const sheet = useQuery(api.sheets.get, { id: sheetId });
+  const filters = sheet?.filters || [];
 
   const { theme } = useTheme();
   const isDark = theme === 'dark';
@@ -223,7 +230,12 @@ export function ChartRenderer(props: {
       chartInstance
     ) {
       try {
-        return chartInstance.getDuckDbQuery(visual.axes, columns, tableName);
+        return chartInstance.getDuckDbQuery(
+          visual.axes,
+          columns,
+          tableName,
+          filters.length > 0 ? filters : undefined,
+        );
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         toast.error('Chart config error', { description: msg });
@@ -238,6 +250,7 @@ export function ChartRenderer(props: {
     tableName,
     columns,
     chartInstance,
+    filters,
   ]);
 
   const {
