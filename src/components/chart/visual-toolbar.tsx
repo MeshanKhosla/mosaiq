@@ -81,7 +81,7 @@ function FieldWells({
   const currentMeasures = selectedVisual.axes?.measures || [];
 
   return (
-    <div className="flex-1 border-r border-border pr-3">
+    <div className="flex-1 border-l border-border/30 pl-3">
       <div className="flex items-center gap-2">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Field Wells
@@ -587,44 +587,42 @@ export function VisualToolbar({
   };
 
   return (
-    <div className="border-b border-border bg-background/50 backdrop-blur-sm -mx-6">
-      <div className="flex items-center gap-2 px-3 py-1.5">
-        <div className="flex items-center gap-1 border-r border-border pr-3">
-          {visualTypes.map(({ type, label, icon: Icon }) => (
-            <Button
-              key={type}
-              variant="ghost"
-              size="sm"
-              onClick={() => handleCreateVisual(type)}
-              className="h-9 w-9 p-0"
-              title={label}
-            >
-              <Icon className="h-4 w-4" />
-            </Button>
-          ))}
-        </div>
+    <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className="flex items-center gap-1 border-l border-border/30 pl-3">
+        {visualTypes.map(({ type, label, icon: Icon }) => (
+          <Button
+            key={type}
+            variant="ghost"
+            size="sm"
+            onClick={() => handleCreateVisual(type)}
+            className="h-9 w-9 p-0"
+            title={label}
+          >
+            <Icon className="h-4 w-4" />
+          </Button>
+        ))}
+      </div>
 
-        {selectedVisual && (
-          <FieldWells
-            selectedVisual={selectedVisual}
-            columns={columns}
-            dimensionColumns={dimensionColumns}
-            measureColumns={measureColumns}
-            onToggleDimension={handleToggleDimension}
-            onToggleMeasure={handleToggleMeasure}
-            onRemoveDimension={handleRemoveDimension}
-            onRemoveMeasure={handleRemoveMeasure}
-          />
-        )}
+      {selectedVisual && (
+        <FieldWells
+          selectedVisual={selectedVisual}
+          columns={columns}
+          dimensionColumns={dimensionColumns}
+          measureColumns={measureColumns}
+          onToggleDimension={handleToggleDimension}
+          onToggleMeasure={handleToggleMeasure}
+          onRemoveDimension={handleRemoveDimension}
+          onRemoveMeasure={handleRemoveMeasure}
+        />
+      )}
 
-        <div className="ml-auto">
-          <Filters
-            sheetId={sheetId}
-            columns={columns}
-            tableName={tableName}
-            tableLoaded={tableLoaded}
-          />
-        </div>
+      <div className="ml-auto">
+        <Filters
+          sheetId={sheetId}
+          columns={columns}
+          tableName={tableName}
+          tableLoaded={tableLoaded}
+        />
       </div>
     </div>
   );

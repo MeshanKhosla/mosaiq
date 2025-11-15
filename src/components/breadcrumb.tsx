@@ -42,12 +42,12 @@ export function Breadcrumb({
   const router = useRouterState();
   const pathname = router.location.pathname;
 
-  const datasourceIdMatch = pathname.match(/^\/datasource\/(.+)$/);
+  const datasourceIdMatch = pathname.match(/^\/datasource\/([^/]+)/);
   const datasourceId = datasourceIdMatch
     ? (datasourceIdMatch[1] as Id<'datasources'>)
     : null;
 
-  const analysisIdMatch = pathname.match(/^\/analysis\/(.+)$/);
+  const analysisIdMatch = pathname.match(/^\/analysis\/([^/]+)/);
   const analysisId = analysisIdMatch
     ? (analysisIdMatch[1] as Id<'analyses'>)
     : null;
