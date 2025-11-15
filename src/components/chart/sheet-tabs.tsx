@@ -181,7 +181,7 @@ export function SheetTabs({ sheets, analysisId }: SheetTabsProps) {
   }
 
   return (
-    <div className="flex items-center gap-1 border-b border-border bg-background px-2">
+    <div className="flex items-center gap-1 shrink-0">
       <div className="flex items-center gap-1 overflow-x-auto">
         {sheets.map((sheet) => {
           const isActive = sheet._id === activeSheetId;

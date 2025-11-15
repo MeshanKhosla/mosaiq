@@ -246,22 +246,24 @@ function SheetPage() {
         ],
       }}
     >
-      <div className="flex h-[calc(100vh-8rem)] flex-col -mt-6">
+      <div className="flex h-[calc(100vh-8rem)] flex-col -mt-6 -mx-6">
         {datasource && (
           <>
-            <SheetTabs sheets={sheets} analysisId={analysisId} />
-            <VisualToolbar
-              onCreateVisual={handleCreateVisual}
-              sheetId={currentSheetId}
-              columns={datasource.columns}
-              selectedVisual={selectedVisual}
-              onVisualSelect={(visual) =>
-                setSelectedVisualId(visual?._id || null)
-              }
-              tableName={tableName}
-              tableLoaded={tableLoaded}
-            />
-            <div className="flex-1 overflow-auto">
+            <div className="flex items-center gap-2 border-b border-border/30 px-3 py-1">
+              <SheetTabs sheets={sheets} analysisId={analysisId} />
+              <VisualToolbar
+                onCreateVisual={handleCreateVisual}
+                sheetId={currentSheetId}
+                columns={datasource.columns}
+                selectedVisual={selectedVisual}
+                onVisualSelect={(visual) =>
+                  setSelectedVisualId(visual?._id || null)
+                }
+                tableName={tableName}
+                tableLoaded={tableLoaded}
+              />
+            </div>
+            <div className="flex-1 overflow-auto px-6">
               <VisualCanvas
                 sheetId={currentSheetId}
                 datasourceId={datasource._id}
