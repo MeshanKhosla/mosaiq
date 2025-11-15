@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as DatasourcesRouteImport } from './routes/datasources'
+import { Route as DashboardsRouteImport } from './routes/dashboards'
 import { Route as AnalysesRouteImport } from './routes/analyses'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DatasourceIdRouteImport } from './routes/datasource.$id'
@@ -34,6 +35,11 @@ const SigninRoute = SigninRouteImport.update({
 const DatasourcesRoute = DatasourcesRouteImport.update({
   id: '/datasources',
   path: '/datasources',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardsRoute = DashboardsRouteImport.update({
+  id: '/dashboards',
+  path: '/dashboards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnalysesRoute = AnalysesRouteImport.update({
@@ -80,6 +86,7 @@ const AnalysisIdSheetSheetIdRoute = AnalysisIdSheetSheetIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analyses': typeof AnalysesRoute
+  '/dashboards': typeof DashboardsRoute
   '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analyses': typeof AnalysesRoute
+  '/dashboards': typeof DashboardsRoute
   '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analyses': typeof AnalysesRoute
+  '/dashboards': typeof DashboardsRoute
   '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/analyses'
+    | '/dashboards'
     | '/datasources'
     | '/signin'
     | '/signup'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/analyses'
+    | '/dashboards'
     | '/datasources'
     | '/signin'
     | '/signup'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/analyses'
+    | '/dashboards'
     | '/datasources'
     | '/signin'
     | '/signup'
@@ -162,6 +174,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalysesRoute: typeof AnalysesRoute
+  DashboardsRoute: typeof DashboardsRoute
   DatasourcesRoute: typeof DatasourcesRoute
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       path: '/datasources'
       fullPath: '/datasources'
       preLoaderRoute: typeof DatasourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboards': {
+      id: '/dashboards'
+      path: '/dashboards'
+      fullPath: '/dashboards'
+      preLoaderRoute: typeof DashboardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analyses': {
@@ -280,6 +300,7 @@ const DashboardIdRouteWithChildren = DashboardIdRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysesRoute: AnalysesRoute,
+  DashboardsRoute: DashboardsRoute,
   DatasourcesRoute: DatasourcesRoute,
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,

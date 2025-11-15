@@ -1,4 +1,4 @@
-import { Database, FileText, Home } from 'lucide-react';
+import { Database, FileText, Home, LayoutDashboard } from 'lucide-react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
@@ -43,6 +43,11 @@ const menuItems = [
     title: 'Analyses',
     url: '/analyses',
     icon: FileText,
+  },
+  {
+    title: 'Dashboards',
+    url: '/dashboards',
+    icon: LayoutDashboard,
   },
 ];
 

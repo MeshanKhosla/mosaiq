@@ -77,7 +77,24 @@ function DashboardSheetPage() {
     dashboard ? { analysisId: dashboard.sourceAnalysisId } : 'skip',
   );
 
-  const updateDashboardName = useMutation(api.dashboards.updateName);
+  const updateDashboardName = useMutation(
+    api.dashboards.updateName,
+  ).withOptimisticUpdate((localStore, args) => {
+    const existingDashboard = localStore.getQuery(api.dashboards.getForViewer, {
+      id: args.id,
+    });
+
+    if (existingDashboard !== undefined && existingDashboard !== null) {
+      localStore.setQuery(
+        api.dashboards.getForViewer,
+        { id: args.id },
+        {
+          ...existingDashboard,
+          name: args.name.trim(),
+        },
+      );
+    }
+  });
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState('');

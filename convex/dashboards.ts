@@ -302,6 +302,7 @@ export const list = query({
         name: v.string(),
         sourceAnalysisId: v.id('analyses'),
         createdBy: v.string(),
+        isPublic: v.optional(v.boolean()),
       }),
     ),
     v.null(),

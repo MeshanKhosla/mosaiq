@@ -55,7 +55,24 @@ function SheetPage() {
   const currentSheetId = sheetId as Id<'sheets'>;
   const analysis = useQuery(api.analyses.get, { id: analysisId });
   const sheets = useQuery(api.sheets.getAllByAnalysis, { analysisId });
-  const updateAnalysisName = useMutation(api.analyses.updateName);
+  const updateAnalysisName = useMutation(
+    api.analyses.updateName,
+  ).withOptimisticUpdate((localStore, args) => {
+    const existingAnalysis = localStore.getQuery(api.analyses.get, {
+      id: args.id,
+    });
+
+    if (existingAnalysis !== undefined && existingAnalysis !== null) {
+      localStore.setQuery(
+        api.analyses.get,
+        { id: args.id },
+        {
+          ...existingAnalysis,
+          name: args.name.trim(),
+        },
+      );
+    }
+  });
   const createVisual = useMutation(api.visuals.create).withOptimisticUpdate(
     (localStore, args) => {
       const existingVisuals = localStore.getQuery(api.visuals.getBySheet, {
