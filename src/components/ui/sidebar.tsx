@@ -178,7 +178,7 @@ const SidebarProvider = forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              'group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar',
+              'group/sidebar-wrapper flex min-h-screen w-full has-[[data-variant=inset]]:bg-sidebar',
               className,
             )}
             ref={ref}
@@ -281,7 +281,7 @@ const Sidebar = forwardRef<
         >
           <div
             className={cn(
-              'absolute inset-y-0 hidden h-svh transition-[width] duration-75 ease-linear md:flex',
+              'fixed top-0 bottom-0 hidden transition-[width] duration-75 ease-linear md:flex',
               side === 'left' ? 'left-0' : 'right-0',
               // Adjust the padding for floating and inset variants.
               variant === 'floating' || variant === 'inset'
