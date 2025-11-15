@@ -95,6 +95,7 @@ export function Breadcrumb({
 
   if (pathname.startsWith('/dashboard/')) {
     if (dashboard && dashboard.name) {
+      breadcrumbItems.push({ label: 'Dashboards', path: '/dashboards' });
       breadcrumbItems.push({
         label: dashboard.name,
         isEditable: dashboard.isAuthor,
