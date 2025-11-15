@@ -30,7 +30,7 @@ function formatDate(timestamp: number) {
 }
 
 function HomePage() {
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
   const dashboards = useConvexQuery(api.dashboards.list);
   const analyses = useConvexQuery(api.analyses.list);
   const datasources = useConvexQuery(api.datasources.list);
@@ -55,6 +55,94 @@ function HomePage() {
       .sort((a, b) => b._creationTime - a._creationTime)
       .slice(0, 5);
   }, [datasources]);
+
+  if (isPending) {
+    return (
+      <AppLayout>
+        <div className="space-y-4">
+          <div className="relative pt-8 pb-8 min-h-[25vh]">
+            <div
+              className="absolute inset-0 -z-10 overflow-hidden"
+              style={{
+                background: `
+                  radial-gradient(circle at 20% 10%, hsl(var(--ring)) 0%, transparent 60%),
+                  radial-gradient(circle at 80% 15%, hsl(var(--chart-1)) 0%, transparent 60%),
+                  radial-gradient(circle at 50% 5%, hsl(var(--ring)) 0%, transparent 50%)
+                `,
+                opacity: 0.3,
+                filter: 'blur(120px)',
+              }}
+            />
+            <div
+              className="absolute inset-0 -z-10"
+              style={{
+                background: `
+                  radial-gradient(ellipse 150% 100% at top, hsl(var(--ring)) 0%, transparent 80%)
+                `,
+                opacity: 0.2,
+                filter: 'blur(80px)',
+              }}
+            />
+            <div className="w-full space-y-4 px-4">
+              <div className="flex flex-col items-center space-y-4 w-full">
+                <Skeleton className="w-full h-20" />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton className="h-8 w-48" />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-4 w-24" />
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton className="h-8 w-48" />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-4 w-24" />
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton className="h-8 w-48" />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-4 w-24" />
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (!session) {
     return (
