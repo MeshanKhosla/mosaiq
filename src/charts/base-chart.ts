@@ -16,6 +16,11 @@ export type ChartRequirements = {
 
 type Column = Doc<'datasources'>['columns'][number];
 
+export type Filter = {
+  columnId: string;
+  selectedValues: Array<string | number>;
+};
+
 class BaseChart {
   /**
    * Get the requirements for the chart.
@@ -26,20 +31,81 @@ class BaseChart {
   }
 
   /**
+   * Build a WHERE clause from filters.
+   * @param filters - Array of filter objects
+   * @param columns - The columns from the datasource
+   * @returns WHERE clause string or empty string if no filters
+   */
+  buildWhereClause(
+    filters: Array<Filter> | undefined,
+    columns: Array<Column>,
+  ): string {
+    if (!filters || filters.length === 0) {
+      return '';
+    }
+
+    const escapeColumnName = (name: string): string => {
+      if (
+        /[^a-zA-Z0-9_]/.test(name) ||
+        /^\d/.test(name) ||
+        ['select', 'from', 'where', 'group', 'order', 'by', 'as'].includes(
+          name.toLowerCase(),
+        )
+      ) {
+        return `"${name.replace(/"/g, '""')}"`;
+      }
+      return name;
+    };
+
+    const escapeValue = (value: string | number): string => {
+      if (typeof value === 'string') {
+        return `'${value.replace(/'/g, "''")}'`;
+      }
+      return String(value);
+    };
+
+    const conditions: Array<string> = [];
+
+    for (const filter of filters) {
+      if (filter.selectedValues.length === 0) {
+        continue;
+      }
+
+      const column = columns.find((col) => col._id === filter.columnId);
+      if (!column) {
+        continue;
+      }
+
+      const columnName = escapeColumnName(column.name);
+      const values = filter.selectedValues.map(escapeValue).join(', ');
+      conditions.push(`${columnName} IN (${values})`);
+    }
+
+    if (conditions.length === 0) {
+      return '';
+    }
+
+    return ` WHERE ${conditions.join(' AND ')}`;
+  }
+
+  /**
    * Get the DuckDB query for the chart.
    * @param axes - The axes of the chart.
    * @param columns - The columns from the datasource.
    * @param tableName - The name of the table to query.
+   * @param filters - Optional filters to apply to the query.
    * @returns The DuckDB query.
    */
   getDuckDbQuery(
     axes: Axes,
     columns: Array<Column>,
     tableName?: string,
+    filters?: Array<Filter>,
   ): string {
     axes;
     columns;
     tableName;
+    filters;
     throw new Error('Not implemented');
   }
 

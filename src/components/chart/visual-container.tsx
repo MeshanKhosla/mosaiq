@@ -301,6 +301,7 @@ export function VisualContainer({
         tableLoaded={tableLoaded}
         width={localPosition.width}
         height={localPosition.height}
+        sheetId={visual.sheetId}
       />
     );
   };

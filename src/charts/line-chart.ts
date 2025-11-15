@@ -10,6 +10,10 @@ class LineChart extends BaseChart {
     axes: Axes,
     columns: Array<Column>,
     tableName: string = 'data',
+    filters?: Array<{
+      columnId: string;
+      selectedValues: Array<string | number>;
+    }>,
   ): string {
     if (!axes || !axes.dimensions || !axes.measures) {
       throw new Error('Axes must have dimensions and measures');
@@ -47,12 +51,15 @@ class LineChart extends BaseChart {
     const dimensionName = escapeColumnName(dimensionColumn.name);
     const measureName = escapeColumnName(measureColumn.name);
 
+    const whereClause = this.buildWhereClause(filters, columns);
+
     // Generate SQL query for line chart
     // SELECT dimension, SUM(measure) as value
     // FROM table
+    // [WHERE filters]
     // GROUP BY dimension
     // ORDER BY dimension (for proper line continuity, especially for time-series)
-    return `SELECT ${dimensionName}, SUM(${measureName}) as value FROM ${escapeColumnName(tableName)} GROUP BY ${dimensionName} ORDER BY ${dimensionName}`;
+    return `SELECT ${dimensionName}, SUM(${measureName}) as value FROM ${escapeColumnName(tableName)}${whereClause} GROUP BY ${dimensionName} ORDER BY ${dimensionName}`;
   }
 
   validateAxes(axes: Axes): true | string {

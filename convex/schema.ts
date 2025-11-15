@@ -31,6 +31,14 @@ export default defineSchema({
     name: v.string(),
     analysisId: v.id('analyses'),
     createdBy: v.string(),
+    filters: v.optional(
+      v.array(
+        v.object({
+          columnId: v.string(),
+          selectedValues: v.array(v.union(v.string(), v.number())),
+        }),
+      ),
+    ),
   })
     .index('by_createdBy', ['createdBy'])
     .index('by_analysisId', ['analysisId']),
