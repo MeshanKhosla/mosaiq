@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
 import { insertFile, useDuckDb } from 'duckdb-wasm-kit';
@@ -13,6 +13,7 @@ import { AppLayout } from '~/components/app-layout';
 import { VisualToolbar } from '~/components/chart/visual-toolbar';
 import { VisualCanvas } from '~/components/chart/visual-canvas';
 import { SheetTabs } from '~/components/chart/sheet-tabs';
+import { ShareDashboardModal } from '~/components/dashboard/share-dashboard-modal';
 
 export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
   component: SheetPage,
@@ -50,12 +51,11 @@ export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
 
 function SheetPage() {
   const { id, sheetId } = Route.useParams();
-  const navigate = useNavigate();
   const analysisId = id as Id<'analyses'>;
   const currentSheetId = sheetId as Id<'sheets'>;
   const analysis = useQuery(api.analyses.get, { id: analysisId });
   const sheets = useQuery(api.sheets.getAllByAnalysis, { analysisId });
-  const createDashboard = useMutation(api.dashboards.create);
+  const updateAnalysisName = useMutation(api.analyses.updateName);
   const createVisual = useMutation(api.visuals.create).withOptimisticUpdate(
     (localStore, args) => {
       const existingVisuals = localStore.getQuery(api.visuals.getBySheet, {
@@ -89,10 +89,49 @@ function SheetPage() {
   const visuals = useQuery(api.visuals.getBySheet, {
     sheetId: currentSheetId,
   });
-  const [isPublishing, setIsPublishing] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState('');
+  const hasFocusedRef = useRef<boolean>(false);
   const [selectedVisualId, setSelectedVisualId] =
     useState<Id<'visuals'> | null>(null);
   const tempIdRef = useRef<Id<'visuals'> | null>(null);
+
+  useEffect(() => {
+    if (analysis) {
+      setEditName(analysis.name);
+    }
+  }, [analysis]);
+
+  const handleNameBlur = async () => {
+    setIsEditingName(false);
+    if (analysis && editName.trim() && editName.trim() !== analysis.name) {
+      try {
+        await updateAnalysisName({ id: analysisId, name: editName.trim() });
+      } catch (error) {
+        toast.error('Failed to update analysis name', {
+          description:
+            error instanceof Error
+              ? error.message
+              : 'An unknown error occurred',
+        });
+        setEditName(analysis.name);
+      }
+    } else if (analysis) {
+      setEditName(analysis.name);
+    }
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      if (analysis) {
+        setEditName(analysis.name);
+      }
+      setIsEditingName(false);
+    }
+  };
 
   const datasourceId = analysis?.datasourceIds[0];
   const datasource = useQuery(
@@ -205,34 +244,11 @@ function SheetPage() {
   const selectedVisual =
     visuals?.find((v) => v._id === selectedVisualId) || null;
 
-  const handlePublishToDashboard = async () => {
+  const handlePublishToDashboard = () => {
     if (!analysis) {
       return;
     }
-
-    setIsPublishing(true);
-    try {
-      const dashboardName = `${analysis.name} Dashboard`;
-      const dashboardId = await createDashboard({
-        analysisId: analysis._id,
-        name: dashboardName,
-      });
-      toast.success('Dashboard created successfully', {
-        description: `"${dashboardName}" has been published to dashboard.`,
-      });
-      await navigate({
-        to: '/dashboard/$id',
-        params: { id: dashboardId },
-      });
-    } catch (error) {
-      console.error('Failed to create dashboard:', error);
-      toast.error('Failed to publish to dashboard', {
-        description:
-          error instanceof Error ? error.message : 'An unknown error occurred',
-      });
-    } finally {
-      setIsPublishing(false);
-    }
+    setShowShareModal(true);
   };
 
   if (dbError) {
@@ -253,15 +269,28 @@ function SheetPage() {
   return (
     <AppLayout
       breadcrumbEditingProps={{
+        isEditing: isEditingName,
+        editName: editName,
+        hasFocusedRef: hasFocusedRef,
+        onEditClick: () => setIsEditingName(true),
+        onNameChange: setEditName,
+        onKeyDown: handleNameKeyDown,
+        onBlur: handleNameBlur,
         ctaButtons: [
           {
-            label: isPublishing ? 'Publishing...' : 'Publish to dashboard',
+            label: 'Publish to dashboard',
             onClick: handlePublishToDashboard,
-            disabled: isPublishing || !analysis,
+            disabled: !analysis,
           },
         ],
       }}
     >
+      <ShareDashboardModal
+        open={showShareModal}
+        onOpenChange={setShowShareModal}
+        analysisId={analysis._id}
+        defaultDashboardName={`${analysis.name} Dashboard`}
+      />
       <div className="flex h-[calc(100vh-8rem)] flex-col -mt-6 -mx-6">
         {datasource && (
           <>

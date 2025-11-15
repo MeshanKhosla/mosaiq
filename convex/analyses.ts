@@ -150,3 +150,26 @@ export const create = mutation({
     return analysisId;
   },
 });
+
+export const updateName = mutation({
+  args: {
+    id: v.id('analyses'),
+    name: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+    const analysis = await ctx.db.get(args.id);
+    if (!analysis || analysis.createdBy !== user._id) {
+      throw new Error('Analysis not found or unauthorized');
+    }
+    const trimmedName = args.name.trim();
+    if (!trimmedName) {
+      throw new Error('Analysis name cannot be empty');
+    }
+    await ctx.db.patch(args.id, {
+      name: trimmedName,
+    });
+    return null;
+  },
+});

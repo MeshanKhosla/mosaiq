@@ -67,6 +67,8 @@ export function Breadcrumb({
     analysisId ? { id: analysisId } : 'skip',
   );
 
+  const currentUser = useQuery(api.auth.getCurrentUser, {});
+
   const dashboard = useQuery(
     api.dashboards.getForViewer,
     dashboardId ? { id: dashboardId } : 'skip',
@@ -110,7 +112,10 @@ export function Breadcrumb({
         label: analysisDatasource.name,
         path: `/datasource/${analysisDatasourceId}`,
       });
-      breadcrumbItems.push({ label: analysis.name });
+      breadcrumbItems.push({
+        label: analysis.name,
+        isEditable: currentUser?._id === analysis.createdBy,
+      });
     }
   } else if (pathname.startsWith('/datasource/')) {
     if (datasource && datasource.name) {
@@ -137,7 +142,8 @@ export function Breadcrumb({
             item.isEditable &&
             isLastItem &&
             (pathname.startsWith('/datasource/') ||
-              pathname.startsWith('/dashboard/'));
+              pathname.startsWith('/dashboard/') ||
+              pathname.startsWith('/analysis/'));
 
           return (
             <div key={index} className="flex items-center gap-1.5">
