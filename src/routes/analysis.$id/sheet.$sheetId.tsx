@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
-import { insertFile, useDuckDb } from 'duckdb-wasm-kit';
+import { insertFile } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
@@ -14,6 +14,7 @@ import { VisualToolbar } from '~/components/chart/visual-toolbar';
 import { VisualCanvas } from '~/components/chart/visual-canvas';
 import { SheetTabs } from '~/components/chart/sheet-tabs';
 import { ShareDashboardModal } from '~/components/dashboard/share-dashboard-modal';
+import { useDuckDbContext } from '~/components/duckdb-provider';
 
 export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
   component: SheetPage,
@@ -169,7 +170,7 @@ function SheetPage() {
     queryFn: () => fetch(storageUrl!).then((res) => res.text()),
   });
 
-  const { db, loading: dbLoading, error: dbError } = useDuckDb();
+  const { db, loading: dbLoading, error: dbError } = useDuckDbContext();
 
   let tableName: string | undefined;
   if (datasource) {
