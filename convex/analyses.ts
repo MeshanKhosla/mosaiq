@@ -57,6 +57,33 @@ export const get = query({
   },
 });
 
+export const getForViewer = query({
+  args: {
+    id: v.id('analyses'),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id('analyses'),
+      _creationTime: v.number(),
+      datasourceIds: v.array(v.id('datasources')),
+      name: v.string(),
+      createdBy: v.string(),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return null;
+    }
+    const analysis = await ctx.db.get(args.id);
+    if (!analysis) {
+      return null;
+    }
+    return analysis;
+  },
+});
+
 export const getByDatasourceId = query({
   args: {
     datasourceId: v.id('datasources'),

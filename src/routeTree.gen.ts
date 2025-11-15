@@ -18,6 +18,7 @@ import { Route as DatasourceIdRouteImport } from './routes/datasource.$id'
 import { Route as DashboardIdRouteImport } from './routes/dashboard.$id'
 import { Route as AnalysisIdRouteImport } from './routes/analysis.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as DashboardIdSheetSheetIdRouteImport } from './routes/dashboard.$id/sheet.$sheetId'
 import { Route as AnalysisIdSheetSheetIdRouteImport } from './routes/analysis.$id/sheet.$sheetId'
 
 const SignupRoute = SignupRouteImport.update({
@@ -65,6 +66,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIdSheetSheetIdRoute = DashboardIdSheetSheetIdRouteImport.update({
+  id: '/sheet/$sheetId',
+  path: '/sheet/$sheetId',
+  getParentRoute: () => DashboardIdRoute,
+} as any)
 const AnalysisIdSheetSheetIdRoute = AnalysisIdSheetSheetIdRouteImport.update({
   id: '/sheet/$sheetId',
   path: '/sheet/$sheetId',
@@ -78,10 +84,11 @@ export interface FileRoutesByFullPath {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/analysis/$id': typeof AnalysisIdRouteWithChildren
-  '/dashboard/$id': typeof DashboardIdRoute
+  '/dashboard/$id': typeof DashboardIdRouteWithChildren
   '/datasource/$id': typeof DatasourceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/analysis/$id/sheet/$sheetId': typeof AnalysisIdSheetSheetIdRoute
+  '/dashboard/$id/sheet/$sheetId': typeof DashboardIdSheetSheetIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -90,10 +97,11 @@ export interface FileRoutesByTo {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/analysis/$id': typeof AnalysisIdRouteWithChildren
-  '/dashboard/$id': typeof DashboardIdRoute
+  '/dashboard/$id': typeof DashboardIdRouteWithChildren
   '/datasource/$id': typeof DatasourceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/analysis/$id/sheet/$sheetId': typeof AnalysisIdSheetSheetIdRoute
+  '/dashboard/$id/sheet/$sheetId': typeof DashboardIdSheetSheetIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,10 +111,11 @@ export interface FileRoutesById {
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
   '/analysis/$id': typeof AnalysisIdRouteWithChildren
-  '/dashboard/$id': typeof DashboardIdRoute
+  '/dashboard/$id': typeof DashboardIdRouteWithChildren
   '/datasource/$id': typeof DatasourceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/analysis/$id/sheet/$sheetId': typeof AnalysisIdSheetSheetIdRoute
+  '/dashboard/$id/sheet/$sheetId': typeof DashboardIdSheetSheetIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/datasource/$id'
     | '/api/auth/$'
     | '/analysis/$id/sheet/$sheetId'
+    | '/dashboard/$id/sheet/$sheetId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/datasource/$id'
     | '/api/auth/$'
     | '/analysis/$id/sheet/$sheetId'
+    | '/dashboard/$id/sheet/$sheetId'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/datasource/$id'
     | '/api/auth/$'
     | '/analysis/$id/sheet/$sheetId'
+    | '/dashboard/$id/sheet/$sheetId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -154,7 +166,7 @@ export interface RootRouteChildren {
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
   AnalysisIdRoute: typeof AnalysisIdRouteWithChildren
-  DashboardIdRoute: typeof DashboardIdRoute
+  DashboardIdRoute: typeof DashboardIdRouteWithChildren
   DatasourceIdRoute: typeof DatasourceIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -224,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/$id/sheet/$sheetId': {
+      id: '/dashboard/$id/sheet/$sheetId'
+      path: '/sheet/$sheetId'
+      fullPath: '/dashboard/$id/sheet/$sheetId'
+      preLoaderRoute: typeof DashboardIdSheetSheetIdRouteImport
+      parentRoute: typeof DashboardIdRoute
+    }
     '/analysis/$id/sheet/$sheetId': {
       id: '/analysis/$id/sheet/$sheetId'
       path: '/sheet/$sheetId'
@@ -246,6 +265,18 @@ const AnalysisIdRouteWithChildren = AnalysisIdRoute._addFileChildren(
   AnalysisIdRouteChildren,
 )
 
+interface DashboardIdRouteChildren {
+  DashboardIdSheetSheetIdRoute: typeof DashboardIdSheetSheetIdRoute
+}
+
+const DashboardIdRouteChildren: DashboardIdRouteChildren = {
+  DashboardIdSheetSheetIdRoute: DashboardIdSheetSheetIdRoute,
+}
+
+const DashboardIdRouteWithChildren = DashboardIdRoute._addFileChildren(
+  DashboardIdRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalysesRoute: AnalysesRoute,
@@ -253,7 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
   AnalysisIdRoute: AnalysisIdRouteWithChildren,
-  DashboardIdRoute: DashboardIdRoute,
+  DashboardIdRoute: DashboardIdRouteWithChildren,
   DatasourceIdRoute: DatasourceIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

@@ -52,6 +52,60 @@ export const get = query({
   },
 });
 
+export const getForViewer = query({
+  args: {
+    id: v.id('dashboards'),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id('dashboards'),
+      _creationTime: v.number(),
+      name: v.string(),
+      sourceAnalysisId: v.id('analyses'),
+      createdBy: v.string(),
+      isAuthor: v.boolean(),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return null;
+    }
+    const dashboard = await ctx.db.get(args.id);
+    if (!dashboard) {
+      return null;
+    }
+    return {
+      ...dashboard,
+      isAuthor: dashboard.createdBy === user._id,
+    };
+  },
+});
+
+export const updateName = mutation({
+  args: {
+    id: v.id('dashboards'),
+    name: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+    const dashboard = await ctx.db.get(args.id);
+    if (!dashboard || dashboard.createdBy !== user._id) {
+      throw new Error('Dashboard not found or unauthorized');
+    }
+    const trimmedName = args.name.trim();
+    if (!trimmedName) {
+      throw new Error('Dashboard name cannot be empty');
+    }
+    await ctx.db.patch(args.id, {
+      name: trimmedName,
+    });
+    return null;
+  },
+});
+
 export const list = query({
   args: {},
   returns: v.union(

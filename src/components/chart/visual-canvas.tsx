@@ -16,6 +16,10 @@ interface VisualCanvasProps {
   tableLoaded: boolean;
   selectedVisualId?: Id<'visuals'> | null;
   onVisualSelect?: (id: Id<'visuals'> | null) => void;
+  readOnly?: boolean;
+  visualsQuery?:
+    | typeof api.visuals.getBySheet
+    | typeof api.visuals.getBySheetForViewer;
 }
 
 export function VisualCanvas({
@@ -28,9 +32,11 @@ export function VisualCanvas({
   tableLoaded,
   selectedVisualId,
   onVisualSelect,
+  readOnly = false,
+  visualsQuery = api.visuals.getBySheet,
 }: VisualCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
-  const visuals = useQuery(api.visuals.getBySheet, { sheetId });
+  const visuals = useQuery(visualsQuery, { sheetId });
 
   if (visuals === undefined || visuals === null) {
     return (
@@ -45,7 +51,9 @@ export function VisualCanvas({
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
           <p className="text-sm text-muted-foreground">
-            No visuals yet. Click a visual type in the toolbar to create one.
+            {readOnly
+              ? 'No visuals to display.'
+              : 'No visuals yet. Click a visual type in the toolbar to create one.'}
           </p>
         </div>
       </div>
@@ -77,6 +85,7 @@ export function VisualCanvas({
           isSelected={selectedVisualId === visual._id}
           onSelect={() => onVisualSelect?.(visual._id)}
           canvasRef={canvasRef}
+          readOnly={readOnly}
         />
       ))}
     </div>
