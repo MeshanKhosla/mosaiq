@@ -34,6 +34,41 @@ export const get = query({
   },
 });
 
+export const getForViewer = query({
+  args: {
+    id: v.id('datasources'),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return null;
+    }
+    const datasource = await ctx.db.get(args.id);
+    if (!datasource) {
+      return null;
+    }
+    return datasource;
+  },
+});
+
+export const getStorageUrlForViewer = query({
+  args: {
+    datasourceId: v.id('datasources'),
+  },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return null;
+    }
+    const datasource = await ctx.db.get(args.datasourceId);
+    if (!datasource) {
+      return null;
+    }
+    return await ctx.storage.getUrl(datasource.storageId);
+  },
+});
+
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {

@@ -52,6 +52,11 @@ export function Breadcrumb({
     ? (analysisIdMatch[1] as Id<'analyses'>)
     : null;
 
+  const dashboardIdMatch = pathname.match(/^\/dashboard\/([^/]+)/);
+  const dashboardId = dashboardIdMatch
+    ? (dashboardIdMatch[1] as Id<'dashboards'>)
+    : null;
+
   const datasource = useQuery(
     api.datasources.get,
     datasourceId ? { id: datasourceId } : 'skip',
@@ -60,6 +65,13 @@ export function Breadcrumb({
   const analysis = useQuery(
     api.analyses.get,
     analysisId ? { id: analysisId } : 'skip',
+  );
+
+  const currentUser = useQuery(api.auth.getCurrentUser, {});
+
+  const dashboard = useQuery(
+    api.dashboards.getForViewer,
+    dashboardId ? { id: dashboardId } : 'skip',
   );
 
   const analysisDatasourceId =
@@ -81,7 +93,15 @@ export function Breadcrumb({
     isEditable?: boolean;
   }> = [{ label: 'Home', path: '/' }];
 
-  if (pathname.startsWith('/analysis/')) {
+  if (pathname.startsWith('/dashboard/')) {
+    if (dashboard && dashboard.name) {
+      breadcrumbItems.push({ label: 'Dashboards', path: '/dashboards' });
+      breadcrumbItems.push({
+        label: dashboard.name,
+        isEditable: dashboard.isAuthor,
+      });
+    }
+  } else if (pathname.startsWith('/analysis/')) {
     if (
       analysis &&
       analysisDatasource &&
@@ -93,7 +113,10 @@ export function Breadcrumb({
         label: analysisDatasource.name,
         path: `/datasource/${analysisDatasourceId}`,
       });
-      breadcrumbItems.push({ label: analysis.name });
+      breadcrumbItems.push({
+        label: analysis.name,
+        isEditable: currentUser?._id === analysis.createdBy,
+      });
     }
   } else if (pathname.startsWith('/datasource/')) {
     if (datasource && datasource.name) {
@@ -119,7 +142,9 @@ export function Breadcrumb({
           const isEditableItem =
             item.isEditable &&
             isLastItem &&
-            pathname.startsWith('/datasource/');
+            (pathname.startsWith('/datasource/') ||
+              pathname.startsWith('/dashboard/') ||
+              pathname.startsWith('/analysis/'));
 
           return (
             <div key={index} className="flex items-center gap-1.5">

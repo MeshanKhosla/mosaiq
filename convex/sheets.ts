@@ -225,6 +225,31 @@ export const deleteSheet = mutation({
   },
 });
 
+export const getByAnalysisForViewer = query({
+  args: {
+    analysisId: v.id('analyses'),
+  },
+  returns: v.union(v.array(sheetSchema), v.null()),
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return null;
+    }
+
+    const analysis = await ctx.db.get(args.analysisId);
+    if (!analysis) {
+      return null;
+    }
+
+    const sheets = await ctx.db
+      .query('sheets')
+      .withIndex('by_analysisId', (q) => q.eq('analysisId', args.analysisId))
+      .collect();
+
+    return sheets.sort((a, b) => a._creationTime - b._creationTime);
+  },
+});
+
 export const updateFilters = mutation({
   args: {
     sheetId: v.id('sheets'),

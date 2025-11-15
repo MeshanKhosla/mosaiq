@@ -1,46 +1,58 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { useQuery } from 'convex/react';
+import { Outlet, createFileRoute, redirect } from '@tanstack/react-router';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
-import { AppLayout } from '~/components/app-layout';
 
 export const Route = createFileRoute('/dashboard/$id')({
-  component: DashboardPage,
-  loader: async ({ context, params }) => {
+  component: DashboardLayout,
+  beforeLoad: async ({ context, params, location }) => {
     const dashboardId = params.id as Id<'dashboards'>;
-    return await context.queryClient.ensureQueryData(
-      convexQuery(api.dashboards.get, { id: dashboardId }),
+
+    const pathname = location.pathname || location.href || '';
+    const isSheetRoute = /\/dashboard\/[^/]+\/sheet\/[^/]+/.test(pathname);
+
+    if (isSheetRoute) {
+      return;
+    }
+
+    const dashboard = await context.queryClient.ensureQueryData(
+      convexQuery(api.dashboards.getForViewer, { id: dashboardId }),
     );
+
+    if (!dashboard) {
+      return;
+    }
+
+    const analysis = await context.queryClient.ensureQueryData(
+      convexQuery(api.analyses.getForViewer, {
+        id: dashboard.sourceAnalysisId,
+      }),
+    );
+
+    if (!analysis) {
+      return;
+    }
+
+    const sheets = await context.queryClient.ensureQueryData(
+      convexQuery(api.sheets.getByAnalysisForViewer, {
+        analysisId: dashboard.sourceAnalysisId,
+      }),
+    );
+
+    if (!sheets || sheets.length === 0) {
+      return;
+    }
+
+    throw redirect({
+      to: '/dashboard/$id/sheet/$sheetId',
+      params: {
+        id: dashboardId,
+        sheetId: sheets[0]._id,
+      },
+    });
   },
 });
 
-function DashboardPage() {
-  const { id } = Route.useParams();
-  const dashboardId = id as Id<'dashboards'>;
-  const dashboard = useQuery(api.dashboards.get, { id: dashboardId });
-
-  return (
-    <AppLayout>
-      <div className="space-y-6">
-        {dashboard ? (
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {dashboard.name}
-            </h1>
-            <p className="text-muted-foreground">
-              Dashboard content will be displayed here
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <div className="h-9 w-64 animate-pulse rounded bg-muted" />
-              <div className="mt-2 h-5 w-96 animate-pulse rounded bg-muted" />
-            </div>
-          </div>
-        )}
-      </div>
-    </AppLayout>
-  );
+function DashboardLayout() {
+  return <Outlet />;
 }

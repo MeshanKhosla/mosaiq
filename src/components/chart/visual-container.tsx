@@ -42,6 +42,7 @@ interface VisualContainerProps {
   isSelected?: boolean;
   onSelect?: () => void;
   canvasRef?: React.RefObject<HTMLDivElement | null>;
+  readOnly?: boolean;
 }
 
 export function VisualContainer({
@@ -55,6 +56,7 @@ export function VisualContainer({
   isSelected,
   onSelect,
   canvasRef,
+  readOnly = false,
 }: VisualContainerProps) {
   const [localPosition, setLocalPosition] = useState(visual.position);
 
@@ -306,6 +308,86 @@ export function VisualContainer({
     );
   };
 
+  const containerContent = (
+    <div
+      className={`relative flex h-full w-full flex-col rounded border bg-card shadow-sm ${
+        isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border'
+      }`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect?.();
+      }}
+    >
+      <div
+        className={`flex items-center gap-2 border-b border-border px-2 py-1 ${
+          readOnly ? '' : 'visual-drag-handle cursor-move'
+        }`}
+      >
+        {isEditingTitle && !readOnly ? (
+          <Input
+            ref={titleInputRef}
+            value={titleValue}
+            onChange={(e) => setTitleValue(e.target.value)}
+            onBlur={handleTitleBlur}
+            onKeyDown={handleTitleKeyDown}
+            className="h-6 text-xs font-medium flex-1"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <h3
+            className={`text-xs font-medium px-1 py-0.5 rounded shrink-0 ${
+              readOnly ? '' : 'cursor-pointer hover:bg-muted/50'
+            }`}
+            onDoubleClick={
+              readOnly
+                ? undefined
+                : (e) => {
+                    e.stopPropagation();
+                    setIsEditingTitle(true);
+                  }
+            }
+          >
+            {displayTitle}
+          </h3>
+        )}
+        <div className="flex-1" />
+        {!readOnly && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete();
+            }}
+            className="h-5 w-5 p-0 opacity-0 transition-opacity group-hover:opacity-100 shrink-0"
+            title="Delete visual"
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-hidden">{renderVisualContent()}</div>
+    </div>
+  );
+
+  if (readOnly) {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: localPosition.x,
+          top: localPosition.y,
+          width: localPosition.width,
+          height: localPosition.height,
+          zIndex: 1,
+        }}
+      >
+        {containerContent}
+      </div>
+    );
+  }
+
   return (
     <Rnd
       size={{ width: localPosition.width, height: localPosition.height }}
@@ -323,54 +405,7 @@ export function VisualContainer({
         zIndex: 1,
       }}
     >
-      <div
-        className={`relative flex h-full w-full flex-col rounded border bg-card shadow-sm ${
-          isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border'
-        }`}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect?.();
-        }}
-      >
-        <div className="visual-drag-handle flex items-center gap-2 border-b border-border px-2 py-1 cursor-move">
-          {isEditingTitle ? (
-            <Input
-              ref={titleInputRef}
-              value={titleValue}
-              onChange={(e) => setTitleValue(e.target.value)}
-              onBlur={handleTitleBlur}
-              onKeyDown={handleTitleKeyDown}
-              className="h-6 text-xs font-medium flex-1"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <h3
-              className="inline-block cursor-pointer text-xs font-medium px-1 py-0.5 rounded hover:bg-muted/50 shrink-0"
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                setIsEditingTitle(true);
-              }}
-            >
-              {displayTitle}
-            </h3>
-          )}
-          <div className="flex-1" />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete();
-            }}
-            className="h-5 w-5 p-0 opacity-0 transition-opacity group-hover:opacity-100 shrink-0"
-            title="Delete visual"
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
-
-        <div className="flex-1 overflow-hidden">{renderVisualContent()}</div>
-      </div>
+      {containerContent}
     </Rnd>
   );
 }

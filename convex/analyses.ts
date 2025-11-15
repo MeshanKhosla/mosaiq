@@ -57,6 +57,33 @@ export const get = query({
   },
 });
 
+export const getForViewer = query({
+  args: {
+    id: v.id('analyses'),
+  },
+  returns: v.union(
+    v.object({
+      _id: v.id('analyses'),
+      _creationTime: v.number(),
+      datasourceIds: v.array(v.id('datasources')),
+      name: v.string(),
+      createdBy: v.string(),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return null;
+    }
+    const analysis = await ctx.db.get(args.id);
+    if (!analysis) {
+      return null;
+    }
+    return analysis;
+  },
+});
+
 export const getByDatasourceId = query({
   args: {
     datasourceId: v.id('datasources'),
@@ -121,5 +148,28 @@ export const create = mutation({
     });
 
     return analysisId;
+  },
+});
+
+export const updateName = mutation({
+  args: {
+    id: v.id('analyses'),
+    name: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+    const analysis = await ctx.db.get(args.id);
+    if (!analysis || analysis.createdBy !== user._id) {
+      throw new Error('Analysis not found or unauthorized');
+    }
+    const trimmedName = args.name.trim();
+    if (!trimmedName) {
+      throw new Error('Analysis name cannot be empty');
+    }
+    await ctx.db.patch(args.id, {
+      name: trimmedName,
+    });
+    return null;
   },
 });

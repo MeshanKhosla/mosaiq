@@ -47,7 +47,18 @@ export default defineSchema({
     name: v.string(),
     sourceAnalysisId: v.id('analyses'),
     createdBy: v.string(),
+    isPublic: v.optional(v.boolean()),
   }).index('by_createdBy', ['createdBy']),
+
+  dashboardShares: defineTable({
+    dashboardId: v.id('dashboards'),
+    sharedWithUserId: v.string(),
+    sharedWithEmail: v.string(),
+    sharedBy: v.string(),
+  })
+    .index('by_dashboardId', ['dashboardId'])
+    .index('by_sharedWithUserId', ['sharedWithUserId'])
+    .index('by_sharedWithEmail', ['sharedWithEmail']),
 
   visuals: defineTable({
     sheetId: v.id('sheets'),
