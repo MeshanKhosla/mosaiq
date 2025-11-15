@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
@@ -63,7 +63,9 @@ function SheetPage() {
       });
 
       if (existingVisuals !== undefined && existingVisuals !== null) {
-        const tempId = `temp-${Date.now()}-${Math.random()}` as Id<'visuals'>;
+        const tempId =
+          tempIdRef.current ||
+          (`temp-${Date.now()}-${Math.random()}` as Id<'visuals'>);
         const tempVisual = {
           _id: tempId,
           _creationTime: Date.now(),
@@ -90,6 +92,7 @@ function SheetPage() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [selectedVisualId, setSelectedVisualId] =
     useState<Id<'visuals'> | null>(null);
+  const tempIdRef = useRef<Id<'visuals'> | null>(null);
 
   const datasourceId = analysis?.datasourceIds[0];
   const datasource = useQuery(
@@ -170,15 +173,28 @@ function SheetPage() {
   ) => {
     try {
       const position = getDefaultPosition();
+      // Generate temporary ID for optimistic selection
+      const tempId = `temp-${Date.now()}-${Math.random()}` as Id<'visuals'>;
+      tempIdRef.current = tempId;
+
+      // Optimistically select the new visual immediately
+      setSelectedVisualId(tempId);
+
       const visualId = await createVisual({
         sheetId: currentSheetId,
         type,
         position,
         axes: type === 'table' ? undefined : axes,
       });
+
+      // Update to the real ID when mutation completes
       setSelectedVisualId(visualId);
+      tempIdRef.current = null;
     } catch (error) {
       console.error('Failed to create visual:', error);
+      // Reset selection on error
+      setSelectedVisualId(null);
+      tempIdRef.current = null;
       toast.error('Failed to create visual', {
         description:
           error instanceof Error ? error.message : 'An unknown error occurred',

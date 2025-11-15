@@ -280,10 +280,6 @@ export function ChartRenderer(props: {
     return (
       <div className="text-sm text-muted-foreground">Loading chart data...</div>
     );
-  if (queryLoading)
-    return (
-      <div className="text-sm text-muted-foreground">Executing query...</div>
-    );
 
   if (validationResult !== true) {
     return (
@@ -295,6 +291,13 @@ export function ChartRenderer(props: {
       </div>
     );
   }
+
+  // Only show loading if axes are valid and query is loading
+  // This prevents flash when transitioning from temp to real ID (axes don't change)
+  if (queryLoading)
+    return (
+      <div className="text-sm text-muted-foreground">Executing query...</div>
+    );
 
   if (!arrow || !visual.axes)
     return (
