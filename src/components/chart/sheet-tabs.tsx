@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useMutation } from 'convex/react';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { api } from '../../../convex/_generated/api';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
@@ -10,19 +11,35 @@ import { cn } from '~/lib/utils';
 
 interface SheetTabsProps {
   sheets: Array<Doc<'sheets'>>;
-  activeSheetId: Id<'sheets'> | null;
-  onSheetSelect: (sheetId: Id<'sheets'>) => void;
   analysisId: Id<'analyses'>;
 }
 
-export function SheetTabs({
-  sheets,
-  activeSheetId,
-  onSheetSelect,
-  analysisId,
-}: SheetTabsProps) {
+export function SheetTabs({ sheets, analysisId }: SheetTabsProps) {
+  const navigate = useNavigate();
+  const params = useParams({ from: '/analysis/$id/sheet/$sheetId' });
+  const activeSheetId = (params.sheetId as Id<'sheets'>) || null;
+
   const createSheet = useMutation(api.sheets.createSheet);
-  const updateName = useMutation(api.sheets.updateName);
+  const updateName = useMutation(api.sheets.updateName).withOptimisticUpdate(
+    (localStore, args) => {
+      const existingSheets = localStore.getQuery(api.sheets.getAllByAnalysis, {
+        analysisId,
+      });
+
+      if (existingSheets !== undefined && existingSheets !== null) {
+        const updatedSheets = existingSheets.map((sheet) =>
+          sheet._id === args.sheetId
+            ? { ...sheet, name: args.name.trim() }
+            : sheet,
+        );
+        localStore.setQuery(
+          api.sheets.getAllByAnalysis,
+          { analysisId },
+          updatedSheets,
+        );
+      }
+    },
+  );
   const deleteSheet = useMutation(api.sheets.deleteSheet);
 
   const [editingSheetId, setEditingSheetId] = useState<Id<'sheets'> | null>(
@@ -48,7 +65,13 @@ export function SheetTabs({
 
     try {
       const newSheetId = await createSheet({ analysisId });
-      onSheetSelect(newSheetId);
+      await navigate({
+        to: '/analysis/$id/sheet/$sheetId',
+        params: {
+          id: analysisId,
+          sheetId: newSheetId,
+        },
+      });
       toast.success('Sheet created');
     } catch (error) {
       const errorMessage =
@@ -57,7 +80,7 @@ export function SheetTabs({
         description: errorMessage,
       });
     }
-  }, [analysisId, createSheet, maxSheetsReached, onSheetSelect]);
+  }, [analysisId, createSheet, maxSheetsReached, navigate]);
 
   const handleStartEdit = useCallback((sheet: Doc<'sheets'>) => {
     setEditingSheetId(sheet._id);
@@ -127,11 +150,19 @@ export function SheetTabs({
         return;
       }
 
+      const remainingSheets = sheets.filter((s) => s._id !== sheetId);
+      const isDeletingActiveSheet = sheetId === activeSheetId;
+
       try {
         await deleteSheet({ sheetId });
-        const remainingSheets = sheets.filter((s) => s._id !== sheetId);
-        if (remainingSheets.length > 0) {
-          onSheetSelect(remainingSheets[0]._id);
+        if (isDeletingActiveSheet && remainingSheets.length > 0) {
+          await navigate({
+            to: '/analysis/$id/sheet/$sheetId',
+            params: {
+              id: analysisId,
+              sheetId: remainingSheets[0]._id,
+            },
+          });
         }
         toast.success('Sheet deleted');
       } catch (error) {
@@ -142,7 +173,7 @@ export function SheetTabs({
         });
       }
     },
-    [deleteSheet, sheets, onSheetSelect],
+    [deleteSheet, sheets, navigate, analysisId, activeSheetId],
   );
 
   if (sheets.length === 0) {
@@ -169,7 +200,15 @@ export function SheetTabs({
             >
               <button
                 type="button"
-                onClick={() => onSheetSelect(sheet._id)}
+                onClick={() => {
+                  navigate({
+                    to: '/analysis/$id/sheet/$sheetId',
+                    params: {
+                      id: analysisId,
+                      sheetId: sheet._id,
+                    },
+                  });
+                }}
                 onDoubleClick={(e) => {
                   e.stopPropagation();
                   handleStartEdit(sheet);

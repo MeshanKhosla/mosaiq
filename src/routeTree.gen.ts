@@ -18,6 +18,7 @@ import { Route as DatasourceIdRouteImport } from './routes/datasource.$id'
 import { Route as DashboardIdRouteImport } from './routes/dashboard.$id'
 import { Route as AnalysisIdRouteImport } from './routes/analysis.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AnalysisIdSheetSheetIdRouteImport } from './routes/analysis.$id/sheet.$sheetId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -64,6 +65,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnalysisIdSheetSheetIdRoute = AnalysisIdSheetSheetIdRouteImport.update({
+  id: '/sheet/$sheetId',
+  path: '/sheet/$sheetId',
+  getParentRoute: () => AnalysisIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -71,10 +77,11 @@ export interface FileRoutesByFullPath {
   '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
-  '/analysis/$id': typeof AnalysisIdRoute
+  '/analysis/$id': typeof AnalysisIdRouteWithChildren
   '/dashboard/$id': typeof DashboardIdRoute
   '/datasource/$id': typeof DatasourceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/analysis/$id/sheet/$sheetId': typeof AnalysisIdSheetSheetIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -82,10 +89,11 @@ export interface FileRoutesByTo {
   '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
-  '/analysis/$id': typeof AnalysisIdRoute
+  '/analysis/$id': typeof AnalysisIdRouteWithChildren
   '/dashboard/$id': typeof DashboardIdRoute
   '/datasource/$id': typeof DatasourceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/analysis/$id/sheet/$sheetId': typeof AnalysisIdSheetSheetIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -94,10 +102,11 @@ export interface FileRoutesById {
   '/datasources': typeof DatasourcesRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
-  '/analysis/$id': typeof AnalysisIdRoute
+  '/analysis/$id': typeof AnalysisIdRouteWithChildren
   '/dashboard/$id': typeof DashboardIdRoute
   '/datasource/$id': typeof DatasourceIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/analysis/$id/sheet/$sheetId': typeof AnalysisIdSheetSheetIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/dashboard/$id'
     | '/datasource/$id'
     | '/api/auth/$'
+    | '/analysis/$id/sheet/$sheetId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/dashboard/$id'
     | '/datasource/$id'
     | '/api/auth/$'
+    | '/analysis/$id/sheet/$sheetId'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/dashboard/$id'
     | '/datasource/$id'
     | '/api/auth/$'
+    | '/analysis/$id/sheet/$sheetId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -141,7 +153,7 @@ export interface RootRouteChildren {
   DatasourcesRoute: typeof DatasourcesRoute
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
-  AnalysisIdRoute: typeof AnalysisIdRoute
+  AnalysisIdRoute: typeof AnalysisIdRouteWithChildren
   DashboardIdRoute: typeof DashboardIdRoute
   DatasourceIdRoute: typeof DatasourceIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -212,8 +224,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analysis/$id/sheet/$sheetId': {
+      id: '/analysis/$id/sheet/$sheetId'
+      path: '/sheet/$sheetId'
+      fullPath: '/analysis/$id/sheet/$sheetId'
+      preLoaderRoute: typeof AnalysisIdSheetSheetIdRouteImport
+      parentRoute: typeof AnalysisIdRoute
+    }
   }
 }
+
+interface AnalysisIdRouteChildren {
+  AnalysisIdSheetSheetIdRoute: typeof AnalysisIdSheetSheetIdRoute
+}
+
+const AnalysisIdRouteChildren: AnalysisIdRouteChildren = {
+  AnalysisIdSheetSheetIdRoute: AnalysisIdSheetSheetIdRoute,
+}
+
+const AnalysisIdRouteWithChildren = AnalysisIdRoute._addFileChildren(
+  AnalysisIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -221,7 +252,7 @@ const rootRouteChildren: RootRouteChildren = {
   DatasourcesRoute: DatasourcesRoute,
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,
-  AnalysisIdRoute: AnalysisIdRoute,
+  AnalysisIdRoute: AnalysisIdRouteWithChildren,
   DashboardIdRoute: DashboardIdRoute,
   DatasourceIdRoute: DatasourceIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
