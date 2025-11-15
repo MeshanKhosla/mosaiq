@@ -8,12 +8,19 @@ import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
+import { fetchAuth } from '~/routes/__root';
 import { VisualCanvas } from '~/components/chart/visual-canvas';
 import { DashboardSheetTabs } from '~/components/chart/dashboard-sheet-tabs';
 import { useDuckDbContext } from '~/components/duckdb-provider';
 
 export const Route = createFileRoute('/dashboard/$id/sheet/$sheetId')({
   component: DashboardSheetPage,
+  beforeLoad: async () => {
+    const { userId } = await fetchAuth();
+    if (!userId) {
+      throw redirect({ to: '/' });
+    }
+  },
   loader: async ({ context, params }) => {
     const dashboardId = params.id as Id<'dashboards'>;
     const sheetId = params.sheetId as Id<'sheets'>;
@@ -198,15 +205,8 @@ function DashboardSheetPage() {
     return <div>Failed to initialize DuckDB: {dbError.message}</div>;
   }
 
-  if (!dashboard || !analysis || !sheets || sheets.length === 0) {
-    return (
-      <AppLayout>
-        <div>
-          <div className="h-9 w-64 animate-pulse rounded bg-muted" />
-          <div className="mt-2 h-5 w-96 animate-pulse rounded bg-muted" />
-        </div>
-      </AppLayout>
-    );
+  if (!dashboard || !analysis) {
+    return null;
   }
 
   return (
@@ -227,23 +227,28 @@ function DashboardSheetPage() {
         {datasource && (
           <>
             <div className="flex items-center gap-2 border-b border-border/30 px-3 py-1">
-              <DashboardSheetTabs sheets={sheets} dashboardId={dashboardId} />
-            </div>
-            <div className="flex-1 overflow-auto px-6">
-              <VisualCanvas
-                sheetId={currentSheetId}
-                datasourceId={datasource._id}
-                columns={datasource.columns}
-                csvDataLoading={csvDataLoading}
-                dbLoading={dbLoading}
-                tableName={tableName}
-                tableLoaded={tableLoaded}
-                selectedVisualId={selectedVisualId}
-                onVisualSelect={setSelectedVisualId}
-                readOnly={true}
-                visualsQuery={api.visuals.getBySheetForViewer}
+              <DashboardSheetTabs
+                sheets={sheets ?? undefined}
+                dashboardId={dashboardId}
               />
             </div>
+            {sheets && sheets.length > 0 && (
+              <div className="flex-1 overflow-auto px-6">
+                <VisualCanvas
+                  sheetId={currentSheetId}
+                  datasourceId={datasource._id}
+                  columns={datasource.columns}
+                  csvDataLoading={csvDataLoading}
+                  dbLoading={dbLoading}
+                  tableName={tableName}
+                  tableLoaded={tableLoaded}
+                  selectedVisualId={selectedVisualId}
+                  onVisualSelect={setSelectedVisualId}
+                  readOnly={true}
+                  visualsQuery={api.visuals.getBySheetForViewer}
+                />
+              </div>
+            )}
           </>
         )}
       </div>

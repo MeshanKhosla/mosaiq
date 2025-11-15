@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { Link, createFileRoute, redirect } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -8,12 +8,13 @@ import {
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useQuery } from 'convex/react';
-import { useSuspenseQuery } from '@tanstack/react-query';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
+import { authClient } from '~/lib/auth-client';
 import { AppLayout } from '~/components/app-layout';
+import { fetchAuth } from '~/routes/__root';
 import {
   Table,
   TableBody,
@@ -27,6 +28,12 @@ import { Button } from '~/components/ui/button';
 
 export const Route = createFileRoute('/dashboards')({
   component: DashboardsPage,
+  beforeLoad: async () => {
+    const { userId } = await fetchAuth();
+    if (!userId) {
+      throw redirect({ to: '/' });
+    }
+  },
   loader: async ({ context }) => {
     return await context.queryClient.ensureQueryData(
       convexQuery(api.dashboards.list, {}),
@@ -136,9 +143,7 @@ const columns: Array<ColumnDef<Dashboard>> = [
 
 function DashboardsPage() {
   const dashboards = useQuery(api.dashboards.list);
-  const { data: currentUser } = useSuspenseQuery(
-    convexQuery(api.auth.getCurrentUser, {}),
-  );
+  const { data: session } = authClient.useSession();
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useReactTable({
@@ -151,7 +156,7 @@ function DashboardsPage() {
       sorting,
     },
     meta: {
-      currentUser: currentUser || undefined,
+      currentUser: session?.user || undefined,
     },
   });
 

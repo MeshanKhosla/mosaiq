@@ -97,11 +97,13 @@ export function ShareDashboardModal({
         description: `"${dashboardName}" has been published.`,
       });
 
-      onOpenChange(false);
       await navigate({
         to: '/dashboard/$id',
         params: { id: dashboardId },
       });
+
+      // Close modal after navigation completes
+      onOpenChange(false);
     } catch (error) {
       console.error('Failed to create dashboard:', error);
       toast.error('Failed to create dashboard', {
@@ -120,8 +122,16 @@ export function ShareDashboardModal({
     }
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    // Prevent closing the modal while creating/redirecting
+    if (!newOpen && isCreating) {
+      return;
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Share Dashboard</DialogTitle>

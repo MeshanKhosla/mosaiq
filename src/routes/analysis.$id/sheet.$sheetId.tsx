@@ -10,6 +10,7 @@ import type { Id } from '../../../convex/_generated/dataModel';
 import type { VisualType } from '~/components/chart/visual-toolbar';
 import { DEFAULT_VISUAL_SIZE } from '~/lib/constants';
 import { AppLayout } from '~/components/app-layout';
+import { fetchAuth } from '~/routes/__root';
 import { VisualToolbar } from '~/components/chart/visual-toolbar';
 import { VisualCanvas } from '~/components/chart/visual-canvas';
 import { SheetTabs } from '~/components/chart/sheet-tabs';
@@ -18,6 +19,12 @@ import { useDuckDbContext } from '~/components/duckdb-provider';
 
 export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
   component: SheetPage,
+  beforeLoad: async () => {
+    const { userId } = await fetchAuth();
+    if (!userId) {
+      throw redirect({ to: '/' });
+    }
+  },
   loader: async ({ context, params }) => {
     const analysisId = params.id as Id<'analyses'>;
     const sheetId = params.sheetId as Id<'sheets'>;
@@ -273,15 +280,8 @@ function SheetPage() {
     return <div>Failed to initialize DuckDB: {dbError.message}</div>;
   }
 
-  if (!analysis || !sheets || sheets.length === 0) {
-    return (
-      <AppLayout>
-        <div>
-          <div className="h-9 w-64 animate-pulse rounded bg-muted" />
-          <div className="mt-2 h-5 w-96 animate-pulse rounded bg-muted" />
-        </div>
-      </AppLayout>
-    );
+  if (!analysis) {
+    return null;
   }
 
   return (
@@ -313,7 +313,7 @@ function SheetPage() {
         {datasource && (
           <>
             <div className="flex items-center gap-2 border-b border-border/30 px-3 py-1">
-              <SheetTabs sheets={sheets} analysisId={analysisId} />
+              <SheetTabs sheets={sheets ?? undefined} analysisId={analysisId} />
               <VisualToolbar
                 onCreateVisual={handleCreateVisual}
                 sheetId={currentSheetId}
@@ -326,19 +326,21 @@ function SheetPage() {
                 tableLoaded={tableLoaded}
               />
             </div>
-            <div className="flex-1 overflow-auto px-6">
-              <VisualCanvas
-                sheetId={currentSheetId}
-                datasourceId={datasource._id}
-                columns={datasource.columns}
-                csvDataLoading={csvDataLoading}
-                dbLoading={dbLoading}
-                tableName={tableName}
-                tableLoaded={tableLoaded}
-                selectedVisualId={selectedVisualId}
-                onVisualSelect={setSelectedVisualId}
-              />
-            </div>
+            {sheets && sheets.length > 0 && (
+              <div className="flex-1 overflow-auto px-6">
+                <VisualCanvas
+                  sheetId={currentSheetId}
+                  datasourceId={datasource._id}
+                  columns={datasource.columns}
+                  csvDataLoading={csvDataLoading}
+                  dbLoading={dbLoading}
+                  tableName={tableName}
+                  tableLoaded={tableLoaded}
+                  selectedVisualId={selectedVisualId}
+                  onVisualSelect={setSelectedVisualId}
+                />
+              </div>
+            )}
           </>
         )}
       </div>

@@ -3,7 +3,7 @@ import type { Doc, Id } from '../../../convex/_generated/dataModel';
 import { cn } from '~/lib/utils';
 
 interface DashboardSheetTabsProps {
-  sheets: Array<Doc<'sheets'>>;
+  sheets: Array<Doc<'sheets'>> | undefined | null;
   dashboardId: Id<'dashboards'>;
 }
 
@@ -14,6 +14,14 @@ export function DashboardSheetTabs({
   const navigate = useNavigate();
   const params = useParams({ from: '/dashboard/$id/sheet/$sheetId' });
   const activeSheetId = (params.sheetId as Id<'sheets'>) || null;
+
+  if (sheets === undefined || sheets === null) {
+    return (
+      <div className="flex items-center gap-1 shrink-0">
+        <div className="h-8 w-32 animate-pulse rounded bg-muted" />
+      </div>
+    );
+  }
 
   if (sheets.length === 0) {
     return null;

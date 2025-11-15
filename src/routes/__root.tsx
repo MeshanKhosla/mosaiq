@@ -24,7 +24,7 @@ import { DuckDBProvider } from '~/components/duckdb-provider';
 import appCss from '~/styles/app.css?url';
 
 // Get auth information for SSR using available cookies
-const fetchAuth = createServerFn({ method: 'GET' }).handler(async () => {
+export const fetchAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const { createAuth } = await import('../../convex/auth');
   const { session } = await fetchSession(getRequest());
   const sessionCookieName = getCookieName(createAuth);

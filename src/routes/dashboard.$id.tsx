@@ -2,10 +2,16 @@ import { Outlet, createFileRoute, redirect } from '@tanstack/react-router';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
+import { fetchAuth } from '~/routes/__root';
 
 export const Route = createFileRoute('/dashboard/$id')({
   component: DashboardLayout,
   beforeLoad: async ({ context, params, location }) => {
+    const { userId } = await fetchAuth();
+    if (!userId) {
+      throw redirect({ to: '/' });
+    }
+
     const dashboardId = params.id as Id<'dashboards'>;
 
     const pathname = location.pathname || location.href || '';

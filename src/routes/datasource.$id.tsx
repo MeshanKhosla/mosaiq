@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
+import { fetchAuth } from '~/routes/__root';
 import { DataTable } from '~/components/data-table/data-table';
 import { DataTableSearch } from '~/components/datasource/data-table-search';
 import { AnalysisLinksList } from '~/components/datasource/analysis-links-list';
@@ -12,6 +13,12 @@ import { AnalysisLinksList } from '~/components/datasource/analysis-links-list';
 export const Route = createFileRoute('/datasource/$id')({
   component: DatasourcePage,
   validateSearch: () => ({}),
+  beforeLoad: async () => {
+    const { userId } = await fetchAuth();
+    if (!userId) {
+      throw redirect({ to: '/' });
+    }
+  },
   loader: async ({ context, params }) => {
     const datasourceId = params.id as Id<'datasources'>;
     return await context.queryClient.ensureQueryData(
