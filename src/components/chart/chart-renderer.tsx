@@ -1,6 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useDuckDbQuery } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
+import {
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import type { SortingState } from '@tanstack/react-table';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
 import type { ColorPalette } from '~/lib/types';
 import type { VisualType } from './visual-toolbar';
@@ -9,16 +17,124 @@ import { Chart } from '~/components/chart';
 import BarChart from '~/charts/bar-chart';
 import PieChart from '~/charts/pie-chart';
 import LineChart from '~/charts/line-chart';
-import { arrowTo2Series } from '~/lib/utils';
+import TableChart from '~/charts/table-chart';
+import { arrowTo2Series, arrowToTableData } from '~/lib/utils';
 import { useTheme } from '~/components/theme-provider';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
+import { DataTablePagination } from '~/components/data-table/pagination';
 
 type Visual = Doc<'visuals'>;
 type Column = Doc<'datasources'>['columns'][number];
 
+function TableVisualRenderer({ arrow }: { arrow: any }) {
+  const tableData = useMemo(() => arrowToTableData(arrow), [arrow]);
+  const columnNames = useMemo(
+    () => arrow?.schema.fields.map((field: any) => field.name) ?? [],
+    [arrow],
+  );
+
+  const tableColumns = useMemo(() => {
+    return columnNames.map((name: string) => ({
+      id: name,
+      accessorKey: name,
+      header: name,
+      cell: ({ row }: { row: any }) => {
+        const value = row.getValue(name);
+        if (value === null || value === undefined) {
+          return <span className="text-muted-foreground">-</span>;
+        }
+        if (typeof value === 'number') {
+          return value.toLocaleString();
+        }
+        return String(value);
+      },
+    }));
+  }, [columnNames]);
+
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const table = useReactTable({
+    data: tableData,
+    columns: tableColumns,
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+    state: {
+      sorting,
+    },
+  });
+
+  return (
+    <div className="flex h-full w-full flex-col overflow-hidden">
+      <div className="flex-1 overflow-auto">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length > 0 ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={tableColumns.length}
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="border-t">
+        <DataTablePagination table={table} />
+      </div>
+    </div>
+  );
+}
+
 function getChartInstance(type: VisualType): BaseChart | null {
   switch (type) {
     case 'table':
-      return null;
+      return new TableChart();
     case 'bar_chart':
       return new BarChart();
     case 'pie_chart':
@@ -158,6 +274,21 @@ export function ChartRenderer(props: {
         <div className="text-sm text-muted-foreground">Invalid chart type</div>
       </div>
     );
+  }
+
+  if (visual.type === 'table') {
+    try {
+      return <TableVisualRenderer arrow={arrow} />;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Error parsing table data:', err);
+      toast.error('Failed to parse table data', { description: errorMessage });
+      return (
+        <div className="text-sm text-destructive">
+          Error parsing table data: {errorMessage}
+        </div>
+      );
+    }
   }
 
   try {

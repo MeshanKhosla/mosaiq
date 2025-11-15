@@ -8,7 +8,6 @@ import type { Doc, Id } from '../../../convex/_generated/dataModel';
 import type BaseChart from '~/charts/base-chart';
 import type { VisualType } from './visual-toolbar';
 import { MIN_VISUAL_SIZE } from '~/lib/constants';
-import { DataTable } from '~/components/data-table/data-table';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import BarChart from '~/charts/bar-chart';
@@ -308,10 +307,6 @@ export function VisualContainer({
   }, [visual._id, deleteVisual]);
 
   const renderVisualContent = () => {
-    if (visual.type === 'table') {
-      return <DataTable datasourceId={datasourceId} searchValue="" />;
-    }
-
     return (
       <ChartRenderer
         visual={visual}
