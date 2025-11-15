@@ -69,17 +69,9 @@ function HomePage() {
 
   return (
     <AppLayout>
-      <div className="space-y-8">
+      <div className="space-y-4">
         {user && (
           <>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Home</h1>
-              <p className="text-muted-foreground">
-                Upload data and manage your dashboards, analyses, and
-                datasources
-              </p>
-            </div>
-
             <Upload />
 
             <div className="space-y-6">
