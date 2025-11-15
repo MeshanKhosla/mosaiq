@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -13,7 +13,9 @@ import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { AppLayout } from '~/components/app-layout';
+import { AnalysisLink } from '~/components/analysis-link';
 import { fetchAuth } from '~/routes/__root';
+
 import {
   Table,
   TableBody,
@@ -34,7 +36,7 @@ export const Route = createFileRoute('/analyses')({
     }
   },
   loader: async ({ context }) => {
-    return await context.queryClient.ensureQueryData(
+    await context.queryClient.ensureQueryData(
       convexQuery(api.analyses.list, {}),
     );
   },
@@ -200,11 +202,9 @@ function AnalysesPage() {
               <TableBody>
                 {table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id} className="hover:!bg-accent">
-                    <Link
-                      to="/analysis/$id"
-                      params={{ id: row.original._id }}
+                    <AnalysisLink
+                      analysisId={row.original._id}
                       className="contents"
-                      preload="intent"
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
@@ -214,7 +214,7 @@ function AnalysesPage() {
                           )}
                         </TableCell>
                       ))}
-                    </Link>
+                    </AnalysisLink>
                   </TableRow>
                 ))}
               </TableBody>

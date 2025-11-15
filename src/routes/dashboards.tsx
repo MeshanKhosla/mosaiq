@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -14,7 +14,9 @@ import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { authClient } from '~/lib/auth-client';
 import { AppLayout } from '~/components/app-layout';
+import { DashboardLink } from '~/components/dashboard-link';
 import { fetchAuth } from '~/routes/__root';
+
 import {
   Table,
   TableBody,
@@ -35,7 +37,7 @@ export const Route = createFileRoute('/dashboards')({
     }
   },
   loader: async ({ context }) => {
-    return await context.queryClient.ensureQueryData(
+    await context.queryClient.ensureQueryData(
       convexQuery(api.dashboards.list, {}),
     );
   },
@@ -226,11 +228,10 @@ function DashboardsPage() {
               <TableBody>
                 {table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id} className="hover:!bg-accent">
-                    <Link
-                      to="/dashboard/$id"
-                      params={{ id: row.original._id }}
+                    <DashboardLink
+                      dashboardId={row.original._id}
+                      sourceAnalysisId={row.original.sourceAnalysisId}
                       className="contents"
-                      preload="intent"
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
@@ -240,7 +241,7 @@ function DashboardsPage() {
                           )}
                         </TableCell>
                       ))}
-                    </Link>
+                    </DashboardLink>
                   </TableRow>
                 ))}
               </TableBody>

@@ -1,5 +1,5 @@
-import { Link } from '@tanstack/react-router';
 import type { Doc } from '../../../convex/_generated/dataModel';
+import { AnalysisLink } from '~/components/analysis-link';
 
 interface AnalysisLinksListProps {
   analyses: Array<Doc<'analyses'>> | undefined;
@@ -22,14 +22,13 @@ export function AnalysisLinksList({ analyses }: AnalysisLinksListProps) {
       ) : (
         <div className="flex flex-wrap gap-2">
           {analyses.map((analysis) => (
-            <Link
+            <AnalysisLink
               key={analysis._id}
-              to="/analysis/$id"
-              params={{ id: analysis._id }}
+              analysisId={analysis._id}
               className="text-sm text-primary inline-flex items-center px-2.5 py-1 rounded-md border border-border bg-background hover:bg-accent transition-colors"
             >
               {analysis.name}
-            </Link>
+            </AnalysisLink>
           ))}
         </div>
       )}

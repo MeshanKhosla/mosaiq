@@ -4,6 +4,8 @@ import { useQuery as useConvexQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { AppLayout } from '~/components/app-layout';
 import { Upload } from '~/components/upload';
+import { AnalysisLink } from '~/components/analysis-link';
+import { DashboardLink } from '~/components/dashboard-link';
 import {
   Card,
   CardContent,
@@ -223,12 +225,11 @@ function HomePage() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {recentDashboards.map((dashboard) => (
-                  <Link
+                  <DashboardLink
                     key={dashboard._id}
-                    to="/dashboard/$id"
-                    params={{ id: dashboard._id }}
+                    dashboardId={dashboard._id}
+                    sourceAnalysisId={dashboard.sourceAnalysisId}
                     className="contents"
-                    preload="intent"
                   >
                     <Card className="hover:bg-accent transition-colors cursor-pointer">
                       <CardHeader>
@@ -240,7 +241,7 @@ function HomePage() {
                         </CardDescription>
                       </CardHeader>
                     </Card>
-                  </Link>
+                  </DashboardLink>
                 ))}
               </div>
             )}
@@ -283,12 +284,10 @@ function HomePage() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {recentAnalyses.map((analysis) => (
-                  <Link
+                  <AnalysisLink
                     key={analysis._id}
-                    to="/analysis/$id"
-                    params={{ id: analysis._id }}
+                    analysisId={analysis._id}
                     className="contents"
-                    preload="intent"
                   >
                     <Card className="hover:bg-accent transition-colors cursor-pointer">
                       <CardHeader>
@@ -300,7 +299,7 @@ function HomePage() {
                         </CardDescription>
                       </CardHeader>
                     </Card>
-                  </Link>
+                  </AnalysisLink>
                 ))}
               </div>
             )}

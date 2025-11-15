@@ -1,44 +1,46 @@
-import { Outlet, createFileRoute, redirect } from '@tanstack/react-router';
-import { convexQuery } from '@convex-dev/react-query';
+import { useEffect } from 'react';
+import {
+  Outlet,
+  createFileRoute,
+  redirect,
+  useLocation,
+  useNavigate,
+} from '@tanstack/react-router';
+import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { fetchAuth } from '~/routes/__root';
 
 export const Route = createFileRoute('/analysis/$id')({
   component: AnalysisLayout,
-  beforeLoad: async ({ context, params, location }) => {
+  beforeLoad: async () => {
     const { userId } = await fetchAuth();
     if (!userId) {
       throw redirect({ to: '/' });
     }
-
-    const analysisId = params.id as Id<'analyses'>;
-
-    const pathname = location.pathname || location.href || '';
-    const isSheetRoute = /\/analysis\/[^/]+\/sheet\/[^/]+/.test(pathname);
-
-    if (isSheetRoute) {
-      return;
-    }
-
-    const sheets = await context.queryClient.ensureQueryData(
-      convexQuery(api.sheets.getAllByAnalysis, { analysisId }),
-    );
-
-    if (!sheets || sheets.length === 0) {
-      return;
-    }
-
-    throw redirect({
-      to: '/analysis/$id/sheet/$sheetId',
-      params: {
-        id: analysisId,
-        sheetId: sheets[0]._id,
-      },
-    });
   },
 });
 
 function AnalysisLayout() {
+  const { id } = Route.useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const analysisId = id as Id<'analyses'>;
+  const sheets = useQuery(api.sheets.getAllByAnalysis, { analysisId });
+
+  useEffect(() => {
+    const isBaseRoute = location.pathname === `/analysis/${analysisId}`;
+    if (isBaseRoute && sheets && sheets.length > 0) {
+      navigate({
+        to: '/analysis/$id/sheet/$sheetId',
+        params: {
+          id: analysisId,
+          sheetId: sheets[0]._id,
+        },
+        replace: true,
+      });
+    }
+  }, [sheets, analysisId, navigate, location.pathname]);
+
   return <Outlet />;
 }
