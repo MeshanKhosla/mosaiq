@@ -12,6 +12,7 @@ import { DEFAULT_VISUAL_SIZE } from '~/lib/constants';
 import { AppLayout } from '~/components/app-layout';
 import { VisualToolbar } from '~/components/chart/visual-toolbar';
 import { VisualCanvas } from '~/components/chart/visual-canvas';
+import { SheetTabs } from '~/components/chart/sheet-tabs';
 
 export const Route = createFileRoute('/analysis/$id')({
   component: AnalysisPage,
@@ -28,7 +29,8 @@ function AnalysisPage() {
   const navigate = useNavigate();
   const analysisId = id as Id<'analyses'>;
   const analysis = useQuery(api.analyses.get, { id: analysisId });
-  const sheet = useQuery(api.sheets.getByAnalysis, { analysisId });
+  const sheets = useQuery(api.sheets.getAllByAnalysis, { analysisId });
+  const [activeSheetId, setActiveSheetId] = useState<Id<'sheets'> | null>(null);
   const createDashboard = useMutation(api.dashboards.create);
   const createVisual = useMutation(api.visuals.create).withOptimisticUpdate(
     (localStore, args) => {
@@ -60,11 +62,22 @@ function AnalysisPage() {
   );
   const visuals = useQuery(
     api.visuals.getBySheet,
-    sheet ? { sheetId: sheet._id } : 'skip',
+    activeSheetId ? { sheetId: activeSheetId } : 'skip',
   );
   const [isPublishing, setIsPublishing] = useState(false);
   const [selectedVisualId, setSelectedVisualId] =
     useState<Id<'visuals'> | null>(null);
+
+  useEffect(() => {
+    if (sheets && sheets.length > 0 && !activeSheetId) {
+      setActiveSheetId(sheets[0]._id);
+    } else if (sheets && sheets.length > 0 && activeSheetId) {
+      const activeSheetExists = sheets.some((s) => s._id === activeSheetId);
+      if (!activeSheetExists) {
+        setActiveSheetId(sheets[0]._id);
+      }
+    }
+  }, [sheets, activeSheetId]);
 
   const datasourceId = analysis?.datasourceIds[0];
   const datasource = useQuery(
@@ -143,12 +156,12 @@ function AnalysisPage() {
     type: VisualType,
     axes?: { dimensions?: Array<string>; measures?: Array<string> },
   ) => {
-    if (!sheet) return;
+    if (!activeSheetId) return;
 
     try {
       const position = getDefaultPosition();
       const visualId = await createVisual({
-        sheetId: sheet._id,
+        sheetId: activeSheetId,
         type,
         position,
         axes: type === 'table' ? undefined : axes,
@@ -224,11 +237,17 @@ function AnalysisPage() {
       }}
     >
       <div className="flex h-[calc(100vh-8rem)] flex-col -mt-6">
-        {sheet && datasource && (
+        {sheets && sheets.length > 0 && datasource && activeSheetId && (
           <>
+            <SheetTabs
+              sheets={sheets}
+              activeSheetId={activeSheetId}
+              onSheetSelect={setActiveSheetId}
+              analysisId={analysisId}
+            />
             <VisualToolbar
               onCreateVisual={handleCreateVisual}
-              sheetId={sheet._id}
+              sheetId={activeSheetId}
               columns={datasource.columns}
               selectedVisual={selectedVisual}
               onVisualSelect={(visual) =>
@@ -239,7 +258,7 @@ function AnalysisPage() {
             />
             <div className="flex-1 overflow-auto">
               <VisualCanvas
-                sheetId={sheet._id}
+                sheetId={activeSheetId}
                 datasourceId={datasource._id}
                 columns={datasource.columns}
                 csvDataLoading={csvDataLoading}
