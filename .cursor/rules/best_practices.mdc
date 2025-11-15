@@ -2,7 +2,9 @@
 alwaysApply: true
 ---
 
-Follow best practices from the libraries used. For example, follow Convex, ShadCN, Tanstack, React best practices always. Also follow the style of code that is in the current package.
+Always follow best practices from the libraries used. For example, follow Convex, ShadCN, Tanstack, React best practices always. Also follow the style of code that is in the current package.
+
+Do not write useless comments that are obviously AI generated.
 
 You should run this after any change that could impact code:
 

@@ -8,7 +8,6 @@ import type { Doc, Id } from '../../../convex/_generated/dataModel';
 import type BaseChart from '~/charts/base-chart';
 import type { VisualType } from './visual-toolbar';
 import { MIN_VISUAL_SIZE } from '~/lib/constants';
-import { DataTable } from '~/components/data-table/data-table';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import BarChart from '~/charts/bar-chart';
@@ -57,10 +56,8 @@ export function VisualContainer({
   onSelect,
   canvasRef,
 }: VisualContainerProps) {
-  // Local state for immediate UI updates during drag/resize
   const [localPosition, setLocalPosition] = useState(visual.position);
 
-  // Sync with server data when it changes
   useEffect(() => {
     setLocalPosition(visual.position);
   }, [visual.position]);
@@ -74,7 +71,6 @@ export function VisualContainer({
     });
 
     if (existingVisuals !== undefined && existingVisuals !== null) {
-      // Create a new array with the updated visual position
       const updatedVisuals = existingVisuals.map((v) =>
         v._id === id
           ? {
@@ -98,7 +94,6 @@ export function VisualContainer({
     });
 
     if (existingVisuals !== undefined && existingVisuals !== null) {
-      // Remove the deleted visual from the list
       const updatedVisuals = existingVisuals.filter((v) => v._id !== args.id);
       localStore.setQuery(
         api.visuals.getBySheet,
@@ -131,13 +126,11 @@ export function VisualContainer({
     },
   );
 
-  // Compute display title: use stored title, or compute from axes, or fallback to type name
   const displayTitle = useMemo(() => {
     if (visual.title) {
       return visual.title;
     }
 
-    // Check if axes are valid
     if (visual.type !== 'table' && visual.axes) {
       const chartInstance = getChartInstance(visual.type);
       const isValid = chartInstance?.validateAxes(visual.axes) === true;
@@ -162,7 +155,6 @@ export function VisualContainer({
       }
     }
 
-    // Fallback to visual type name
     return visual.type
       .split('_')
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -174,12 +166,10 @@ export function VisualContainer({
   const titleInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sync title when visual changes
   useEffect(() => {
     setTitleValue(displayTitle);
   }, [displayTitle]);
 
-  // Focus input when editing starts
   useEffect(() => {
     if (isEditingTitle && titleInputRef.current) {
       titleInputRef.current.focus();
@@ -209,12 +199,10 @@ export function VisualContainer({
   );
 
   const handleDrag = useCallback((_e: any, d: { x: number; y: number }) => {
-    // Update local state immediately for smooth dragging
-    // Don't clamp during drag to prevent jitter - bounds enforced on drag stop
     setLocalPosition((prev: typeof visual.position) => ({
       ...prev,
       x: d.x,
-      y: Math.max(0, d.y), // Prevent dragging above canvas (y < 0)
+      y: Math.max(0, d.y),
     }));
   }, []);
 
@@ -224,24 +212,20 @@ export function VisualContainer({
         clearTimeout(debounceTimerRef.current);
       }
 
-      // Constrain X to canvas bounds, allow infinite Y movement
       let clampedX = d.x;
-      const clampedY = Math.max(0, d.y); // Prevent dragging above canvas (y < 0)
+      const clampedY = Math.max(0, d.y);
 
       if (canvasRef?.current) {
         const canvasRect = canvasRef.current.getBoundingClientRect();
-        const padding = 12; // px-3 = 0.75rem = 12px
+        const padding = 12;
         const minX = 0;
         const maxX = canvasRect.width - localPosition.width - padding * 2;
 
-        // Clamp X to stay within canvas bounds
         clampedX = Math.max(minX, Math.min(clampedX, maxX));
       } else {
-        // Fallback: prevent negative X
         clampedX = Math.max(0, clampedX);
       }
 
-      // Update optimistically immediately
       updatePosition({
         id: visual._id,
         position: {
@@ -269,7 +253,6 @@ export function VisualContainer({
       _delta: any,
       position: { x: number; y: number },
     ) => {
-      // Update local state immediately for smooth resizing
       setLocalPosition((prev: typeof visual.position) => ({
         ...prev,
         x: position.x,
@@ -289,7 +272,6 @@ export function VisualContainer({
       _delta: any,
       position: { x: number; y: number },
     ) => {
-      // Update optimistically immediately
       updatePosition({
         id: visual._id,
         position: {
@@ -308,10 +290,6 @@ export function VisualContainer({
   }, [visual._id, deleteVisual]);
 
   const renderVisualContent = () => {
-    if (visual.type === 'table') {
-      return <DataTable datasourceId={datasourceId} searchValue="" />;
-    }
-
     return (
       <ChartRenderer
         visual={visual}
@@ -338,6 +316,8 @@ export function VisualContainer({
       minWidth={MIN_VISUAL_SIZE}
       minHeight={MIN_VISUAL_SIZE}
       className="group"
+      dragHandleClassName="visual-drag-handle"
+      cancel="input, button"
       style={{
         zIndex: 1,
       }}
@@ -351,8 +331,7 @@ export function VisualContainer({
           onSelect?.();
         }}
       >
-        {/* Thin header with editable title */}
-        <div className="flex items-center justify-between border-b border-border px-2 py-1">
+        <div className="visual-drag-handle flex items-center gap-2 border-b border-border px-2 py-1 cursor-move">
           {isEditingTitle ? (
             <Input
               ref={titleInputRef}
@@ -360,12 +339,12 @@ export function VisualContainer({
               onChange={(e) => setTitleValue(e.target.value)}
               onBlur={handleTitleBlur}
               onKeyDown={handleTitleKeyDown}
-              className="h-6 text-xs font-medium"
+              className="h-6 text-xs font-medium flex-1"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
             <h3
-              className="flex-1 cursor-pointer truncate text-xs font-medium px-1 py-0.5 rounded hover:bg-muted/50"
+              className="inline-block cursor-pointer text-xs font-medium px-1 py-0.5 rounded hover:bg-muted/50 shrink-0"
               onDoubleClick={(e) => {
                 e.stopPropagation();
                 setIsEditingTitle(true);
@@ -374,6 +353,7 @@ export function VisualContainer({
               {displayTitle}
             </h3>
           )}
+          <div className="flex-1" />
           <Button
             variant="ghost"
             size="sm"
@@ -381,14 +361,13 @@ export function VisualContainer({
               e.stopPropagation();
               handleDelete();
             }}
-            className="h-5 w-5 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+            className="h-5 w-5 p-0 opacity-0 transition-opacity group-hover:opacity-100 shrink-0"
             title="Delete visual"
           >
             <X className="h-3 w-3" />
           </Button>
         </div>
 
-        {/* Content - thin wrapper, same width */}
         <div className="flex-1 overflow-hidden">{renderVisualContent()}</div>
       </div>
     </Rnd>

@@ -306,7 +306,7 @@ export function VisualToolbar({
           ))}
         </div>
 
-        {selectedVisual && selectedVisual.type !== 'table' && (
+        {selectedVisual && (
           <FieldWells
             selectedVisual={selectedVisual}
             columns={columns}
