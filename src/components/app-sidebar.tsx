@@ -84,41 +84,31 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
-                const isHome = item.url === '/';
-                const isDisabled = !session && !isHome;
-                return (
+              {menuItems
+                .filter((item) => {
+                  const isHome = item.url === '/';
+                  return session || isHome;
+                })
+                .map((item) => (
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
-                      asChild={!isDisabled}
+                      asChild
                       isActive={currentPath === item.url}
-                      disabled={isDisabled}
-                      className={
-                        isDisabled ? 'opacity-50 pointer-events-none' : ''
-                      }
                     >
-                      {isDisabled ? (
-                        <div>
-                          <item.icon />
-                          <span>{item.title}</span>
-                        </div>
-                      ) : (
-                        <Link
-                          to={item.url}
-                          onClick={() => {
-                            if (isMobile) {
-                              setOpenMobile(false);
-                            }
-                          }}
-                        >
-                          <item.icon />
-                          <span>{item.title}</span>
-                        </Link>
-                      )}
+                      <Link
+                        to={item.url}
+                        onClick={() => {
+                          if (isMobile) {
+                            setOpenMobile(false);
+                          }
+                        }}
+                      >
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                );
-              })}
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

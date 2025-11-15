@@ -30,7 +30,7 @@ function formatDate(timestamp: number) {
 }
 
 function HomePage() {
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
   const dashboards = useConvexQuery(api.dashboards.list);
   const analyses = useConvexQuery(api.analyses.list);
   const datasources = useConvexQuery(api.datasources.list);
@@ -55,21 +55,6 @@ function HomePage() {
       .sort((a, b) => b._creationTime - a._creationTime)
       .slice(0, 5);
   }, [datasources]);
-
-  if (isPending) {
-    return (
-      <AppLayout>
-        <div className="space-y-4">
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="space-y-4 w-full max-w-md">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-32 w-full" />
-            </div>
-          </div>
-        </div>
-      </AppLayout>
-    );
-  }
 
   if (!session) {
     return (
