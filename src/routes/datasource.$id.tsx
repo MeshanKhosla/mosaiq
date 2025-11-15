@@ -106,13 +106,13 @@ function DatasourcePage() {
     setIsCreatingAnalysis(true);
     try {
       const analysisName = `${datasource.name} Analysis`;
-      const analysisId = await createAnalysis({
+      const { analysisId, sheetId } = await createAnalysis({
         datasourceId,
         name: analysisName,
       });
       await navigate({
-        to: '/analysis/$id',
-        params: { id: analysisId },
+        to: '/analysis/$id/sheet/$sheetId',
+        params: { id: analysisId, sheetId },
       });
     } catch (error) {
       console.error('Failed to create analysis:', error);

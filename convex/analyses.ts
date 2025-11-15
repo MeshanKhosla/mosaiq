@@ -1,7 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import { authComponent } from './auth';
-import { internal } from './_generated/api';
 
 export const list = query({
   args: {},
@@ -125,7 +124,10 @@ export const create = mutation({
     datasourceId: v.id('datasources'),
     name: v.string(),
   },
-  returns: v.id('analyses'),
+  returns: v.object({
+    analysisId: v.id('analyses'),
+    sheetId: v.id('sheets'),
+  }),
   handler: async (ctx, args) => {
     const user = await authComponent.getAuthUser(ctx);
 
@@ -141,13 +143,14 @@ export const create = mutation({
       createdBy: user._id,
     });
 
-    // Automatically create a default sheet for the analysis
-    await ctx.scheduler.runAfter(0, internal.sheets.create, {
-      analysisId,
+    // Automatically create a default sheet for the analysis synchronously
+    const sheetId = await ctx.db.insert('sheets', {
       name: 'Sheet 1',
+      analysisId,
+      createdBy: user._id,
     });
 
-    return analysisId;
+    return { analysisId, sheetId };
   },
 });
 
