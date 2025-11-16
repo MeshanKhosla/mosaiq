@@ -2,6 +2,7 @@ import { createRouter } from '@tanstack/react-router';
 import { QueryClient } from '@tanstack/react-query';
 import { routerWithQueryClient } from '@tanstack/react-router-with-query';
 import { ConvexProvider, ConvexReactClient } from 'convex/react';
+import { ConvexQueryClient } from '@convex-dev/react-query';
 import * as Sentry from '@sentry/tanstackstart-react';
 import { routeTree } from '~/routeTree.gen';
 
@@ -14,13 +15,19 @@ export function getRouter() {
     unsavedChangesWarning: false,
   });
 
+  const convexQueryClient = new ConvexQueryClient(convex);
+
   const queryClient: QueryClient = new QueryClient({
     defaultOptions: {
       queries: {
         gcTime: 5000,
+        queryFn: convexQueryClient.queryFn(),
+        queryKeyHashFn: convexQueryClient.hashFn(),
       },
     },
   });
+
+  convexQueryClient.connect(queryClient);
 
   const router = routerWithQueryClient(
     createRouter({

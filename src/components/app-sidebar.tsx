@@ -82,6 +82,7 @@ export function AppSidebar() {
                     >
                       <Link
                         to={item.url}
+                        preload="intent"
                         onClick={() => {
                           if (isMobile) {
                             setOpenMobile(false);
