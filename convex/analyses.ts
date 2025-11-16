@@ -14,12 +14,12 @@ export const list = query({
         createdBy: v.string(),
       }),
     ),
-    v.null(),
+    v.literal('Unauthenticated'),
   ),
   handler: async (ctx) => {
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
-      return;
+      return 'Unauthenticated';
     }
     const userId = user._id;
     return await ctx.db
@@ -102,7 +102,7 @@ export const getByDatasourceId = query({
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
-      return;
+      return null;
     }
     const userId = user._id;
 
