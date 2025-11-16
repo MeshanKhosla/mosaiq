@@ -79,7 +79,14 @@ export default defineSchema({
     axes: v.optional(
       v.object({
         dimensions: v.optional(v.array(v.string())), // Ids of columns
-        measures: v.optional(v.array(v.string())), // Ids of columns
+        measures: v.optional(
+          v.array(
+            v.object({
+              columnId: v.string(),
+              aggregation: v.string(),
+            }),
+          ),
+        ),
       }),
     ),
   })

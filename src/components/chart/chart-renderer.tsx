@@ -332,7 +332,8 @@ export function ChartRenderer(props: {
   try {
     const { labels, values } = arrowTo2Series(arrow);
 
-    const measureId = visual.axes.measures?.[0];
+    const measure = visual.axes.measures?.[0];
+    const measureId = typeof measure === 'string' ? measure : measure?.columnId;
     const measureColumn = columns.find((c) => c._id === measureId);
     const measureName = measureColumn?.name ?? 'Value';
     const dimensionId = visual.axes.dimensions?.[0];

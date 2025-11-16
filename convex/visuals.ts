@@ -2,6 +2,33 @@ import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import { authComponent } from './auth';
 
+function normalizeMeasures(
+  measures:
+    | Array<string>
+    | Array<{ columnId: string; aggregation: string }>
+    | undefined,
+): Array<{ columnId: string; aggregation: string }> | undefined {
+  if (!measures || measures.length === 0) {
+    return undefined;
+  }
+  return measures.map((m) => {
+    if (typeof m === 'string') {
+      return { columnId: m, aggregation: 'SUM' };
+    }
+    return m;
+  });
+}
+
+function normalizeAxes(axes: any): any {
+  if (!axes) {
+    return axes;
+  }
+  return {
+    ...axes,
+    measures: normalizeMeasures(axes.measures),
+  };
+}
+
 export const create = mutation({
   args: {
     sheetId: v.id('sheets'),
@@ -21,7 +48,14 @@ export const create = mutation({
     axes: v.optional(
       v.object({
         dimensions: v.optional(v.array(v.string())),
-        measures: v.optional(v.array(v.string())),
+        measures: v.optional(
+          v.array(
+            v.object({
+              columnId: v.string(),
+              aggregation: v.string(),
+            }),
+          ),
+        ),
       }),
     ),
   },
@@ -76,7 +110,14 @@ export const getBySheet = query({
         axes: v.optional(
           v.object({
             dimensions: v.optional(v.array(v.string())),
-            measures: v.optional(v.array(v.string())),
+            measures: v.optional(
+              v.array(
+                v.object({
+                  columnId: v.string(),
+                  aggregation: v.string(),
+                }),
+              ),
+            ),
           }),
         ),
       }),
@@ -96,10 +137,15 @@ export const getBySheet = query({
     }
 
     // Get all visuals for this sheet
-    return await ctx.db
+    const visuals = await ctx.db
       .query('visuals')
       .withIndex('by_sheetId', (q) => q.eq('sheetId', args.sheetId))
       .collect();
+
+    return visuals.map((visual) => ({
+      ...visual,
+      axes: normalizeAxes(visual.axes),
+    }));
   },
 });
 
@@ -129,7 +175,14 @@ export const get = query({
       axes: v.optional(
         v.object({
           dimensions: v.optional(v.array(v.string())),
-          measures: v.optional(v.array(v.string())),
+          measures: v.optional(
+            v.array(
+              v.object({
+                columnId: v.string(),
+                aggregation: v.string(),
+              }),
+            ),
+          ),
         }),
       ),
     }),
@@ -144,7 +197,10 @@ export const get = query({
     if (!visual || visual.createdBy !== user._id) {
       return null;
     }
-    return visual;
+    return {
+      ...visual,
+      axes: normalizeAxes(visual.axes),
+    };
   },
 });
 
@@ -154,7 +210,14 @@ export const updateAxes = mutation({
     axes: v.optional(
       v.object({
         dimensions: v.optional(v.array(v.string())),
-        measures: v.optional(v.array(v.string())),
+        measures: v.optional(
+          v.array(
+            v.object({
+              columnId: v.string(),
+              aggregation: v.string(),
+            }),
+          ),
+        ),
       }),
     ),
   },
@@ -167,8 +230,10 @@ export const updateAxes = mutation({
       throw new Error('Visual not found or unauthorized');
     }
 
+    const normalizedAxes = normalizeAxes(args.axes);
+
     await ctx.db.patch(args.id, {
-      axes: args.axes,
+      axes: normalizedAxes,
     });
 
     return null;
@@ -251,7 +316,14 @@ export const getBySheetForViewer = query({
         axes: v.optional(
           v.object({
             dimensions: v.optional(v.array(v.string())),
-            measures: v.optional(v.array(v.string())),
+            measures: v.optional(
+              v.array(
+                v.object({
+                  columnId: v.string(),
+                  aggregation: v.string(),
+                }),
+              ),
+            ),
           }),
         ),
       }),
@@ -269,10 +341,15 @@ export const getBySheetForViewer = query({
       return null;
     }
 
-    return await ctx.db
+    const visuals = await ctx.db
       .query('visuals')
       .withIndex('by_sheetId', (q) => q.eq('sheetId', args.sheetId))
       .collect();
+
+    return visuals.map((visual) => ({
+      ...visual,
+      axes: normalizeAxes(visual.axes),
+    }));
   },
 });
 

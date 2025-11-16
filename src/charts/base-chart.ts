@@ -31,6 +31,66 @@ class BaseChart {
   }
 
   /**
+   * Escape column names for SQL queries.
+   */
+  escapeColumnName(name: string): string {
+    if (
+      /[^a-zA-Z0-9_]/.test(name) ||
+      /^\d/.test(name) ||
+      ['select', 'from', 'where', 'group', 'order', 'by', 'as'].includes(
+        name.toLowerCase(),
+      )
+    ) {
+      return `"${name.replace(/"/g, '""')}"`;
+    }
+    return name;
+  }
+
+  /**
+   * Build an aggregation SQL expression.
+   * @param columnName - The column name (not escaped, will be escaped here)
+   * @param aggregation - The aggregation type (SUM, AVG, COUNT, MIN, MAX, COUNT_DISTINCT, MEDIAN)
+   * @param columnType - The column type to validate aggregation compatibility
+   * @returns SQL aggregation expression
+   */
+  buildAggregationExpression(
+    columnName: string,
+    aggregation: string,
+    columnType?: 'string' | 'number' | 'date',
+  ): string {
+    const escapedColumn = this.escapeColumnName(columnName);
+    const aggUpper = aggregation.toUpperCase();
+
+    const numericOnlyAggregations = ['SUM', 'AVG', 'MIN', 'MAX', 'MEDIAN'];
+    if (
+      columnType &&
+      columnType !== 'number' &&
+      numericOnlyAggregations.includes(aggUpper)
+    ) {
+      return `COUNT(${escapedColumn})`;
+    }
+
+    switch (aggUpper) {
+      case 'SUM':
+        return `SUM(${escapedColumn})`;
+      case 'AVG':
+        return `AVG(${escapedColumn})`;
+      case 'COUNT':
+        return `COUNT(${escapedColumn})`;
+      case 'MIN':
+        return `MIN(${escapedColumn})`;
+      case 'MAX':
+        return `MAX(${escapedColumn})`;
+      case 'COUNT_DISTINCT':
+        return `COUNT(DISTINCT ${escapedColumn})`;
+      case 'MEDIAN':
+        return `MEDIAN(${escapedColumn})`;
+      default:
+        return `COUNT(${escapedColumn})`;
+    }
+  }
+
+  /**
    * Build a WHERE clause from filters.
    * @param filters - Array of filter objects
    * @param columns - The columns from the datasource
@@ -43,19 +103,6 @@ class BaseChart {
     if (!filters || filters.length === 0) {
       return '';
     }
-
-    const escapeColumnName = (name: string): string => {
-      if (
-        /[^a-zA-Z0-9_]/.test(name) ||
-        /^\d/.test(name) ||
-        ['select', 'from', 'where', 'group', 'order', 'by', 'as'].includes(
-          name.toLowerCase(),
-        )
-      ) {
-        return `"${name.replace(/"/g, '""')}"`;
-      }
-      return name;
-    };
 
     const escapeValue = (value: string | number): string => {
       if (typeof value === 'string') {
@@ -76,7 +123,7 @@ class BaseChart {
         continue;
       }
 
-      const columnName = escapeColumnName(column.name);
+      const columnName = this.escapeColumnName(column.name);
       const values = filter.selectedValues.map(escapeValue).join(', ');
       conditions.push(`${columnName} IN (${values})`);
     }

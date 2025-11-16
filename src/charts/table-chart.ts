@@ -25,62 +25,70 @@ class TableChart extends BaseChart {
       throw new Error('Table must have at least one measure');
     }
 
-    const escapeColumnName = (name: string): string => {
-      if (
-        /[^a-zA-Z0-9_]/.test(name) ||
-        /^\d/.test(name) ||
-        ['select', 'from', 'where', 'group', 'order', 'by', 'as'].includes(
-          name.toLowerCase(),
-        )
-      ) {
-        return `"${name.replace(/"/g, '""')}"`;
-      }
-      return name;
-    };
-
     const dimensionColumns = dimensions
       .map((id) => columns.find((col) => col._id === id))
       .filter((col): col is Column => col !== undefined);
 
-    const measureColumns = measures
-      .map((id) => columns.find((col) => col._id === id))
-      .filter((col): col is Column => col !== undefined);
+    const measureData = measures
+      .map((m) => {
+        const columnId = typeof m === 'string' ? m : m.columnId;
+        const aggregation = typeof m === 'string' ? 'SUM' : m.aggregation;
+        const column = columns.find((col) => col._id === columnId);
+        return { column, aggregation };
+      })
+      .filter(
+        (m): m is { column: Column; aggregation: string } =>
+          m.column !== undefined,
+      );
 
-    if (measureColumns.length === 0) {
+    if (measureData.length === 0) {
       throw new Error('Measure columns not found');
     }
 
     const selectParts: Array<string> = [];
 
     dimensionColumns.forEach((col) => {
-      const escapedName = escapeColumnName(col.name);
+      const escapedName = this.escapeColumnName(col.name);
       selectParts.push(escapedName);
     });
 
-    measureColumns.forEach((col) => {
-      const escapedName = escapeColumnName(col.name);
-      selectParts.push(`SUM(${escapedName}) as ${escapedName}`);
+    measureData.forEach(({ column, aggregation }) => {
+      const escapedName = this.escapeColumnName(column.name);
+      const aggregationExpr = this.buildAggregationExpression(
+        column.name,
+        aggregation,
+        column.type,
+      );
+      selectParts.push(`${aggregationExpr} as ${escapedName}`);
     });
 
     const groupByParts = dimensionColumns.map((col) =>
-      escapeColumnName(col.name),
+      this.escapeColumnName(col.name),
     );
 
     const orderByParts: Array<string> = [];
     if (dimensionColumns.length > 0) {
-      orderByParts.push(escapeColumnName(dimensionColumns[0].name));
-      if (measureColumns.length > 0) {
-        orderByParts.push(
-          `SUM(${escapeColumnName(measureColumns[0].name)}) DESC`,
+      orderByParts.push(this.escapeColumnName(dimensionColumns[0].name));
+      if (measureData.length > 0) {
+        const firstMeasure = measureData[0];
+        const aggregationExpr = this.buildAggregationExpression(
+          firstMeasure.column.name,
+          firstMeasure.aggregation,
+          firstMeasure.column.type,
         );
+        orderByParts.push(`${aggregationExpr} DESC`);
       }
-    } else if (measureColumns.length > 0) {
-      orderByParts.push(
-        `SUM(${escapeColumnName(measureColumns[0].name)}) DESC`,
+    } else if (measureData.length > 0) {
+      const firstMeasure = measureData[0];
+      const aggregationExpr = this.buildAggregationExpression(
+        firstMeasure.column.name,
+        firstMeasure.aggregation,
+        firstMeasure.column.type,
       );
+      orderByParts.push(`${aggregationExpr} DESC`);
     }
 
-    const escapedTableName = escapeColumnName(tableName);
+    const escapedTableName = this.escapeColumnName(tableName);
     const selectClause = selectParts.join(', ');
     const whereClause = this.buildWhereClause(filters, columns);
     const groupByClause =
