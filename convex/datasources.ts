@@ -1,7 +1,7 @@
 import { R2 } from '@convex-dev/r2';
 import { v } from 'convex/values';
-import { mutation, query } from './_generated/server';
-import { components } from './_generated/api';
+import { action, mutation, query } from './_generated/server';
+import { api, components } from './_generated/api';
 import { authComponent } from './auth';
 import type { DataModel } from './_generated/dataModel';
 
@@ -97,6 +97,8 @@ export const create = mutation({
         ),
       }),
     ),
+    type: v.optional(v.union(v.literal('csv'), v.literal('url'))),
+    sourceUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await authComponent.getAuthUser(ctx);
@@ -108,7 +110,35 @@ export const create = mutation({
       storageKey: args.storageKey,
       columns: args.columns,
       createdBy: user._id,
+      type: args.type ?? 'csv',
+      sourceUrl: args.sourceUrl,
     });
+  },
+});
+
+export const scrapeUrlForUpload = action({
+  args: {
+    url: v.string(),
+  },
+  returns: v.object({
+    csvContent: v.string(),
+  }),
+  handler: async (ctx, args): Promise<{ csvContent: string }> => {
+    await authComponent.getAuthUser(ctx as any);
+
+    // Validate URL format
+    try {
+      new URL(args.url);
+    } catch {
+      throw new Error('Invalid URL format');
+    }
+
+    // Call Firecrawl action to scrape the URL
+    const csvContent: string = await ctx.runAction(api.firecrawl.scrapeUrl, {
+      url: args.url,
+    });
+
+    return { csvContent };
   },
 });
 

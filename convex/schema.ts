@@ -19,6 +19,8 @@ export default defineSchema({
     ),
     storageKey: v.string(),
     createdBy: v.string(),
+    type: v.optional(v.union(v.literal('csv'), v.literal('url'))),
+    sourceUrl: v.optional(v.string()),
   }).index('by_createdBy', ['createdBy']),
 
   analyses: defineTable({

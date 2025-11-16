@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { useQuery as useConvexQuery } from 'convex/react';
+import { FileText, Globe } from 'lucide-react';
 import { api } from '../../convex/_generated/api';
 import { AppLayout } from '~/components/app-layout';
 import { Upload } from '~/components/upload';
@@ -41,21 +42,21 @@ function HomePage() {
     if (!dashboards) return [];
     return [...dashboards]
       .sort((a, b) => b._creationTime - a._creationTime)
-      .slice(0, 5);
+      .slice(0, 6);
   }, [dashboards]);
 
   const recentAnalyses = useMemo(() => {
     if (!analyses) return [];
     return [...analyses]
       .sort((a, b) => b._creationTime - a._creationTime)
-      .slice(0, 5);
+      .slice(0, 6);
   }, [analyses]);
 
   const recentDatasources = useMemo(() => {
     if (!datasources) return [];
     return [...datasources]
       .sort((a, b) => b._creationTime - a._creationTime)
-      .slice(0, 5);
+      .slice(0, 6);
   }, [datasources]);
 
   if (isPending) {
@@ -351,7 +352,12 @@ function HomePage() {
                   >
                     <Card className="hover:bg-accent transition-colors cursor-pointer">
                       <CardHeader>
-                        <CardTitle className="text-lg">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          {(datasource.type ?? 'csv') === 'url' ? (
+                            <Globe className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                          )}
                           {datasource.name}
                         </CardTitle>
                         <CardDescription>

@@ -12,6 +12,7 @@ import type * as analyses from "../analyses.js";
 import type * as auth from "../auth.js";
 import type * as dashboards from "../dashboards.js";
 import type * as datasources from "../datasources.js";
+import type * as firecrawl from "../firecrawl.js";
 import type * as http from "../http.js";
 import type * as sheets from "../sheets.js";
 import type * as users from "../users.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   dashboards: typeof dashboards;
   datasources: typeof datasources;
+  firecrawl: typeof firecrawl;
   http: typeof http;
   sheets: typeof sheets;
   users: typeof users;
