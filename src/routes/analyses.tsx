@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -13,7 +13,6 @@ import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { AppLayout } from '~/components/app-layout';
 import { AnalysisLink } from '~/components/analysis-link';
-import { fetchAuth } from '~/routes/__root';
 
 import {
   Table,
