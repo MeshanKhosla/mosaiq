@@ -14,6 +14,7 @@ import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { AppLayout } from '~/components/app-layout';
 import { AnalysisLink } from '~/components/analysis-link';
+import { authClient } from '~/lib/auth-client';
 
 import {
   Table,
@@ -46,12 +47,12 @@ type Analysis = {
 };
 
 function AnalysesPage() {
+  const { data: session } = authClient.useSession();
   const { data: analyses } = useSuspenseQuery(
     convexQuery(api.analyses.list, {}),
   );
-  const navigate = useNavigate();
   const [sorting, setSorting] = useState<SortingState>([]);
-
+  const navigate = useNavigate();
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -126,7 +127,7 @@ function AnalysesPage() {
   );
 
   const table = useReactTable({
-    data: analyses === 'Unauthenticated' ? [] : analyses,
+    data: analyses,
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -136,7 +137,7 @@ function AnalysesPage() {
     },
   });
 
-  if (analyses === 'Unauthenticated') {
+  if (!session) {
     navigate({ to: '/' });
     return null;
   }
