@@ -64,7 +64,10 @@ function SheetPage() {
   const analysis = useQuery(api.analyses.get, { id: analysisId });
   const sheets = useQuery(api.sheets.getAllByAnalysis, { analysisId });
 
-  // Refresh page on navigation to ensure clean state
+  // HACK: Refresh page on navigation to ensure clean state
+  // This is a workaround for DuckDB table loading race conditions that cause
+  // "Binder Error: Referenced column not found in FROM clause" errors
+  // I know it'a bad but the hackathon is about to end lol
   useEffect(() => {
     const hasRefreshed = sessionStorage.getItem(`refreshed-${currentSheetId}`);
     if (!hasRefreshed) {
