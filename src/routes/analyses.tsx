@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -27,15 +27,6 @@ import { Button } from '~/components/ui/button';
 
 export const Route = createFileRoute('/analyses')({
   component: AnalysesPage,
-  // beforeLoad: async () => {
-  //   const { userId } = await fetchAuth();
-  //   if (!userId) {
-  //     throw redirect({ to: '/' });
-  //   }
-  // },
-  // loader: () => {
-  //   // Client-side data fetching will handle this via useQuery hooks
-  // },
 });
 
 type Analysis = {
@@ -47,6 +38,7 @@ type Analysis = {
 
 function AnalysesPage() {
   const analyses = useQuery(api.analyses.list);
+  const navigate = useNavigate();
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const formatDate = (timestamp: number) => {
@@ -123,7 +115,7 @@ function AnalysesPage() {
   );
 
   const table = useReactTable({
-    data: analyses || [],
+    data: analyses === 'Unauthenticated' ? [] : (analyses ?? []),
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -133,16 +125,23 @@ function AnalysesPage() {
     },
   });
 
-  return (
-    <AppLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analyses</h1>
-          <p className="text-muted-foreground">View and manage your analyses</p>
-        </div>
+  if (analyses === 'Unauthenticated') {
+    navigate({ to: '/' });
+    return null;
+  }
 
-        <div className="rounded-md border">
-          {!analyses ? (
+  if (analyses === undefined) {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Analyses</h1>
+            <p className="text-muted-foreground">
+              View and manage your analyses
+            </p>
+          </div>
+
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow className="hover:!bg-transparent">
@@ -173,49 +172,79 @@ function AnalysesPage() {
                 ))}
               </TableBody>
             </Table>
-          ) : analyses.length === 0 ? (
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (analyses.length === 0) {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Analyses</h1>
+            <p className="text-muted-foreground">
+              View and manage your analyses
+            </p>
+          </div>
+
+          <div className="rounded-md border">
             <div className="p-8 text-center text-muted-foreground">
               No analyses found. Create your first analysis from a datasource.
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} className="hover:!bg-accent">
-                    <AnalysisLink
-                      analysisId={row.original._id}
-                      className="contents"
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Analyses</h1>
+          <p className="text-muted-foreground">View and manage your analyses</p>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
                           )}
-                        </TableCell>
-                      ))}
-                    </AnalysisLink>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} className="hover:!bg-accent">
+                  <AnalysisLink
+                    analysisId={row.original._id}
+                    className="contents"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </AnalysisLink>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
     </AppLayout>
