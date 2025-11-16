@@ -198,16 +198,122 @@ function SheetPage() {
     width: number;
     height: number;
   } => {
-    const gridCols = 3;
-    const gridGap = 20;
-    const visualCount = visuals?.length ?? 0;
-    const col = visualCount % gridCols;
-    const row = Math.floor(visualCount / gridCols);
+    const gutter = 20;
+    const padding = 12;
+    const width = DEFAULT_VISUAL_SIZE;
+    const height = DEFAULT_VISUAL_SIZE;
+    const existingVisuals = visuals ?? [];
+
+    const getCanvasWidth = (): number => {
+      if (typeof window === 'undefined') {
+        return 1200;
+      }
+      const sidebarWidth = 160;
+      const containerPadding = 48;
+      const canvasPadding = 24;
+      return (
+        window.innerWidth - sidebarWidth - containerPadding - canvasPadding
+      );
+    };
+
+    const checkOverlap = (
+      rect1: { x: number; y: number; width: number; height: number },
+      rect2: { x: number; y: number; width: number; height: number },
+    ): boolean => {
+      return (
+        rect1.x < rect2.x + rect2.width &&
+        rect1.x + rect1.width > rect2.x &&
+        rect1.y < rect2.y + rect2.height &&
+        rect1.y + rect1.height > rect2.y
+      );
+    };
+
+    const findNextPosition = (): { x: number; y: number } => {
+      const canvasWidth = getCanvasWidth();
+
+      if (existingVisuals.length === 0) {
+        return { x: padding, y: padding };
+      }
+
+      const candidateRect = {
+        x: 0,
+        y: 0,
+        width,
+        height,
+      };
+
+      const rightmostVisual = existingVisuals.reduce((rightmost, visual) => {
+        const rightmostRight = rightmost.position.x + rightmost.position.width;
+        const visualRight = visual.position.x + visual.position.width;
+        return visualRight > rightmostRight ? visual : rightmost;
+      }, existingVisuals[0]);
+
+      const rightmostRight =
+        rightmostVisual.position.x + rightmostVisual.position.width;
+      const candidateX = rightmostRight + gutter;
+      const candidateY = rightmostVisual.position.y;
+
+      candidateRect.x = candidateX;
+      candidateRect.y = candidateY;
+
+      const fitsHorizontally = candidateX + width <= canvasWidth;
+      const hasOverlap = existingVisuals.some((visual) =>
+        checkOverlap(candidateRect, visual.position),
+      );
+
+      if (fitsHorizontally && !hasOverlap) {
+        return { x: candidateX, y: candidateY };
+      }
+
+      const bottommostVisual = existingVisuals.reduce((bottommost, visual) => {
+        const bottommostBottom =
+          bottommost.position.y + bottommost.position.height;
+        const visualBottom = visual.position.y + visual.position.height;
+        return visualBottom > bottommostBottom ? visual : bottommost;
+      }, existingVisuals[0]);
+
+      const bottommostBottom =
+        bottommostVisual.position.y + bottommostVisual.position.height;
+      const candidateXNewRow = padding;
+      const candidateYNewRow = bottommostBottom + gutter;
+
+      candidateRect.x = candidateXNewRow;
+      candidateRect.y = candidateYNewRow;
+
+      const hasOverlapNewRow = existingVisuals.some((visual) =>
+        checkOverlap(candidateRect, visual.position),
+      );
+
+      if (!hasOverlapNewRow) {
+        return { x: candidateXNewRow, y: candidateYNewRow };
+      }
+
+      let searchY = candidateYNewRow;
+      const maxSearchY = searchY + height * 5;
+
+      while (searchY < maxSearchY) {
+        candidateRect.y = searchY;
+        const hasOverlapAtY = existingVisuals.some((visual) =>
+          checkOverlap(candidateRect, visual.position),
+        );
+
+        if (!hasOverlapAtY) {
+          return { x: candidateXNewRow, y: searchY };
+        }
+
+        searchY += gutter;
+      }
+
+      return { x: padding, y: padding };
+    };
+
+    const position = findNextPosition();
+
     return {
-      x: col * (DEFAULT_VISUAL_SIZE + gridGap) + gridGap,
-      y: row * (DEFAULT_VISUAL_SIZE + gridGap) + gridGap,
-      width: DEFAULT_VISUAL_SIZE,
-      height: DEFAULT_VISUAL_SIZE,
+      x: position.x,
+      y: position.y,
+      width,
+      height,
     };
   };
 
