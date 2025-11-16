@@ -15,7 +15,6 @@ import {
   getCookieName,
 } from '@convex-dev/better-auth/react-start';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import type { ConvexQueryClient } from '@convex-dev/react-query';
 import type { ConvexReactClient } from 'convex/react';
 import type { QueryClient } from '@tanstack/react-query';
 import { authClient } from '~/lib/auth-client';
@@ -38,7 +37,6 @@ export const fetchAuth = createServerFn({ method: 'GET' }).handler(async () => {
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
   convexClient: ConvexReactClient;
-  convexQueryClient: ConvexQueryClient;
 }>()({
   head: () => ({
     meta: [
@@ -75,17 +73,8 @@ export const Route = createRootRouteWithContext<{
       { rel: 'manifest', href: '/site.webmanifest', color: '#fffff' },
       { rel: 'icon', href: '/favicon.ico' },
     ],
-    beforeLoad: async (ctx: any) => {
-      // all queries, mutations and action made with TanStack Query will be
-      // authenticated by an identity token.
+    beforeLoad: async () => {
       const { userId, token } = await fetchAuth();
-
-      // During SSR only (the only time serverHttpClient exists),
-      // set the auth token to make HTTP queries with.
-      if (token) {
-        ctx.context.convexQueryClient.serverHttpClient?.setAuth(token);
-      }
-
       return { userId, token };
     },
     component: RootComponent,

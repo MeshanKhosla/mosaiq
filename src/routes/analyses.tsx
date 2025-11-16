@@ -8,7 +8,6 @@ import {
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useQuery } from 'convex/react';
-import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
@@ -35,10 +34,8 @@ export const Route = createFileRoute('/analyses')({
       throw redirect({ to: '/' });
     }
   },
-  loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(
-      convexQuery(api.analyses.list, {}),
-    );
+  loader: () => {
+    // Client-side data fetching will handle this via useQuery hooks
   },
 });
 

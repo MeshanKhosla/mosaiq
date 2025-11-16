@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
 import { insertFile } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
-import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
@@ -21,57 +20,16 @@ export const Route = createFileRoute('/dashboard/$id/sheet/$sheetId')({
       throw redirect({ to: '/' });
     }
   },
-  loader: async ({ context, params }) => {
-    const dashboardId = params.id as Id<'dashboards'>;
-    const sheetId = params.sheetId as Id<'sheets'>;
-
-    const [dashboard, analysis] = await Promise.all([
-      context.queryClient.ensureQueryData(
-        convexQuery(api.dashboards.getForViewer, { id: dashboardId }),
-      ),
-      context.queryClient
-        .ensureQueryData(
-          convexQuery(api.dashboards.getForViewer, { id: dashboardId }),
-        )
-        .then(async (d) => {
-          if (!d) return null;
-          return await context.queryClient.ensureQueryData(
-            convexQuery(api.analyses.getForViewer, { id: d.sourceAnalysisId }),
-          );
-        }),
-    ]);
-
-    if (!dashboard || !analysis) {
-      return;
-    }
-
-    const sheets = await context.queryClient.ensureQueryData(
-      convexQuery(api.sheets.getByAnalysisForViewer, {
-        analysisId: dashboard.sourceAnalysisId,
-      }),
-    );
-
-    if (!sheets || sheets.length === 0) {
-      return;
-    }
-
-    const sheetExists = sheets.some((s) => s._id === sheetId);
-    if (!sheetExists) {
-      throw redirect({
-        to: '/dashboard/$id/sheet/$sheetId',
-        params: {
-          id: dashboardId,
-          sheetId: sheets[0]._id,
-        },
-      });
-    }
-
-    return { dashboard, analysis, sheets };
+  loader: ({ params }) => {
+    // Client-side data fetching will handle this via useQuery hooks
+    // Sheet validation happens client-side in the component
+    return { dashboardId: params.id, sheetId: params.sheetId };
   },
 });
 
 function DashboardSheetPage() {
   const { id, sheetId } = Route.useParams();
+  const navigate = useNavigate();
   const dashboardId = id as Id<'dashboards'>;
   const currentSheetId = sheetId as Id<'sheets'>;
 
@@ -84,6 +42,19 @@ function DashboardSheetPage() {
     api.sheets.getByAnalysisForViewer,
     dashboard ? { analysisId: dashboard.sourceAnalysisId } : 'skip',
   );
+
+  // Redirect if sheet doesn't exist
+  useEffect(() => {
+    if (sheets && sheets.length > 0) {
+      const sheetExists = sheets.some((s) => s._id === currentSheetId);
+      if (!sheetExists) {
+        navigate({
+          to: '/dashboard/$id/sheet/$sheetId',
+          params: { id: dashboardId, sheetId: sheets[0]._id },
+        });
+      }
+    }
+  }, [sheets, currentSheetId, dashboardId, navigate]);
 
   const updateDashboardName = useMutation(
     api.dashboards.updateName,
