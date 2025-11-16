@@ -32,14 +32,6 @@ export function SheetTabs(props: SheetTabsProps) {
   });
   const activeSheetId = (params.sheetId as Id<'sheets'>) || null;
 
-  if (sheets === undefined || sheets === null) {
-    return (
-      <div className="flex items-center gap-1 shrink-0">
-        <div className="h-8 w-32 animate-pulse rounded bg-muted" />
-      </div>
-    );
-  }
-
   const createSheet = useMutation(api.sheets.createSheet);
   const updateName = useMutation(api.sheets.updateName).withOptimisticUpdate(
     (localStore, args) => {
@@ -70,8 +62,6 @@ export function SheetTabs(props: SheetTabsProps) {
   const [editName, setEditName] = useState('');
   const editInputRef = useRef<HTMLInputElement>(null);
 
-  const maxSheetsReached = sheets.length >= 5;
-
   useEffect(() => {
     if (editingSheetId && editInputRef.current) {
       editInputRef.current.focus();
@@ -81,7 +71,7 @@ export function SheetTabs(props: SheetTabsProps) {
 
   const handleCreateSheet = useCallback(async () => {
     if (!analysisId) return;
-    if (maxSheetsReached) {
+    if (!sheets || sheets.length >= 5) {
       toast.error('Maximum of 5 sheets allowed');
       return;
     }
@@ -102,7 +92,7 @@ export function SheetTabs(props: SheetTabsProps) {
         description: errorMessage,
       });
     }
-  }, [analysisId, createSheet, maxSheetsReached, navigate]);
+  }, [analysisId, createSheet, sheets, navigate]);
 
   const handleStartEdit = useCallback((sheet: Doc<'sheets'>) => {
     setEditingSheetId(sheet._id);
@@ -117,6 +107,7 @@ export function SheetTabs(props: SheetTabsProps) {
         return;
       }
 
+      if (!sheets) return;
       const sheet = sheets.find((s) => s._id === sheetId);
       if (!sheet || sheet.name === trimmedName) {
         setEditingSheetId(null);
@@ -141,6 +132,7 @@ export function SheetTabs(props: SheetTabsProps) {
 
   const handleCancelEdit = useCallback(
     (sheetId: Id<'sheets'>) => {
+      if (!sheets) return;
       const sheet = sheets.find((s) => s._id === sheetId);
       if (sheet) {
         setEditName(sheet.name);
@@ -166,7 +158,7 @@ export function SheetTabs(props: SheetTabsProps) {
   const handleDeleteSheet = useCallback(
     async (sheetId: Id<'sheets'>, e: React.MouseEvent) => {
       e.stopPropagation();
-      if (!analysisId) return;
+      if (!analysisId || !sheets) return;
 
       if (sheets.length <= 1) {
         toast.error('Cannot delete the last remaining sheet');
@@ -198,6 +190,16 @@ export function SheetTabs(props: SheetTabsProps) {
     },
     [deleteSheet, sheets, navigate, analysisId, activeSheetId],
   );
+
+  if (sheets === undefined || sheets === null) {
+    return (
+      <div className="flex items-center gap-1 shrink-0">
+        <div className="h-8 w-32 animate-pulse rounded bg-muted" />
+      </div>
+    );
+  }
+
+  const maxSheetsReached = sheets.length >= 5;
 
   if (sheets.length === 0) {
     return null;
