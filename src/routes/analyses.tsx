@@ -6,8 +6,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp } from 'lucide-react';
-import { useQuery } from 'convex/react';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
@@ -22,10 +23,18 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-import { Skeleton } from '~/components/ui/skeleton';
 import { Button } from '~/components/ui/button';
 
 export const Route = createFileRoute('/analyses')({
+  loader: async (opts) => {
+    if (typeof window === 'undefined') {
+      // Only prefetch on the client (not during SSR)
+      return;
+    }
+    await opts.context.queryClient.ensureQueryData(
+      convexQuery(api.analyses.list, {}),
+    );
+  },
   component: AnalysesPage,
 });
 
@@ -37,7 +46,9 @@ type Analysis = {
 };
 
 function AnalysesPage() {
-  const analyses = useQuery(api.analyses.list);
+  const { data: analyses } = useSuspenseQuery(
+    convexQuery(api.analyses.list, {}),
+  );
   const navigate = useNavigate();
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -115,7 +126,7 @@ function AnalysesPage() {
   );
 
   const table = useReactTable({
-    data: analyses === 'Unauthenticated' ? [] : (analyses ?? []),
+    data: analyses === 'Unauthenticated' ? [] : analyses,
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -128,54 +139,6 @@ function AnalysesPage() {
   if (analyses === 'Unauthenticated') {
     navigate({ to: '/' });
     return null;
-  }
-
-  if (analyses === undefined) {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Analyses</h1>
-            <p className="text-muted-foreground">
-              View and manage your analyses
-            </p>
-          </div>
-
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:!bg-transparent">
-                  <TableHead>
-                    <Skeleton className="h-5 w-24" />
-                  </TableHead>
-                  <TableHead>
-                    <Skeleton className="h-5 w-32" />
-                  </TableHead>
-                  <TableHead>
-                    <Skeleton className="h-5 w-24" />
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i} className="hover:!bg-transparent">
-                    <TableCell>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      </AppLayout>
-    );
   }
 
   if (analyses.length === 0) {
