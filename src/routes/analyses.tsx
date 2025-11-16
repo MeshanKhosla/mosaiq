@@ -47,7 +47,8 @@ type Analysis = {
 };
 
 function AnalysesPage() {
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: isLoadingSession } =
+    authClient.useSession();
   const { data: analyses } = useSuspenseQuery(
     convexQuery(api.analyses.list, {}),
   );
@@ -136,6 +137,18 @@ function AnalysesPage() {
       sorting,
     },
   });
+
+  if (isLoadingSession) {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Analyses</h1>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (!session) {
     navigate({ to: '/' });
