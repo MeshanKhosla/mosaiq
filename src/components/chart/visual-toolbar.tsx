@@ -9,7 +9,7 @@ import { api } from '../../../convex/_generated/api';
 import { FieldWells } from './field-wells';
 import { Filters } from './filters';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
-import type {VisualType} from '~/lib/chart-utils';
+import type { VisualType } from '~/lib/chart-utils';
 import { Button } from '~/components/ui/button';
 
 type Column = Doc<'datasources'>['columns'][number];

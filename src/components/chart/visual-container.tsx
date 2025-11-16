@@ -41,6 +41,10 @@ export function VisualContainer({
 }: VisualContainerProps) {
   const [localPosition, setLocalPosition] = useState(() => visual.position);
 
+  useEffect(() => {
+    setLocalPosition(visual.position);
+  }, [visual.position]);
+
   const updatePosition = useMutation(
     api.visuals.updatePosition,
   ).withOptimisticUpdate((localStore, args) => {
@@ -181,7 +185,7 @@ export function VisualContainer({
     setLocalPosition((prev: typeof visual.position) => ({
       ...prev,
       x: d.x,
-      y: Math.max(0, d.y),
+      y: d.y,
     }));
   }, []);
 
@@ -192,13 +196,12 @@ export function VisualContainer({
       }
 
       let clampedX = d.x;
-      const clampedY = Math.max(0, d.y);
+      const clampedY = d.y;
 
       if (canvasRef?.current) {
-        const canvasRect = canvasRef.current.getBoundingClientRect();
-        const padding = 12;
+        const canvasContentWidth = canvasRef.current.clientWidth;
         const minX = 0;
-        const maxX = canvasRect.width - localPosition.width - padding * 2;
+        const maxX = Math.max(0, canvasContentWidth - localPosition.width);
 
         clampedX = Math.max(minX, Math.min(clampedX, maxX));
       } else {
