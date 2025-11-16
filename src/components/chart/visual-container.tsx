@@ -148,7 +148,10 @@ export function VisualContainer({
           .map((id) => columns.find((c) => c._id === id)?.name)
           .filter((name): name is string => name !== undefined);
         const measureNames = visual.axes.measures
-          .map((id) => columns.find((c) => c._id === id)?.name)
+          .map((m) => {
+            const columnId = typeof m === 'string' ? m : m.columnId;
+            return columns.find((c) => c._id === columnId)?.name;
+          })
           .filter((name): name is string => name !== undefined);
 
         if (dimensionNames.length > 0 && measureNames.length > 0) {

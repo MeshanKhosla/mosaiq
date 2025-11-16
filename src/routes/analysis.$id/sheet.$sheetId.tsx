@@ -273,11 +273,20 @@ function SheetPage() {
       // Optimistically select the new visual immediately
       setSelectedVisualId(tempId);
 
+      const normalizedAxes = axes
+        ? {
+            dimensions: axes.dimensions,
+            measures: axes.measures?.map((m) =>
+              typeof m === 'string' ? { columnId: m, aggregation: 'SUM' } : m,
+            ),
+          }
+        : undefined;
+
       const visualId = await createVisual({
         sheetId: currentSheetId,
         type,
         position,
-        axes: type === 'table' ? undefined : axes,
+        axes: type === 'table' ? undefined : normalizedAxes,
       });
 
       // Update to the real ID when mutation completes

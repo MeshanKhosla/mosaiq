@@ -1,8 +1,8 @@
 import {
   BarChart3,
   Filter,
-  LineChart,
-  PieChart,
+  LineChart as LineChartIcon,
+  PieChart as PieChartIcon,
   Plus,
   Table,
   X,
@@ -12,6 +12,11 @@ import { useMemo, useState } from 'react';
 import { useDuckDbQuery } from 'duckdb-wasm-kit';
 import { api } from '../../../convex/_generated/api';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
+import type BaseChart from '~/charts/base-chart';
+import BarChart from '~/charts/bar-chart';
+import PieChart from '~/charts/pie-chart';
+import LineChart from '~/charts/line-chart';
+import TableChart from '~/charts/table-chart';
 import { Button } from '~/components/ui/button';
 import {
   Popover,
@@ -52,8 +57,8 @@ const visualTypes: Array<{
 }> = [
   { type: 'table', label: 'Table', icon: Table },
   { type: 'bar_chart', label: 'Bar Chart', icon: BarChart3 },
-  { type: 'line_chart', label: 'Line Chart', icon: LineChart },
-  { type: 'pie_chart', label: 'Pie Chart', icon: PieChart },
+  { type: 'line_chart', label: 'Line Chart', icon: LineChartIcon },
+  { type: 'pie_chart', label: 'Pie Chart', icon: PieChartIcon },
 ];
 
 interface FieldWellsProps {
@@ -65,6 +70,45 @@ interface FieldWellsProps {
   onToggleMeasure: (columnId: string, checked: boolean) => void;
   onRemoveDimension: (columnId: string) => void;
   onRemoveMeasure: (columnId: string) => void;
+  onUpdateMeasureAggregation: (columnId: string, aggregation: string) => void;
+}
+
+function getChartInstance(type: VisualType): BaseChart | null {
+  switch (type) {
+    case 'table':
+      return new TableChart();
+    case 'bar_chart':
+      return new BarChart();
+    case 'pie_chart':
+      return new PieChart();
+    case 'line_chart':
+      return new LineChart();
+    default:
+      return new BarChart();
+  }
+}
+
+const AGGREGATION_OPTIONS = [
+  { value: 'SUM', label: 'Sum', numericOnly: true },
+  { value: 'AVG', label: 'Average', numericOnly: true },
+  { value: 'COUNT', label: 'Count', numericOnly: false },
+  { value: 'MIN', label: 'Min', numericOnly: true },
+  { value: 'MAX', label: 'Max', numericOnly: true },
+  { value: 'COUNT_DISTINCT', label: 'Count Distinct', numericOnly: false },
+  { value: 'MEDIAN', label: 'Median', numericOnly: true },
+] as const;
+
+/**
+ * Get available aggregations for a column type.
+ * All fields can be used as measures, but non-numeric fields can only use COUNT/COUNT_DISTINCT.
+ * Numeric fields can use all aggregation types.
+ */
+function getAvailableAggregations(columnType: 'string' | 'number' | 'date') {
+  if (columnType === 'number') {
+    return AGGREGATION_OPTIONS;
+  }
+  // Non-numeric fields (string/date) can only use COUNT and COUNT_DISTINCT
+  return AGGREGATION_OPTIONS.filter((opt) => !opt.numericOnly);
 }
 
 function FieldWells({
@@ -76,9 +120,41 @@ function FieldWells({
   onToggleMeasure,
   onRemoveDimension,
   onRemoveMeasure,
+  onUpdateMeasureAggregation,
 }: FieldWellsProps) {
   const currentDimensions = selectedVisual.axes?.dimensions || [];
   const currentMeasures = selectedVisual.axes?.measures || [];
+
+  const chartInstance = useMemo(
+    () => getChartInstance(selectedVisual.type),
+    [selectedVisual.type],
+  );
+  const requirements = useMemo(
+    () => chartInstance?.getRequirements(),
+    [chartInstance],
+  );
+
+  const getMeasureColumnId = (
+    m: string | { columnId: string; aggregation: string },
+  ): string => {
+    return typeof m === 'string' ? m : m.columnId;
+  };
+
+  const getMeasureAggregation = (
+    m: string | { columnId: string; aggregation: string },
+  ): string => {
+    return typeof m === 'string' ? 'SUM' : m.aggregation;
+  };
+
+  const isMeasureSelected = (columnId: string): boolean => {
+    return currentMeasures.some((m) => getMeasureColumnId(m) === columnId);
+  };
+
+  const dimensionLimitReached =
+    requirements &&
+    currentDimensions.length >= requirements.wells.dimensions.max;
+  const measureLimitReached =
+    requirements && currentMeasures.length >= requirements.wells.measures.max;
 
   return (
     <div className="flex-1 border-l border-border/30 pl-3">
@@ -108,15 +184,21 @@ function FieldWells({
                 <div className="space-y-1">
                   {dimensionColumns.map((col) => {
                     const isSelected = currentDimensions.includes(col._id);
+                    const isDisabled = !isSelected && dimensionLimitReached;
                     return (
                       <label
                         key={col._id}
                         htmlFor={`dim-${col._id}`}
-                        className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent cursor-pointer"
+                        className={`flex items-center space-x-2 rounded-sm px-2 py-1.5 ${
+                          isDisabled
+                            ? 'opacity-50 cursor-not-allowed'
+                            : 'hover:bg-accent cursor-pointer'
+                        }`}
                       >
                         <Checkbox
                           id={`dim-${col._id}`}
                           checked={isSelected}
+                          disabled={isDisabled}
                           onCheckedChange={(checked) =>
                             onToggleDimension(col._id, checked === true)
                           }
@@ -170,16 +252,22 @@ function FieldWells({
               >
                 <div className="space-y-1">
                   {measureColumns.map((col) => {
-                    const isSelected = currentMeasures.includes(col._id);
+                    const isSelected = isMeasureSelected(col._id);
+                    const isDisabled = !isSelected && measureLimitReached;
                     return (
                       <label
                         key={col._id}
                         htmlFor={`meas-${col._id}`}
-                        className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent cursor-pointer"
+                        className={`flex items-center space-x-2 rounded-sm px-2 py-1.5 ${
+                          isDisabled
+                            ? 'opacity-50 cursor-not-allowed'
+                            : 'hover:bg-accent cursor-pointer'
+                        }`}
                       >
                         <Checkbox
                           id={`meas-${col._id}`}
                           checked={isSelected}
+                          disabled={isDisabled}
                           onCheckedChange={(checked) =>
                             onToggleMeasure(col._id, checked === true)
                           }
@@ -194,22 +282,85 @@ function FieldWells({
               </PopoverContent>
             </Popover>
             <div className="flex flex-wrap gap-1">
-              {currentMeasures.map((measId) => {
-                const col = columns.find((c) => c._id === measId);
-                return col ? (
-                  <span
-                    key={measId}
-                    className="flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs shrink-0"
-                  >
-                    {col.name}
-                    <button
-                      onClick={() => onRemoveMeasure(measId)}
-                      className="hover:text-destructive"
+              {currentMeasures.map((measure) => {
+                const columnId = getMeasureColumnId(measure);
+                const aggregation = getMeasureAggregation(measure);
+                const col = columns.find((c) => c._id === columnId);
+                if (!col) return null;
+
+                const availableAggregations = getAvailableAggregations(
+                  col.type,
+                );
+                const currentAggregationValid = availableAggregations.some(
+                  (opt) => opt.value === aggregation,
+                );
+                const effectiveAggregation = currentAggregationValid
+                  ? aggregation
+                  : availableAggregations[0].value;
+
+                // Auto-correct invalid aggregation on render
+                if (!currentAggregationValid) {
+                  // Use setTimeout to avoid state updates during render
+                  setTimeout(() => {
+                    onUpdateMeasureAggregation(columnId, effectiveAggregation);
+                  }, 0);
+                }
+
+                const aggregationLabel =
+                  availableAggregations.find(
+                    (opt) => opt.value === effectiveAggregation,
+                  )?.label || effectiveAggregation;
+
+                return (
+                  <Popover key={columnId}>
+                    <PopoverTrigger asChild>
+                      <button
+                        className="group flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-xs shrink-0 hover:bg-primary/20 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span>
+                          {col.name} ({aggregationLabel})
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveMeasure(columnId);
+                          }}
+                          className="ml-1 opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      side="bottom"
+                      align="start"
+                      className="w-48 p-2"
+                      onOpenAutoFocus={(e) => e.preventDefault()}
                     >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ) : null;
+                      <div className="space-y-1">
+                        <div className="text-xs font-medium mb-2 px-1">
+                          Change aggregation
+                        </div>
+                        {availableAggregations.map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => {
+                              onUpdateMeasureAggregation(columnId, opt.value);
+                            }}
+                            className={`w-full text-left rounded-sm px-2 py-1.5 text-sm hover:bg-accent transition-colors ${
+                              effectiveAggregation === opt.value
+                                ? 'bg-accent font-medium'
+                                : ''
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                );
               })}
             </div>
           </div>
@@ -554,7 +705,7 @@ export function VisualToolbar({
   const dimensionColumns = columns.filter(
     (col) => col.type === 'string' || col.type === 'date',
   );
-  const measureColumns = columns.filter((col) => col.type === 'number');
+  const measureColumns = columns;
 
   const handleCreateVisual = (type: VisualType) => {
     onCreateVisual(type);
@@ -585,11 +736,69 @@ export function VisualToolbar({
     if (!selectedVisual) return;
 
     const currentMeasures = selectedVisual.axes?.measures || [];
-    const newMeasures = checked
-      ? [...currentMeasures, columnId]
-      : currentMeasures.filter((id) => id !== columnId);
+    const getMeasureColumnId = (
+      m: string | { columnId: string; aggregation: string },
+    ): string => {
+      return typeof m === 'string' ? m : m.columnId;
+    };
 
-    if (checked && currentMeasures.includes(columnId)) return;
+    const isMeasureIncluded = currentMeasures.some(
+      (m) => getMeasureColumnId(m) === columnId,
+    );
+
+    if (checked && isMeasureIncluded) return;
+
+    const column = columns.find((c) => c._id === columnId);
+    // Default aggregation: SUM for numeric fields, COUNT for non-numeric fields
+    // (all fields can be measures, but non-numeric fields use COUNT)
+    const defaultAggregation = column?.type === 'number' ? 'SUM' : 'COUNT';
+
+    const newMeasures = checked
+      ? [...currentMeasures, { columnId, aggregation: defaultAggregation }]
+      : currentMeasures.filter((m) => getMeasureColumnId(m) !== columnId);
+
+    const newAxes = {
+      dimensions: selectedVisual.axes?.dimensions || [],
+      measures: newMeasures,
+    };
+
+    updateAxes({
+      id: selectedVisual._id,
+      axes: newAxes,
+    });
+  };
+
+  const handleUpdateMeasureAggregation = (
+    columnId: string,
+    aggregation: string,
+  ) => {
+    if (!selectedVisual) return;
+
+    const column = columns.find((c) => c._id === columnId);
+    if (!column) return;
+
+    const availableAggregations = getAvailableAggregations(column.type);
+    const isValidAggregation = availableAggregations.some(
+      (opt) => opt.value === aggregation,
+    );
+
+    if (!isValidAggregation) {
+      return;
+    }
+
+    const currentMeasures = selectedVisual.axes?.measures || [];
+    const getMeasureColumnId = (
+      m: string | { columnId: string; aggregation: string },
+    ): string => {
+      return typeof m === 'string' ? m : m.columnId;
+    };
+
+    const newMeasures = currentMeasures.map((m) => {
+      if (getMeasureColumnId(m) === columnId) {
+        return { columnId, aggregation };
+      }
+      return typeof m === 'string' ? { columnId: m, aggregation: 'SUM' } : m;
+    });
 
     const newAxes = {
       dimensions: selectedVisual.axes?.dimensions || [],
@@ -637,6 +846,7 @@ export function VisualToolbar({
           onToggleMeasure={handleToggleMeasure}
           onRemoveDimension={handleRemoveDimension}
           onRemoveMeasure={handleRemoveMeasure}
+          onUpdateMeasureAggregation={handleUpdateMeasureAggregation}
         />
       )}
 

@@ -27,39 +27,33 @@ class BarChart extends BaseChart {
 
     // Map column IDs to column names
     const dimensionColumn = columns.find((col) => col._id === dimensions[0]);
-    const measureColumn = columns.find((col) => col._id === measures[0]);
+    const measure = measures[0];
+    const measureColumnId =
+      typeof measure === 'string' ? measure : measure.columnId;
+    const measureAggregation =
+      typeof measure === 'string' ? 'SUM' : measure.aggregation;
+    const measureColumn = columns.find((col) => col._id === measureColumnId);
 
     if (!dimensionColumn || !measureColumn) {
       throw new Error('Column not found');
     }
 
-    // Escape column names with double quotes if they contain special characters
-    const escapeColumnName = (name: string): string => {
-      // If name contains spaces, special characters, or is a reserved word, quote it
-      if (
-        /[^a-zA-Z0-9_]/.test(name) ||
-        /^\d/.test(name) ||
-        ['select', 'from', 'where', 'group', 'order', 'by', 'as'].includes(
-          name.toLowerCase(),
-        )
-      ) {
-        return `"${name.replace(/"/g, '""')}"`;
-      }
-      return name;
-    };
-
-    const dimensionName = escapeColumnName(dimensionColumn.name);
-    const measureName = escapeColumnName(measureColumn.name);
+    const dimensionName = this.escapeColumnName(dimensionColumn.name);
+    const aggregationExpr = this.buildAggregationExpression(
+      measureColumn.name,
+      measureAggregation,
+      measureColumn.type,
+    );
 
     const whereClause = this.buildWhereClause(filters, columns);
 
     // Generate SQL query for bar chart
-    // SELECT dimension, SUM(measure) as value
+    // SELECT dimension, AGG(measure) as value
     // FROM table
     // [WHERE filters]
     // GROUP BY dimension
     // ORDER BY value DESC
-    return `SELECT ${dimensionName}, SUM(${measureName}) as value FROM ${escapeColumnName(tableName)}${whereClause} GROUP BY ${dimensionName} ORDER BY value DESC`;
+    return `SELECT ${dimensionName}, ${aggregationExpr} as value FROM ${this.escapeColumnName(tableName)}${whereClause} GROUP BY ${dimensionName} ORDER BY value DESC`;
   }
 
   validateAxes(axes: Axes): true | string {
