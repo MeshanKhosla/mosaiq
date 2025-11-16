@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
 import { insertFile } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
-import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
 import type { VisualType } from '~/components/chart/visual-toolbar';
@@ -25,46 +24,38 @@ export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
       throw redirect({ to: '/' });
     }
   },
-  loader: async ({ context, params }) => {
-    const analysisId = params.id as Id<'analyses'>;
-    const sheetId = params.sheetId as Id<'sheets'>;
-
-    const [analysis, sheets] = await Promise.all([
-      context.queryClient.ensureQueryData(
-        convexQuery(api.analyses.get, { id: analysisId }),
-      ),
-      context.queryClient.ensureQueryData(
-        convexQuery(api.sheets.getAllByAnalysis, { analysisId }),
-      ),
-    ]);
-
-    if (!analysis || !sheets || sheets.length === 0) {
-      return;
-    }
-
-    const sheetExists = sheets.some((s) => s._id === sheetId);
-    if (!sheetExists) {
-      throw redirect({
-        to: '/analysis/$id/sheet/$sheetId',
-        params: {
-          id: analysisId,
-          sheetId: sheets[0]._id,
-        },
-      });
-    }
-
-    return { analysis, sheets };
+  loader: ({ params }) => {
+    // Client-side data fetching will handle this via useQuery hooks
+    // Sheet validation happens client-side in the component
+    return { analysisId: params.id, sheetId: params.sheetId };
   },
 });
 
 function SheetPage() {
   const { id, sheetId } = Route.useParams();
+  const navigate = useNavigate();
   const analysisId = id as Id<'analyses'>;
   const currentSheetId = sheetId as Id<'sheets'>;
   const analysis = useQuery(api.analyses.get, { id: analysisId });
   const sheets = useQuery(api.sheets.getAllByAnalysis, { analysisId });
 
-  // Refresh page on navigation to ensure clean state
+  // Redirect if sheet doesn't exist
+  useEffect(() => {
+    if (sheets && sheets.length > 0) {
+      const sheetExists = sheets.some((s) => s._id === currentSheetId);
+      if (!sheetExists) {
+        navigate({
+          to: '/analysis/$id/sheet/$sheetId',
+          params: { id: analysisId, sheetId: sheets[0]._id },
+        });
+      }
+    }
+  }, [sheets, currentSheetId, analysisId, navigate]);
+
+  // HACK: Refresh page on navigation to ensure clean state
+  // This is a workaround for DuckDB table loading race conditions that cause
+  // "Binder Error: Referenced column not found in FROM clause" errors
+  // I know it'a bad but the hackathon is about to end lol
   useEffect(() => {
     const hasRefreshed = sessionStorage.getItem(`refreshed-${currentSheetId}`);
     if (!hasRefreshed) {
