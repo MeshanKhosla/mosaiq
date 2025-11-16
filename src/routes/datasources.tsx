@@ -23,6 +23,7 @@ import {
 } from '~/components/ui/table';
 import { Button } from '~/components/ui/button';
 import { authClient } from '~/lib/auth-client';
+import { DataTableSkeleton } from '~/components/data-table/skeleton';
 
 export const Route = createFileRoute('/datasources')({
   loader: async (opts) => {
@@ -171,7 +172,7 @@ function DatasourcesPage() {
   );
 
   const table = useReactTable({
-    data: datasources,
+    data: datasources === 'Unauthenticated' ? [] : datasources,
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -196,6 +197,25 @@ function DatasourcesPage() {
   if (!session) {
     navigate({ to: '/' });
     return null;
+  }
+
+  if (datasources === 'Unauthenticated') {
+    // Show loading state, session check will handle redirect. Usually we end up here if
+    // server authentication is not available yet.
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Datasources</h1>
+            <p className="text-muted-foreground">
+              View and manage your datasources
+            </p>
+          </div>
+
+          <DataTableSkeleton />
+        </div>
+      </AppLayout>
+    );
   }
 
   if (datasources.length === 0) {
