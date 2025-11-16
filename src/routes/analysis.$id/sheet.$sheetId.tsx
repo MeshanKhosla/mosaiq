@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -8,7 +8,6 @@ import type { Id } from '../../../convex/_generated/dataModel';
 import type { VisualType } from '~/lib/chart-utils';
 import { DEFAULT_VISUAL_SIZE } from '~/lib/constants';
 import { AppLayout } from '~/components/app-layout';
-import { fetchAuth } from '~/routes/__root';
 import { VisualToolbar } from '~/components/chart/visual-toolbar';
 import { VisualCanvas } from '~/components/chart/visual-canvas';
 import { SheetTabs } from '~/components/chart/sheet-tabs';
@@ -18,15 +17,10 @@ import { useDuckDbTable } from '~/hooks/use-duckdb-table';
 
 export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
   component: SheetPage,
-  beforeLoad: async () => {
-    const { userId } = await fetchAuth();
-    if (!userId) {
-      throw redirect({ to: '/' });
-    }
-  },
   loader: ({ params }) => {
     // Client-side data fetching will handle this via useQuery hooks
     // Sheet validation happens client-side in the component
+    // Auth is already checked by the parent route /analysis/$id
     return { analysisId: params.id, sheetId: params.sheetId };
   },
 });

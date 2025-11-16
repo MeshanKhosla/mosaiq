@@ -1,27 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
-import { fetchAuth } from '~/routes/__root';
 import { VisualCanvas } from '~/components/chart/visual-canvas';
-import { DashboardSheetTabs } from '~/components/chart/dashboard-sheet-tabs';
+import { SheetTabs } from '~/components/chart/sheet-tabs';
 import { useDuckDbTable } from '~/hooks/use-duckdb-table';
 
 export const Route = createFileRoute('/dashboard/$id/sheet/$sheetId')({
   component: DashboardSheetPage,
-  beforeLoad: async () => {
-    const { userId } = await fetchAuth();
-    if (!userId) {
-      throw redirect({ to: '/' });
-    }
-  },
   loader: ({ params }) => {
     // Client-side data fetching will handle this via useQuery hooks
     // Sheet validation happens client-side in the component
+    // Auth is already checked by the parent route /dashboard/$id
     return { dashboardId: params.id, sheetId: params.sheetId };
   },
 });
@@ -168,7 +162,7 @@ function DashboardSheetPage() {
         {datasource && (
           <>
             <div className="flex items-center gap-2 border-b border-border/30 px-3 py-1">
-              <DashboardSheetTabs
+              <SheetTabs
                 sheets={sheets ?? undefined}
                 dashboardId={dashboardId}
               />
