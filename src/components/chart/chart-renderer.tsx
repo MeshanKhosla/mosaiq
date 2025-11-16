@@ -273,7 +273,7 @@ export function ChartRenderer(props: {
   if (dbLoading)
     return (
       <div className="text-sm text-muted-foreground">
-        Loading duckdb binary...
+        Loading DuckDB WASM binary...
       </div>
     );
   if (!tableLoaded)

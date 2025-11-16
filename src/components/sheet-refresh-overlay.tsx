@@ -51,7 +51,7 @@ export function SheetRefreshOverlay() {
       <div className="flex flex-col items-center gap-6 w-full max-w-md px-8">
         <div className="flex flex-col gap-2 w-full">
           <p className="text-sm font-medium text-foreground text-center">
-            Loading DuckDB binary...
+            Loading DuckDB WASM binary...
           </p>
           <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">
             <div

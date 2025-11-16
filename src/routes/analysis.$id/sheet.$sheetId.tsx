@@ -58,9 +58,14 @@ function SheetPage() {
   // "Binder Error: Referenced column not found in FROM clause" errors
   // I know it'a bad but the hackathon is about to end lol
   useLayoutEffect(() => {
-    const hasRefreshed = sessionStorage.getItem(`refreshed-${currentSheetId}`);
+    // Only refresh on the first sheet (when first navigating to the analysis)
+    const isFirstSheet =
+      sheets && sheets.length > 0 && sheets[0]._id === currentSheetId;
+    if (!isFirstSheet) return;
+
+    const hasRefreshed = sessionStorage.getItem(`refreshed-${analysisId}`);
     if (!hasRefreshed && !refreshTimeoutRef.current) {
-      sessionStorage.setItem(`refreshed-${currentSheetId}`, 'true');
+      sessionStorage.setItem(`refreshed-${analysisId}`, 'true');
       // Show overlay first, then refresh after a delay
       setShowRefreshOverlay(true);
       refreshTimeoutRef.current = setTimeout(() => {
@@ -68,7 +73,7 @@ function SheetPage() {
         window.location.reload();
       }, 450);
     }
-  }, [currentSheetId]);
+  }, [currentSheetId, sheets, analysisId]);
   const updateAnalysisName = useMutation(
     api.analyses.updateName,
   ).withOptimisticUpdate((localStore, args) => {
