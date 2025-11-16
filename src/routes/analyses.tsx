@@ -28,15 +28,15 @@ import { Button } from '~/components/ui/button';
 
 export const Route = createFileRoute('/analyses')({
   component: AnalysesPage,
-  beforeLoad: async () => {
-    const { userId } = await fetchAuth();
-    if (!userId) {
-      throw redirect({ to: '/' });
-    }
-  },
-  loader: () => {
-    // Client-side data fetching will handle this via useQuery hooks
-  },
+  // beforeLoad: async () => {
+  //   const { userId } = await fetchAuth();
+  //   if (!userId) {
+  //     throw redirect({ to: '/' });
+  //   }
+  // },
+  // loader: () => {
+  //   // Client-side data fetching will handle this via useQuery hooks
+  // },
 });
 
 type Analysis = {
