@@ -140,7 +140,8 @@ const columns: Array<ColumnDef<Dashboard>> = [
 ];
 
 function DashboardsPage() {
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: isLoadingSession } =
+    authClient.useSession();
   const navigate = useNavigate();
   const { data: dashboards } = useSuspenseQuery(
     convexQuery(api.dashboards.list, {}),
@@ -166,7 +167,7 @@ function DashboardsPage() {
     return null;
   }
 
-  if (dashboards === 'Unauthenticated') {
+  if (isLoadingSession || dashboards === 'Unauthenticated') {
     return (
       <AppLayout>
         <div className="space-y-6">

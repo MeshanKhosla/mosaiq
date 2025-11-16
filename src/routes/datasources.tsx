@@ -182,26 +182,12 @@ function DatasourcesPage() {
     },
   });
 
-  if (isLoadingSession) {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Datasources</h1>
-          </div>
-        </div>
-      </AppLayout>
-    );
-  }
-
   if (!session) {
     navigate({ to: '/' });
     return null;
   }
 
-  if (datasources === 'Unauthenticated') {
-    // Show loading state, session check will handle redirect. Usually we end up here if
-    // server authentication is not available yet.
+  if (isLoadingSession || datasources === 'Unauthenticated') {
     return (
       <AppLayout>
         <div className="space-y-6">

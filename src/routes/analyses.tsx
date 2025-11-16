@@ -48,7 +48,8 @@ type Analysis = {
 };
 
 function AnalysesPage() {
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: isLoadingSession } =
+    authClient.useSession();
   const { data: analyses } = useSuspenseQuery(
     convexQuery(api.analyses.list, {}),
   );
@@ -143,7 +144,7 @@ function AnalysesPage() {
     return null;
   }
 
-  if (analyses === 'Unauthenticated') {
+  if (isLoadingSession || analyses === 'Unauthenticated') {
     return (
       <AppLayout>
         <div className="space-y-6">
