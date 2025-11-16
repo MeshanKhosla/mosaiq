@@ -6,6 +6,8 @@ Always follow best practices from the libraries used. For example, follow Convex
 
 Do not write useless comments that are obviously AI generated.
 
+Prefer guard clauses over nested ternaries.
+
 You should run this after any change that could impact code:
 
 ```sh
