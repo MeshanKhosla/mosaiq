@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useMutation } from 'convex/react';
-import { useNavigate, useParams } from '@tanstack/react-router';
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { toast } from 'sonner';
 import { api } from '../../../convex/_generated/api';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
@@ -9,14 +9,27 @@ import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { cn } from '~/lib/utils';
 
-interface SheetTabsProps {
-  sheets: Array<Doc<'sheets'>> | undefined | null;
-  analysisId: Id<'analyses'>;
-}
+type SheetTabsProps =
+  | {
+      sheets: Array<Doc<'sheets'>> | undefined | null;
+      analysisId: Id<'analyses'>;
+      dashboardId?: never;
+    }
+  | {
+      sheets: Array<Doc<'sheets'>> | undefined | null;
+      analysisId?: never;
+      dashboardId: Id<'dashboards'>;
+    };
 
-export function SheetTabs({ sheets, analysisId }: SheetTabsProps) {
+export function SheetTabs(props: SheetTabsProps) {
+  const { sheets, analysisId, dashboardId } = props;
+  const isDashboard = !!dashboardId;
   const navigate = useNavigate();
-  const params = useParams({ from: '/analysis/$id/sheet/$sheetId' });
+  const params = useParams({
+    from: isDashboard
+      ? '/dashboard/$id/sheet/$sheetId'
+      : '/analysis/$id/sheet/$sheetId',
+  });
   const activeSheetId = (params.sheetId as Id<'sheets'>) || null;
 
   if (sheets === undefined || sheets === null) {
@@ -30,6 +43,7 @@ export function SheetTabs({ sheets, analysisId }: SheetTabsProps) {
   const createSheet = useMutation(api.sheets.createSheet);
   const updateName = useMutation(api.sheets.updateName).withOptimisticUpdate(
     (localStore, args) => {
+      if (!analysisId) return;
       const existingSheets = localStore.getQuery(api.sheets.getAllByAnalysis, {
         analysisId,
       });
@@ -66,6 +80,7 @@ export function SheetTabs({ sheets, analysisId }: SheetTabsProps) {
   }, [editingSheetId]);
 
   const handleCreateSheet = useCallback(async () => {
+    if (!analysisId) return;
     if (maxSheetsReached) {
       toast.error('Maximum of 5 sheets allowed');
       return;
@@ -80,7 +95,6 @@ export function SheetTabs({ sheets, analysisId }: SheetTabsProps) {
           sheetId: newSheetId,
         },
       });
-      toast.success('Sheet created');
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to create sheet';
@@ -152,6 +166,7 @@ export function SheetTabs({ sheets, analysisId }: SheetTabsProps) {
   const handleDeleteSheet = useCallback(
     async (sheetId: Id<'sheets'>, e: React.MouseEvent) => {
       e.stopPropagation();
+      if (!analysisId) return;
 
       if (sheets.length <= 1) {
         toast.error('Cannot delete the last remaining sheet');
@@ -206,27 +221,13 @@ export function SheetTabs({ sheets, analysisId }: SheetTabsProps) {
                   : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
             >
-              <button
-                type="button"
-                onClick={() => {
-                  navigate({
-                    to: '/analysis/$id/sheet/$sheetId',
-                    params: {
-                      id: analysisId,
-                      sheetId: sheet._id,
-                    },
-                  });
-                }}
-                onDoubleClick={(e) => {
-                  e.stopPropagation();
-                  handleStartEdit(sheet);
-                }}
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors',
-                  isActive && 'text-foreground',
-                )}
-              >
-                {isEditing ? (
+              {isEditing ? (
+                <div
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors',
+                    isActive && 'text-foreground',
+                  )}
+                >
                   <Input
                     ref={editInputRef}
                     value={editName}
@@ -236,41 +237,73 @@ export function SheetTabs({ sheets, analysisId }: SheetTabsProps) {
                     onClick={(e) => e.stopPropagation()}
                     className="h-6 min-w-[80px] text-xs"
                   />
-                ) : (
-                  <>
-                    <span>{sheet.name}</span>
-                    {canDelete && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => handleDeleteSheet(sheet._id, e)}
-                        className="h-5 w-5 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-                        title="Delete sheet"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </>
-                )}
-              </button>
+                </div>
+              ) : (
+                <Link
+                  to={
+                    isDashboard
+                      ? '/dashboard/$id/sheet/$sheetId'
+                      : '/analysis/$id/sheet/$sheetId'
+                  }
+                  params={{
+                    id: (analysisId || dashboardId)!,
+                    sheetId: sheet._id,
+                  }}
+                  preload="intent"
+                  onDoubleClick={(e) => {
+                    if (!isDashboard) {
+                      e.preventDefault();
+                      handleStartEdit(sheet);
+                    }
+                  }}
+                  className={cn(
+                    'flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors',
+                    isActive && 'text-foreground',
+                  )}
+                >
+                  <span>{sheet.name}</span>
+                  {canDelete && !isDashboard && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDeleteSheet(sheet._id, e);
+                      }}
+                      className="h-5 w-5 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                      title="Delete sheet"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </Link>
+              )}
             </div>
           );
         })}
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleCreateSheet}
-        disabled={maxSheetsReached}
-        className="h-8 w-8 shrink-0 p-0"
-        title={
-          maxSheetsReached ? 'Maximum of 5 sheets allowed' : 'Create new sheet'
-        }
-      >
-        <Plus className="h-4 w-4" />
-      </Button>
-      {maxSheetsReached && (
-        <span className="text-xs text-muted-foreground shrink-0">(5/5)</span>
+      {!isDashboard && (
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCreateSheet}
+            disabled={maxSheetsReached}
+            className="h-8 w-8 shrink-0 p-0"
+            title={
+              maxSheetsReached
+                ? 'Maximum of 5 sheets allowed'
+                : 'Create new sheet'
+            }
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          {maxSheetsReached && (
+            <span className="text-xs text-muted-foreground shrink-0">
+              (5/5)
+            </span>
+          )}
+        </>
       )}
     </div>
   );

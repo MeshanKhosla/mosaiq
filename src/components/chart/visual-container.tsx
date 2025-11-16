@@ -182,10 +182,13 @@ export function VisualContainer({
   );
 
   const handleDrag = useCallback((_e: any, d: { x: number; y: number }) => {
+    // Clamp Y during drag to provide visual feedback (snap back to top)
+    const clampedY = Math.max(0, d.y);
+
     setLocalPosition((prev: typeof visual.position) => ({
       ...prev,
       x: d.x,
-      y: d.y,
+      y: clampedY,
     }));
   }, []);
 
@@ -196,7 +199,7 @@ export function VisualContainer({
       }
 
       let clampedX = d.x;
-      const clampedY = d.y;
+      let clampedY = d.y;
 
       if (canvasRef?.current) {
         const canvasContentWidth = canvasRef.current.clientWidth;
@@ -207,6 +210,9 @@ export function VisualContainer({
       } else {
         clampedX = Math.max(0, clampedX);
       }
+
+      // Clamp Y to prevent dragging above the canvas (snap back to top)
+      clampedY = Math.max(0, clampedY);
 
       updatePosition({
         id: visual._id,
@@ -235,12 +241,27 @@ export function VisualContainer({
       _delta: any,
       position: { x: number; y: number },
     ) => {
+      let clampedY = position.y;
+      let finalHeight = ref.offsetHeight;
+
+      // Clamp Y during resize to provide visual feedback
+      if (clampedY < 0) {
+        // Adjust height when resizing upward beyond canvas top
+        finalHeight = finalHeight + clampedY;
+        clampedY = 0;
+
+        // Ensure minimum height is maintained
+        if (finalHeight < MIN_VISUAL_SIZE) {
+          finalHeight = MIN_VISUAL_SIZE;
+        }
+      }
+
       setLocalPosition((prev: typeof visual.position) => ({
         ...prev,
         x: position.x,
-        y: position.y,
+        y: clampedY,
         width: ref.offsetWidth,
-        height: ref.offsetHeight,
+        height: finalHeight,
       }));
     },
     [visual.position],
@@ -249,22 +270,51 @@ export function VisualContainer({
   const handleResizeStop = useCallback(
     (
       _e: any,
-      _direction: any,
+      _direction: string,
       ref: HTMLElement,
       _delta: any,
       position: { x: number; y: number },
     ) => {
+      let clampedX = position.x;
+      let clampedY = position.y;
+      const finalWidth = ref.offsetWidth;
+      let finalHeight = ref.offsetHeight;
+
+      // Clamp X to prevent resizing beyond canvas bounds horizontally
+      if (canvasRef?.current) {
+        const canvasContentWidth = canvasRef.current.clientWidth;
+        const minX = 0;
+        const maxX = Math.max(0, canvasContentWidth - finalWidth);
+        clampedX = Math.max(minX, Math.min(clampedX, maxX));
+      } else {
+        clampedX = Math.max(0, clampedX);
+      }
+
+      // Clamp Y to prevent resizing above the canvas (snap back to top)
+      // When resizing upward (north, northwest, northeast), adjust height if needed
+      if (clampedY < 0) {
+        // If Y is negative, we need to adjust both Y and height
+        // The height should be reduced by the amount Y went negative
+        finalHeight = finalHeight + clampedY; // clampedY is negative, so this reduces height
+        clampedY = 0;
+
+        // Ensure minimum height is maintained
+        if (finalHeight < MIN_VISUAL_SIZE) {
+          finalHeight = MIN_VISUAL_SIZE;
+        }
+      }
+
       updatePosition({
         id: visual._id,
         position: {
-          x: position.x,
-          y: position.y,
-          width: ref.offsetWidth,
-          height: ref.offsetHeight,
+          x: clampedX,
+          y: clampedY,
+          width: finalWidth,
+          height: finalHeight,
         },
       });
     },
-    [visual._id, updatePosition],
+    [visual._id, updatePosition, canvasRef],
   );
 
   const handleDelete = useCallback(() => {
