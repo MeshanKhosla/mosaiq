@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ import { VisualCanvas } from '~/components/chart/visual-canvas';
 import { SheetTabs } from '~/components/chart/sheet-tabs';
 import { ShareDashboardModal } from '~/components/dashboard/share-dashboard-modal';
 import { useDuckDbContext } from '~/components/duckdb-provider';
+import { SheetRefreshOverlay } from '~/components/sheet-refresh-overlay';
 
 export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
   component: SheetPage,
@@ -56,17 +57,17 @@ function SheetPage() {
   // This is a workaround for DuckDB table loading race conditions that cause
   // "Binder Error: Referenced column not found in FROM clause" errors
   // I know it'a bad but the hackathon is about to end lol
-  useEffect(() => {
+  useLayoutEffect(() => {
     const hasRefreshed = sessionStorage.getItem(`refreshed-${currentSheetId}`);
-    if (!hasRefreshed) {
+    if (!hasRefreshed && !refreshTimeoutRef.current) {
       sessionStorage.setItem(`refreshed-${currentSheetId}`, 'true');
-      window.location.reload();
-      return;
+      // Show overlay first, then refresh after a delay
+      setShowRefreshOverlay(true);
+      refreshTimeoutRef.current = setTimeout(() => {
+        refreshTimeoutRef.current = null;
+        window.location.reload();
+      }, 450);
     }
-    // Reset flag when navigating away
-    return () => {
-      sessionStorage.removeItem(`refreshed-${currentSheetId}`);
-    };
   }, [currentSheetId]);
   const updateAnalysisName = useMutation(
     api.analyses.updateName,
@@ -126,6 +127,8 @@ function SheetPage() {
   const [selectedVisualId, setSelectedVisualId] =
     useState<Id<'visuals'> | null>(null);
   const tempIdRef = useRef<Id<'visuals'> | null>(null);
+  const [showRefreshOverlay, setShowRefreshOverlay] = useState(false);
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (analysis) {
@@ -324,6 +327,7 @@ function SheetPage() {
         ],
       }}
     >
+      {showRefreshOverlay && <SheetRefreshOverlay />}
       <ShareDashboardModal
         open={showShareModal}
         onOpenChange={setShowShareModal}
