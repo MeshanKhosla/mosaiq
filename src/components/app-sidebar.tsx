@@ -24,6 +24,7 @@ import {
 } from '~/components/ui/sidebar';
 import { ThemeToggle } from '~/components/theme-toggle';
 import { authClient } from '~/lib/auth-client';
+import { getInitials } from '~/lib/user-utils';
 
 const menuItems = [
   {
@@ -58,26 +59,10 @@ export function AppSidebar() {
     await authClient.signOut();
   };
 
-  const getInitials = (name?: string, email?: string) => {
-    if (name) {
-      return name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-    }
-    if (email) {
-      return email[0].toUpperCase();
-    }
-    return '?';
-  };
-
   return (
     <Sidebar>
       <SidebarHeader className="px-4 py-4 flex flex-row items-center justify-between gap-2">
         <h1 className="text-lg font-semibold">Mosaiq</h1>
-        {/* <SidebarTrigger /> */}
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
