@@ -3,9 +3,9 @@ import { Loader2, Upload as UploadIcon } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { useNavigate } from '@tanstack/react-router';
 import { insertFile } from 'duckdb-wasm-kit';
+import { useUploadFile } from '@convex-dev/r2/react';
 import { api } from '../../convex/_generated/api';
 import type { ChangeEvent } from 'react';
-import type { Id } from '../../convex/_generated/dataModel';
 import { Button } from '~/components/ui/button';
 import { useDuckDbContext } from '~/components/duckdb-provider';
 import { authClient } from '~/lib/auth-client';
@@ -73,7 +73,7 @@ export function Upload() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { db, loading: dbLoading, error: dbError } = useDuckDbContext();
 
-  const generateUploadUrl = useMutation(api.datasources.generateUploadUrl);
+  const uploadFile = useUploadFile(api.datasources);
   const createDatasource = useMutation(api.datasources.create);
 
   const handleFileInputClick = () => {
@@ -144,26 +144,15 @@ export function Upload() {
         type,
       }));
 
-      const uploadUrl = await generateUploadUrl();
-
-      const result = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': file.type || 'text/csv' },
-        body: file,
-      });
-
-      if (!result.ok) {
-        throw new Error('Failed to upload file');
-      }
-
-      const { storageId } = await result.json();
+      // Upload file to R2 and get the storage key
+      const storageKey = await uploadFile(file);
 
       const name = file.name.replace(/\.csv$/i, '');
       const datasourceId = await createDatasource({
         name,
         fileName: file.name,
         fileSize: file.size,
-        storageId: storageId as Id<'_storage'>,
+        storageKey,
         columns,
       });
 

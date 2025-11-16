@@ -1,6 +1,17 @@
+import { R2 } from '@convex-dev/r2';
 import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
+import { components } from './_generated/api';
 import { authComponent } from './auth';
+import type { DataModel } from './_generated/dataModel';
+
+export const r2 = new R2(components.r2);
+
+export const { generateUploadUrl, syncMetadata } = r2.clientApi<DataModel>({
+  checkUpload: async (ctx) => {
+    await authComponent.getAuthUser(ctx as any);
+  },
+});
 
 export const list = query({
   args: {},
@@ -65,15 +76,7 @@ export const getStorageUrlForViewer = query({
     if (!datasource) {
       return null;
     }
-    return await ctx.storage.getUrl(datasource.storageId);
-  },
-});
-
-export const generateUploadUrl = mutation({
-  args: {},
-  handler: async (ctx) => {
-    await authComponent.getAuthUser(ctx);
-    return await ctx.storage.generateUploadUrl();
+    return await r2.getUrl(datasource.storageKey);
   },
 });
 
@@ -82,7 +85,7 @@ export const create = mutation({
     name: v.string(),
     fileName: v.string(),
     fileSize: v.number(),
-    storageId: v.id('_storage'),
+    storageKey: v.string(),
     columns: v.array(
       v.object({
         _id: v.string(),
@@ -102,7 +105,7 @@ export const create = mutation({
       name: args.name,
       fileName: args.fileName,
       fileSize: args.fileSize,
-      storageId: args.storageId,
+      storageKey: args.storageKey,
       columns: args.columns,
       createdBy: user._id,
     });
@@ -123,7 +126,7 @@ export const getStorageUrl = query({
     if (!datasource || datasource.createdBy !== user._id) {
       return null;
     }
-    return await ctx.storage.getUrl(datasource.storageId);
+    return await r2.getUrl(datasource.storageKey);
   },
 });
 

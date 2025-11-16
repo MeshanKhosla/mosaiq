@@ -17,7 +17,7 @@ export default defineSchema({
         ),
       }),
     ),
-    storageId: v.id('_storage'),
+    storageKey: v.string(),
     createdBy: v.string(),
   }).index('by_createdBy', ['createdBy']),
 
