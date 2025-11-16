@@ -11,3 +11,11 @@ During server-side rendering, loaders should skip execution since authentication
 Components use `useSuspenseQuery` with `convexQuery` to access the preloaded data. Suspense queries suspend until data is available, eliminating loading states. The data comes from the cache if prefetched, or fetches fresh if not.
 
 The router context provides `queryClient` and `convexClient` to all routes. The `ConvexQueryClient` bridges React Query and Convex, managing subscriptions and keeping query results in sync with the database.
+
+## Authentication
+
+Server-side: Convex queries use `authComponent.safeGetAuthUser(ctx)` and return empty arrays or null when unauthenticated. Mutations use `authComponent.getAuthUser(ctx)` and throw if unauthenticated.
+
+Client-side: Components use `authClient.useSession()` and redirect with `navigate({ to: '/' })` if no session.
+
+The `/analyses` route shows the complete pattern. See `MIGRATION_PLAN.md` for migrating other routes.

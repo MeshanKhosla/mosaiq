@@ -46,7 +46,7 @@ function HomePage() {
   }, [dashboards]);
 
   const recentAnalyses = useMemo(() => {
-    if (!analyses || analyses === 'Unauthenticated') return [];
+    if (!analyses) return [];
     return [...analyses]
       .sort((a, b) => b._creationTime - a._creationTime)
       .slice(0, 6);
@@ -253,18 +253,16 @@ function HomePage() {
               <h2 className="text-2xl font-semibold tracking-tight">
                 Recent Analyses
               </h2>
-              {analyses &&
-                analyses !== 'Unauthenticated' &&
-                analyses.length > 0 && (
-                  <Link
-                    to="/analyses"
-                    className="text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    View all →
-                  </Link>
-                )}
+              {analyses && analyses.length > 0 && (
+                <Link
+                  to="/analyses"
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  View all →
+                </Link>
+              )}
             </div>
-            {!analyses || analyses === 'Unauthenticated' ? (
+            {!analyses ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <Card key={i}>
