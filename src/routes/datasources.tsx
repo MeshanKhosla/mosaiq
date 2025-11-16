@@ -6,7 +6,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, FileText, Globe } from 'lucide-react';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
@@ -43,6 +43,8 @@ type Datasource = {
   name: string;
   fileName: string;
   fileSize: number;
+  type?: 'csv' | 'url';
+  sourceUrl?: string;
 };
 
 function DatasourcesPage() {
@@ -85,6 +87,25 @@ function DatasourcesPage() {
         },
         cell: ({ row }) => (
           <div className="font-medium">{row.original.name}</div>
+        ),
+      },
+      {
+        accessorKey: 'type',
+        header: 'Type',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1.5">
+            {(row.original.type ?? 'csv') === 'url' ? (
+              <>
+                <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">URL</span>
+              </>
+            ) : (
+              <>
+                <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">CSV</span>
+              </>
+            )}
+          </div>
         ),
       },
       {

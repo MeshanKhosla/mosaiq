@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
+import { ExternalLink, Globe } from 'lucide-react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
@@ -149,6 +150,24 @@ function DatasourcePage() {
                   <p className="text-sm text-muted-foreground">
                     {datasource.fileName}
                   </p>
+                  {(datasource.type ?? 'csv') === 'url' &&
+                    datasource.sourceUrl && (
+                      <>
+                        <span className="text-muted-foreground/50">•</span>
+                        <a
+                          href={datasource.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Globe className="h-3.5 w-3.5" />
+                          <span className="max-w-[200px] truncate">
+                            {datasource.sourceUrl}
+                          </span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </>
+                    )}
                 </>
               )}
             </div>
