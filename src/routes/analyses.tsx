@@ -15,6 +15,7 @@ import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { AppLayout } from '~/components/app-layout';
 import { AnalysisLink } from '~/components/analysis-link';
 import { authClient } from '~/lib/auth-client';
+import { DataTableSkeleton } from '~/components/data-table/skeleton';
 
 import {
   Table,
@@ -47,8 +48,7 @@ type Analysis = {
 };
 
 function AnalysesPage() {
-  const { data: session, isPending: isLoadingSession } =
-    authClient.useSession();
+  const { data: session } = authClient.useSession();
   const { data: analyses } = useSuspenseQuery(
     convexQuery(api.analyses.list, {}),
   );
@@ -128,7 +128,7 @@ function AnalysesPage() {
   );
 
   const table = useReactTable({
-    data: analyses,
+    data: analyses === 'Unauthenticated' ? [] : analyses,
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -138,21 +138,26 @@ function AnalysesPage() {
     },
   });
 
-  if (isLoadingSession) {
+  if (!session) {
+    navigate({ to: '/' });
+    return null;
+  }
+
+  if (analyses === 'Unauthenticated') {
     return (
       <AppLayout>
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Analyses</h1>
+            <p className="text-muted-foreground">
+              View and manage your analyses
+            </p>
           </div>
+
+          <DataTableSkeleton />
         </div>
       </AppLayout>
     );
-  }
-
-  if (!session) {
-    navigate({ to: '/' });
-    return null;
   }
 
   if (analyses.length === 0) {

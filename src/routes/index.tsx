@@ -39,21 +39,21 @@ function HomePage() {
   const datasources = useConvexQuery(api.datasources.list);
 
   const recentDashboards = useMemo(() => {
-    if (!dashboards) return [];
+    if (!dashboards || dashboards === 'Unauthenticated') return [];
     return [...dashboards]
       .sort((a, b) => b._creationTime - a._creationTime)
       .slice(0, 6);
   }, [dashboards]);
 
   const recentAnalyses = useMemo(() => {
-    if (!analyses) return [];
+    if (!analyses || analyses === 'Unauthenticated') return [];
     return [...analyses]
       .sort((a, b) => b._creationTime - a._creationTime)
       .slice(0, 6);
   }, [analyses]);
 
   const recentDatasources = useMemo(() => {
-    if (!datasources) return [];
+    if (!datasources || datasources === 'Unauthenticated') return [];
     return [...datasources]
       .sort((a, b) => b._creationTime - a._creationTime)
       .slice(0, 6);
@@ -194,14 +194,16 @@ function HomePage() {
               <h2 className="text-2xl font-semibold tracking-tight">
                 Recent Dashboards
               </h2>
-              {dashboards && dashboards.length > 0 && (
-                <Link
-                  to="/dashboards"
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                >
-                  View all →
-                </Link>
-              )}
+              {dashboards &&
+                dashboards !== 'Unauthenticated' &&
+                dashboards.length > 0 && (
+                  <Link
+                    to="/dashboards"
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    View all →
+                  </Link>
+                )}
             </div>
             {!dashboards ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -253,14 +255,16 @@ function HomePage() {
               <h2 className="text-2xl font-semibold tracking-tight">
                 Recent Analyses
               </h2>
-              {analyses && analyses.length > 0 && (
-                <Link
-                  to="/analyses"
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                >
-                  View all →
-                </Link>
-              )}
+              {analyses &&
+                analyses !== 'Unauthenticated' &&
+                analyses.length > 0 && (
+                  <Link
+                    to="/analyses"
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    View all →
+                  </Link>
+                )}
             </div>
             {!analyses ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -311,14 +315,16 @@ function HomePage() {
               <h2 className="text-2xl font-semibold tracking-tight">
                 Recent Datasources
               </h2>
-              {datasources && datasources.length > 0 && (
-                <Link
-                  to="/datasources"
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                >
-                  View all →
-                </Link>
-              )}
+              {datasources &&
+                datasources !== 'Unauthenticated' &&
+                datasources.length > 0 && (
+                  <Link
+                    to="/datasources"
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    View all →
+                  </Link>
+                )}
             </div>
             {!datasources ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -15,6 +15,7 @@ import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { authClient } from '~/lib/auth-client';
 import { AppLayout } from '~/components/app-layout';
 import { DashboardLink } from '~/components/dashboard-link';
+import { DataTableSkeleton } from '~/components/data-table/skeleton';
 
 import {
   Table,
@@ -139,8 +140,7 @@ const columns: Array<ColumnDef<Dashboard>> = [
 ];
 
 function DashboardsPage() {
-  const { data: session, isPending: isLoadingSession } =
-    authClient.useSession();
+  const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const { data: dashboards } = useSuspenseQuery(
     convexQuery(api.dashboards.list, {}),
@@ -148,7 +148,7 @@ function DashboardsPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useReactTable({
-    data: dashboards,
+    data: dashboards === 'Unauthenticated' ? [] : dashboards,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -161,21 +161,26 @@ function DashboardsPage() {
     },
   });
 
-  if (isLoadingSession) {
+  if (!session) {
+    navigate({ to: '/' });
+    return null;
+  }
+
+  if (dashboards === 'Unauthenticated') {
     return (
       <AppLayout>
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold">Dashboards</h1>
+            <p className="text-muted-foreground">
+              View and manage your dashboards
+            </p>
           </div>
+
+          <DataTableSkeleton />
         </div>
       </AppLayout>
     );
-  }
-
-  if (!session) {
-    navigate({ to: '/' });
-    return null;
   }
 
   if (dashboards.length === 0) {
