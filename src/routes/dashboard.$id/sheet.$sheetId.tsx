@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
-import { insertFile } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
@@ -10,7 +9,7 @@ import { AppLayout } from '~/components/app-layout';
 import { fetchAuth } from '~/routes/__root';
 import { VisualCanvas } from '~/components/chart/visual-canvas';
 import { DashboardSheetTabs } from '~/components/chart/dashboard-sheet-tabs';
-import { useDuckDbContext } from '~/components/duckdb-provider';
+import { useDuckDbTable } from '~/hooks/use-duckdb-table';
 
 export const Route = createFileRoute('/dashboard/$id/sheet/$sheetId')({
   component: DashboardSheetPage,
@@ -122,11 +121,7 @@ function DashboardSheetPage() {
   );
   const storageUrl = useQuery(
     api.datasources.getStorageUrlForViewer,
-    datasourceId
-      ? {
-          datasourceId: datasourceId,
-        }
-      : 'skip',
+    datasourceId ? { datasourceId } : 'skip',
   );
   const { data: csvData, isLoading: csvDataLoading } = useTanstackQuery({
     queryKey: ['csvData', datasourceId],
@@ -134,56 +129,15 @@ function DashboardSheetPage() {
     queryFn: () => fetch(storageUrl!).then((res) => res.text()),
   });
 
-  const { db, loading: dbLoading, error: dbError } = useDuckDbContext();
+  const tableName =
+    datasource && analysis
+      ? `${analysis._id}_${datasource.name.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()}`
+      : undefined;
 
-  let tableName: string | undefined;
-  if (datasource && analysis) {
-    tableName = `${analysis._id}_${datasource.name.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()}`;
-  }
-
-  const [tableLoaded, setTableLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!db || !csvData || !tableName || tableLoaded) return;
-
-    const loadData = async () => {
-      try {
-        const file = new File([csvData], 'data.csv', { type: 'text/csv' });
-
-        try {
-          await insertFile(db, file, tableName);
-        } catch (err) {
-          // File already exists
-        }
-
-        // Verify the table exists and is ready before marking as loaded
-        try {
-          const conn = await db.connect();
-          const escapedTableName = `"${tableName.replace(/"/g, '""')}"`;
-          await conn.query(`SELECT 1 FROM ${escapedTableName} LIMIT 1`);
-          await conn.close();
-        } catch (verifyErr) {
-          // If verification fails, wait a bit and retry once
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          const conn = await db.connect();
-          const escapedTableName = `"${tableName.replace(/"/g, '""')}"`;
-          await conn.query(`SELECT 1 FROM ${escapedTableName} LIMIT 1`);
-          await conn.close();
-        }
-
-        setTableLoaded(true);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : 'Failed to load CSV into DuckDB';
-        console.error('Failed to load CSV into DuckDB:', err);
-        toast.error('Failed to load data', {
-          description: errorMessage,
-        });
-      }
-    };
-
-    loadData();
-  }, [db, csvData, tableName, tableLoaded]);
+  const { tableLoaded, dbLoading, dbError } = useDuckDbTable({
+    csvData,
+    tableName,
+  });
 
   const [selectedVisualId, setSelectedVisualId] =
     useState<Id<'visuals'> | null>(null);

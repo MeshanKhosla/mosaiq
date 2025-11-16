@@ -5,31 +5,12 @@ import { X } from 'lucide-react';
 import { api } from '../../../convex/_generated/api';
 import { ChartRenderer } from './chart-renderer';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
-import type BaseChart from '~/charts/base-chart';
-import type { VisualType } from './visual-toolbar';
 import { MIN_VISUAL_SIZE } from '~/lib/constants';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import BarChart from '~/charts/bar-chart';
-import PieChart from '~/charts/pie-chart';
-import LineChart from '~/charts/line-chart';
+import { getChartInstance } from '~/lib/chart-utils';
 
 type Column = Doc<'datasources'>['columns'][number];
-
-function getChartInstance(type: VisualType): BaseChart | null {
-  switch (type) {
-    case 'table':
-      return null;
-    case 'bar_chart':
-      return new BarChart();
-    case 'pie_chart':
-      return new PieChart();
-    case 'line_chart':
-      return new LineChart();
-    default:
-      return new BarChart();
-  }
-}
 
 interface VisualContainerProps {
   visual: Doc<'visuals'>;
@@ -58,11 +39,7 @@ export function VisualContainer({
   canvasRef,
   readOnly = false,
 }: VisualContainerProps) {
-  const [localPosition, setLocalPosition] = useState(visual.position);
-
-  useEffect(() => {
-    setLocalPosition(visual.position);
-  }, [visual.position]);
+  const [localPosition, setLocalPosition] = useState(() => visual.position);
 
   const updatePosition = useMutation(
     api.visuals.updatePosition,
@@ -128,6 +105,7 @@ export function VisualContainer({
     },
   );
 
+  // Generate auto-title from axes if no custom title is set
   const displayTitle = useMemo(() => {
     if (visual.title) {
       return visual.title;
@@ -167,18 +145,14 @@ export function VisualContainer({
   }, [visual.title, visual.type, visual.axes, columns]);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [titleValue, setTitleValue] = useState(displayTitle);
+  const [titleValue, setTitleValue] = useState(() => displayTitle);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    setTitleValue(displayTitle);
-  }, [displayTitle]);
-
-  useEffect(() => {
-    if (isEditingTitle && titleInputRef.current) {
-      titleInputRef.current.focus();
-      titleInputRef.current.select();
+    if (isEditingTitle) {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
     }
   }, [isEditingTitle]);
 

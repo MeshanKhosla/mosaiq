@@ -2,11 +2,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
 import { useQuery as useTanstackQuery } from '@tanstack/react-query';
-import { insertFile } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
-import type { VisualType } from '~/components/chart/visual-toolbar';
+import type { VisualType } from '~/lib/chart-utils';
 import { DEFAULT_VISUAL_SIZE } from '~/lib/constants';
 import { AppLayout } from '~/components/app-layout';
 import { fetchAuth } from '~/routes/__root';
@@ -14,8 +13,8 @@ import { VisualToolbar } from '~/components/chart/visual-toolbar';
 import { VisualCanvas } from '~/components/chart/visual-canvas';
 import { SheetTabs } from '~/components/chart/sheet-tabs';
 import { ShareDashboardModal } from '~/components/dashboard/share-dashboard-modal';
-import { useDuckDbContext } from '~/components/duckdb-provider';
 import { SheetRefreshOverlay } from '~/components/sheet-refresh-overlay';
+import { useDuckDbTable } from '~/hooks/use-duckdb-table';
 
 export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
   component: SheetPage,
@@ -53,12 +52,17 @@ function SheetPage() {
     }
   }, [sheets, currentSheetId, analysisId, navigate]);
 
-  // HACK: Refresh page on navigation to ensure clean state
-  // This is a workaround for DuckDB table loading race conditions that cause
-  // "Binder Error: Referenced column not found in FROM clause" errors
-  // I know it'a bad but the hackathon is about to end lol
+  /**
+   * HACKATHON WORKAROUND: Force page refresh on first navigation
+   *
+   * This is a temporary fix for DuckDB table loading race conditions that cause
+   * "Binder Error: Referenced column not found in FROM clause" errors. The issue
+   * occurs when charts query tables before they're fully registered in DuckDB.
+   *
+   * Proper fix would be: Implement proper table registration tracking and query
+   * queueing system to ensure all queries wait for table readiness.
+   */
   useLayoutEffect(() => {
-    // Only refresh on the first sheet (when first navigating to the analysis)
     const isFirstSheet =
       sheets && sheets.length > 0 && sheets[0]._id === currentSheetId;
     if (!isFirstSheet) return;
@@ -66,7 +70,6 @@ function SheetPage() {
     const hasRefreshed = sessionStorage.getItem(`refreshed-${analysisId}`);
     if (!hasRefreshed && !refreshTimeoutRef.current) {
       sessionStorage.setItem(`refreshed-${analysisId}`, 'true');
-      // Show overlay first, then refresh after a delay
       setShowRefreshOverlay(true);
       refreshTimeoutRef.current = setTimeout(() => {
         refreshTimeoutRef.current = null;
@@ -178,11 +181,7 @@ function SheetPage() {
   );
   const storageUrl = useQuery(
     api.datasources.getStorageUrl,
-    datasourceId
-      ? {
-          datasourceId: datasourceId,
-        }
-      : 'skip',
+    datasourceId ? { datasourceId } : 'skip',
   );
   const { data: csvData, isLoading: csvDataLoading } = useTanstackQuery({
     queryKey: ['csvData', datasourceId],
@@ -190,56 +189,14 @@ function SheetPage() {
     queryFn: () => fetch(storageUrl!).then((res) => res.text()),
   });
 
-  const { db, loading: dbLoading, error: dbError } = useDuckDbContext();
+  const tableName = datasource
+    ? `${analysisId}_${datasource.name.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()}`
+    : undefined;
 
-  let tableName: string | undefined;
-  if (datasource) {
-    tableName = `${analysisId}_${datasource.name.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()}`;
-  }
-
-  const [tableLoaded, setTableLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!db || !csvData || !tableName || tableLoaded) return;
-
-    const loadData = async () => {
-      try {
-        const file = new File([csvData], 'data.csv', { type: 'text/csv' });
-
-        try {
-          await insertFile(db, file, tableName);
-        } catch (err) {
-          // File already exists
-        }
-
-        // Verify the table exists and is ready before marking as loaded
-        try {
-          const conn = await db.connect();
-          const escapedTableName = `"${tableName.replace(/"/g, '""')}"`;
-          await conn.query(`SELECT 1 FROM ${escapedTableName} LIMIT 1`);
-          await conn.close();
-        } catch (verifyErr) {
-          // If verification fails, wait a bit and retry once
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          const conn = await db.connect();
-          const escapedTableName = `"${tableName.replace(/"/g, '""')}"`;
-          await conn.query(`SELECT 1 FROM ${escapedTableName} LIMIT 1`);
-          await conn.close();
-        }
-
-        setTableLoaded(true);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : 'Failed to load CSV into DuckDB';
-        console.error('Failed to load CSV into DuckDB:', err);
-        toast.error('Failed to load data', {
-          description: errorMessage,
-        });
-      }
-    };
-
-    loadData();
-  }, [db, csvData, tableName, tableLoaded]);
+  const { tableLoaded, dbLoading, dbError } = useDuckDbTable({
+    csvData,
+    tableName,
+  });
 
   const getDefaultPosition = (): {
     x: number;
@@ -266,11 +223,10 @@ function SheetPage() {
   ) => {
     try {
       const position = getDefaultPosition();
-      // Generate temporary ID for optimistic selection
+
+      // Generate temporary ID for optimistic UI updates
       const tempId = `temp-${Date.now()}-${Math.random()}` as Id<'visuals'>;
       tempIdRef.current = tempId;
-
-      // Optimistically select the new visual immediately
       setSelectedVisualId(tempId);
 
       const normalizedAxes = axes
@@ -289,12 +245,10 @@ function SheetPage() {
         axes: type === 'table' ? undefined : normalizedAxes,
       });
 
-      // Update to the real ID when mutation completes
       setSelectedVisualId(visualId);
       tempIdRef.current = null;
     } catch (error) {
       console.error('Failed to create visual:', error);
-      // Reset selection on error
       setSelectedVisualId(null);
       tempIdRef.current = null;
       toast.error('Failed to create visual', {

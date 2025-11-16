@@ -14,14 +14,8 @@ import { api } from '../../../convex/_generated/api';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
 import type { ColorPalette } from '~/lib/types';
-import type { VisualType } from './visual-toolbar';
-import type BaseChart from '~/charts/base-chart';
 import { Button } from '~/components/ui/button';
 import { Chart } from '~/components/chart';
-import BarChart from '~/charts/bar-chart';
-import PieChart from '~/charts/pie-chart';
-import LineChart from '~/charts/line-chart';
-import TableChart from '~/charts/table-chart';
 import { arrowTo2Series, arrowToTableData } from '~/lib/utils';
 import { useTheme } from '~/components/theme-provider';
 import {
@@ -33,6 +27,7 @@ import {
   TableRow,
 } from '~/components/ui/table';
 import { DataTablePagination } from '~/components/data-table/pagination';
+import { getChartInstance } from '~/lib/chart-utils';
 
 type Visual = Doc<'visuals'>;
 type Column = Doc<'datasources'>['columns'][number];
@@ -153,21 +148,6 @@ function TableVisualRenderer({ arrow }: { arrow: any }) {
       </div>
     </div>
   );
-}
-
-function getChartInstance(type: VisualType): BaseChart | null {
-  switch (type) {
-    case 'table':
-      return new TableChart();
-    case 'bar_chart':
-      return new BarChart();
-    case 'pie_chart':
-      return new PieChart();
-    case 'line_chart':
-      return new LineChart();
-    default:
-      return new BarChart();
-  }
 }
 
 export function ChartRenderer(props: {

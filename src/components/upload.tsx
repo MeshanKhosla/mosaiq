@@ -2,68 +2,15 @@ import { useRef, useState } from 'react';
 import { Loader2, Upload as UploadIcon } from 'lucide-react';
 import { useMutation } from 'convex/react';
 import { useNavigate } from '@tanstack/react-router';
-import { insertFile } from 'duckdb-wasm-kit';
 import { useUploadFile } from '@convex-dev/r2/react';
 import { api } from '../../convex/_generated/api';
 import type { ChangeEvent } from 'react';
 import { Button } from '~/components/ui/button';
 import { useDuckDbContext } from '~/components/duckdb-provider';
 import { authClient } from '~/lib/auth-client';
+import { parseCsvColumnTypesWithDuckDB } from '~/lib/csv-utils';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-async function parseCsvColumnTypesWithDuckDB(
-  db: any,
-  csvContent: string,
-): Promise<Record<string, 'string' | 'number' | 'date'>> {
-  const tempTableName = `temp_upload_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-  const escapedTableName = `"${tempTableName}"`;
-  const file = new File([csvContent], 'data.csv', { type: 'text/csv' });
-  let conn: any = null;
-
-  try {
-    await insertFile(db, file, tempTableName);
-
-    conn = await db.connect();
-    const result = await conn.query(`DESCRIBE ${escapedTableName}`);
-
-    const columnTypes: Record<string, 'string' | 'number' | 'date'> = {};
-
-    for (const row of result.toArray()) {
-      const columnName = row.column_name as string;
-      const duckDbType = (row.column_type as string).toLowerCase();
-
-      if (duckDbType.includes('date') || duckDbType.includes('timestamp')) {
-        columnTypes[columnName] = 'date';
-      } else if (
-        duckDbType.includes('int') ||
-        duckDbType.includes('double') ||
-        duckDbType.includes('float') ||
-        duckDbType.includes('decimal') ||
-        duckDbType.includes('numeric')
-      ) {
-        columnTypes[columnName] = 'number';
-      } else {
-        columnTypes[columnName] = 'string';
-      }
-    }
-
-    await conn.query(`DROP TABLE IF EXISTS ${escapedTableName}`);
-    await conn.close();
-
-    return columnTypes;
-  } catch (err) {
-    if (conn) {
-      try {
-        await conn.query(`DROP TABLE IF EXISTS ${escapedTableName}`);
-        await conn.close();
-      } catch {
-        // Ignore cleanup errors
-      }
-    }
-    throw err;
-  }
-}
 
 export function Upload() {
   const navigate = useNavigate();
@@ -137,7 +84,6 @@ export function Upload() {
       const csvContent = await file.text();
       const columnTypes = await parseCsvColumnTypesWithDuckDB(db, csvContent);
 
-      // Convert columnTypes Record to columns array with IDs
       const columns = Object.entries(columnTypes).map(([name, type]) => ({
         _id: crypto.randomUUID(),
         name,
