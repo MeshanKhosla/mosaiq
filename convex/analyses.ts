@@ -4,19 +4,10 @@ import { authComponent } from './auth';
 
 export const list = query({
   args: {},
-  returns: v.array(
-    v.object({
-      _id: v.id('analyses'),
-      _creationTime: v.number(),
-      datasourceIds: v.array(v.id('datasources')),
-      name: v.string(),
-      createdBy: v.string(),
-    }),
-  ),
   handler: async (ctx) => {
     const user = await authComponent.safeGetAuthUser(ctx);
     if (!user) {
-      return [];
+      return 'Unauthenticated';
     }
     const userId = user._id;
     return await ctx.db

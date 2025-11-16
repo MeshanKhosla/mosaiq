@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createFileRoute, redirect } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -7,14 +7,15 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp } from 'lucide-react';
-import { useQuery } from 'convex/react';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { authClient } from '~/lib/auth-client';
 import { AppLayout } from '~/components/app-layout';
 import { DashboardLink } from '~/components/dashboard-link';
-import { fetchAuth } from '~/routes/__root';
+import { DataTableSkeleton } from '~/components/data-table/skeleton';
 
 import {
   Table,
@@ -24,20 +25,18 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-import { Skeleton } from '~/components/ui/skeleton';
 import { Button } from '~/components/ui/button';
 
 export const Route = createFileRoute('/dashboards')({
-  component: DashboardsPage,
-  beforeLoad: async () => {
-    const { userId } = await fetchAuth();
-    if (!userId) {
-      throw redirect({ to: '/' });
+  loader: async (opts) => {
+    if (typeof window === 'undefined') {
+      return;
     }
+    await opts.context.queryClient.ensureQueryData(
+      convexQuery(api.dashboards.list, {}),
+    );
   },
-  loader: () => {
-    // Client-side data fetching will handle this via useQuery hooks
-  },
+  component: DashboardsPage,
 });
 
 type Dashboard = {
@@ -141,12 +140,16 @@ const columns: Array<ColumnDef<Dashboard>> = [
 ];
 
 function DashboardsPage() {
-  const dashboards = useQuery(api.dashboards.list);
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: isLoadingSession } =
+    authClient.useSession();
+  const navigate = useNavigate();
+  const { data: dashboards } = useSuspenseQuery(
+    convexQuery(api.dashboards.list, {}),
+  );
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useReactTable({
-    data: dashboards || [],
+    data: dashboards === 'Unauthenticated' ? [] : dashboards,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -159,6 +162,48 @@ function DashboardsPage() {
     },
   });
 
+  if (!session) {
+    navigate({ to: '/' });
+    return null;
+  }
+
+  if (isLoadingSession || dashboards === 'Unauthenticated') {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboards</h1>
+            <p className="text-muted-foreground">
+              View and manage your dashboards
+            </p>
+          </div>
+
+          <DataTableSkeleton />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (dashboards.length === 0) {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboards</h1>
+            <p className="text-muted-foreground">
+              View and manage your dashboards
+            </p>
+          </div>
+          <div className="rounded-md border">
+            <div className="p-8 text-center text-muted-foreground">
+              No dashboards found. Create your first dashboard from an analysis.
+            </div>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -169,81 +214,44 @@ function DashboardsPage() {
           </p>
         </div>
         <div className="rounded-md border">
-          {!dashboards ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:!bg-transparent">
-                  <TableHead>
-                    <Skeleton className="h-5 w-24" />
-                  </TableHead>
-                  <TableHead>
-                    <Skeleton className="h-5 w-24" />
-                  </TableHead>
-                  <TableHead>
-                    <Skeleton className="h-5 w-32" />
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i} className="hover:!bg-transparent">
-                    <TableCell>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-full" />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : dashboards.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              No dashboards found. Create your first dashboard from an analysis.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id} className="hover:!bg-accent">
-                    <DashboardLink
-                      dashboardId={row.original._id}
-                      sourceAnalysisId={row.original.sourceAnalysisId}
-                      className="contents"
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
                           )}
-                        </TableCell>
-                      ))}
-                    </DashboardLink>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} className="hover:!bg-accent">
+                  <DashboardLink
+                    dashboardId={row.original._id}
+                    sourceAnalysisId={row.original.sourceAnalysisId}
+                    className="contents"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </DashboardLink>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
     </AppLayout>
