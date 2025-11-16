@@ -2,6 +2,7 @@ import { createRouter } from '@tanstack/react-router';
 import { QueryClient } from '@tanstack/react-query';
 import { routerWithQueryClient } from '@tanstack/react-router-with-query';
 import { ConvexProvider, ConvexReactClient } from 'convex/react';
+import * as Sentry from '@sentry/tanstackstart-react';
 import { routeTree } from '~/routeTree.gen';
 
 export function getRouter() {
@@ -36,6 +37,15 @@ export function getRouter() {
     }),
     queryClient,
   );
+
+  if (!router.isServer) {
+    const SENTRY_DSN = (import.meta as any).env.VITE_SENTRY_DSN;
+    if (SENTRY_DSN) {
+      Sentry.init({
+        dsn: SENTRY_DSN,
+      });
+    }
+  }
 
   return router;
 }

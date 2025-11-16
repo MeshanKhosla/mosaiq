@@ -185,6 +185,19 @@ function HomePage() {
   return (
     <AppLayout>
       <div className="space-y-4">
+        <div className="flex items-center justify-end">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => {
+              throw new Error(
+                'Sentry Test Error - This is a test error to verify Sentry is working',
+              );
+            }}
+          >
+            Test Sentry Error
+          </Button>
+        </div>
         <Upload />
 
         <div className="space-y-6">
