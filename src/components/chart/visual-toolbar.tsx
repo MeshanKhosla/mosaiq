@@ -314,11 +314,32 @@ function Filters({ sheetId, columns, tableName, tableLoaded }: FiltersProps) {
   const handleToggleValue = (value: string | number, checked: boolean) => {
     if (!selectedColumnId) return;
 
+    const otherFilters = filters.filter((f) => f.columnId !== selectedColumnId);
+
+    // If there's no filter, all values are implicitly selected
+    if (!currentFilter) {
+      if (checked) {
+        // All values are already selected, no need to create a filter
+        return;
+      } else {
+        // Unchecking a value: create filter with all values except this one
+        const newSelectedValues = distinctValues.filter((v) => v !== value);
+        if (newSelectedValues.length > 0) {
+          const newFilters = [
+            ...otherFilters,
+            { columnId: selectedColumnId, selectedValues: newSelectedValues },
+          ];
+          updateFilters({ sheetId, filters: newFilters });
+        }
+        return;
+      }
+    }
+
+    // Filter exists: normal toggle logic
     const newSelectedValues = checked
       ? [...selectedValues, value]
       : selectedValues.filter((v) => v !== value);
 
-    const otherFilters = filters.filter((f) => f.columnId !== selectedColumnId);
     const newFilters =
       newSelectedValues.length > 0
         ? [
@@ -463,7 +484,10 @@ function Filters({ sheetId, columns, tableName, tableLoaded }: FiltersProps) {
                   ) : (
                     <div className="max-h-60 overflow-auto space-y-1 border rounded-md p-2">
                       {filteredValues.map((value, index) => {
-                        const isSelected = selectedValues.includes(value);
+                        // If there's no filter, all values are implicitly selected
+                        const isSelected = currentFilter
+                          ? selectedValues.includes(value)
+                          : true;
                         return (
                           <label
                             key={`${value}-${index}`}
