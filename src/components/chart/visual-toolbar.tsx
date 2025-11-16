@@ -1,8 +1,8 @@
 import {
   BarChart3,
   Filter,
-  LineChart,
-  PieChart,
+  LineChart as LineChartIcon,
+  PieChart as PieChartIcon,
   Plus,
   Table,
   X,
@@ -12,6 +12,11 @@ import { useMemo, useState } from 'react';
 import { useDuckDbQuery } from 'duckdb-wasm-kit';
 import { api } from '../../../convex/_generated/api';
 import type { Doc, Id } from '../../../convex/_generated/dataModel';
+import type BaseChart from '~/charts/base-chart';
+import BarChart from '~/charts/bar-chart';
+import PieChart from '~/charts/pie-chart';
+import LineChart from '~/charts/line-chart';
+import TableChart from '~/charts/table-chart';
 import { Button } from '~/components/ui/button';
 import {
   Popover,
@@ -52,8 +57,8 @@ const visualTypes: Array<{
 }> = [
   { type: 'table', label: 'Table', icon: Table },
   { type: 'bar_chart', label: 'Bar Chart', icon: BarChart3 },
-  { type: 'line_chart', label: 'Line Chart', icon: LineChart },
-  { type: 'pie_chart', label: 'Pie Chart', icon: PieChart },
+  { type: 'line_chart', label: 'Line Chart', icon: LineChartIcon },
+  { type: 'pie_chart', label: 'Pie Chart', icon: PieChartIcon },
 ];
 
 interface FieldWellsProps {
@@ -66,6 +71,21 @@ interface FieldWellsProps {
   onRemoveDimension: (columnId: string) => void;
   onRemoveMeasure: (columnId: string) => void;
   onUpdateMeasureAggregation: (columnId: string, aggregation: string) => void;
+}
+
+function getChartInstance(type: VisualType): BaseChart | null {
+  switch (type) {
+    case 'table':
+      return new TableChart();
+    case 'bar_chart':
+      return new BarChart();
+    case 'pie_chart':
+      return new PieChart();
+    case 'line_chart':
+      return new LineChart();
+    default:
+      return new BarChart();
+  }
 }
 
 const AGGREGATION_OPTIONS = [
@@ -105,6 +125,15 @@ function FieldWells({
   const currentDimensions = selectedVisual.axes?.dimensions || [];
   const currentMeasures = selectedVisual.axes?.measures || [];
 
+  const chartInstance = useMemo(
+    () => getChartInstance(selectedVisual.type),
+    [selectedVisual.type],
+  );
+  const requirements = useMemo(
+    () => chartInstance?.getRequirements(),
+    [chartInstance],
+  );
+
   const getMeasureColumnId = (
     m: string | { columnId: string; aggregation: string },
   ): string => {
@@ -120,6 +149,12 @@ function FieldWells({
   const isMeasureSelected = (columnId: string): boolean => {
     return currentMeasures.some((m) => getMeasureColumnId(m) === columnId);
   };
+
+  const dimensionLimitReached =
+    requirements &&
+    currentDimensions.length >= requirements.wells.dimensions.max;
+  const measureLimitReached =
+    requirements && currentMeasures.length >= requirements.wells.measures.max;
 
   return (
     <div className="flex-1 border-l border-border/30 pl-3">
@@ -149,15 +184,21 @@ function FieldWells({
                 <div className="space-y-1">
                   {dimensionColumns.map((col) => {
                     const isSelected = currentDimensions.includes(col._id);
+                    const isDisabled = !isSelected && dimensionLimitReached;
                     return (
                       <label
                         key={col._id}
                         htmlFor={`dim-${col._id}`}
-                        className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent cursor-pointer"
+                        className={`flex items-center space-x-2 rounded-sm px-2 py-1.5 ${
+                          isDisabled
+                            ? 'opacity-50 cursor-not-allowed'
+                            : 'hover:bg-accent cursor-pointer'
+                        }`}
                       >
                         <Checkbox
                           id={`dim-${col._id}`}
                           checked={isSelected}
+                          disabled={isDisabled}
                           onCheckedChange={(checked) =>
                             onToggleDimension(col._id, checked === true)
                           }
@@ -212,15 +253,21 @@ function FieldWells({
                 <div className="space-y-1">
                   {measureColumns.map((col) => {
                     const isSelected = isMeasureSelected(col._id);
+                    const isDisabled = !isSelected && measureLimitReached;
                     return (
                       <label
                         key={col._id}
                         htmlFor={`meas-${col._id}`}
-                        className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent cursor-pointer"
+                        className={`flex items-center space-x-2 rounded-sm px-2 py-1.5 ${
+                          isDisabled
+                            ? 'opacity-50 cursor-not-allowed'
+                            : 'hover:bg-accent cursor-pointer'
+                        }`}
                       >
                         <Checkbox
                           id={`meas-${col._id}`}
                           checked={isSelected}
+                          disabled={isDisabled}
                           onCheckedChange={(checked) =>
                             onToggleMeasure(col._id, checked === true)
                           }
