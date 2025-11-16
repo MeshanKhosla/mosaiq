@@ -39,6 +39,7 @@ bun install
 ```bash
 # Create .env file with:
 VITE_CONVEX_URL=your_convex_url
+VITE_SENTRY_DSN=your_sentry_dsn  # Optional: for error monitoring
 ```
 
 3. Run development servers:
