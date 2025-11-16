@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from 'convex/react';
 import { useDuckDbQuery } from 'duckdb-wasm-kit';
 import { toast } from 'sonner';
@@ -259,61 +259,7 @@ export function ChartRenderer(props: {
     error: queryError,
   } = useDuckDbQuery(query);
 
-  const refreshInitiatedRef = useRef(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (queryError && !refreshInitiatedRef.current) {
-      const errorMessage = queryError.message || String(queryError);
-      // Check if it's a Binder Error about referenced column not found
-      if (
-        errorMessage.includes('Binder Error') ||
-        errorMessage.includes('Referenced column') ||
-        errorMessage.includes('not found in FROM clause')
-      ) {
-        refreshInitiatedRef.current = true;
-        // Wait a bit to allow field/well data to persist before refreshing
-        timerRef.current = setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      }
-    }
-    // Don't clear the timer if we've already initiated refresh - we want it to complete
-    return () => {
-      if (timerRef.current && !refreshInitiatedRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, [queryError]);
-
   if (queryError) {
-    const errorMessage = queryError.message || String(queryError);
-    const shouldRefresh =
-      errorMessage.includes('Binder Error') ||
-      errorMessage.includes('Referenced column') ||
-      errorMessage.includes('not found in FROM clause');
-
-    if (shouldRefresh) {
-      return (
-        <div className="relative flex h-full w-full items-center justify-center">
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-destructive/10 backdrop-blur-sm">
-            <div className="rounded-lg border border-destructive bg-destructive/90 p-4 text-center shadow-lg">
-              <p className="text-sm font-semibold text-destructive-foreground">
-                Database Error Detected
-              </p>
-              <p className="mt-2 text-xs text-destructive-foreground/90">
-                Refreshing page...
-              </p>
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground opacity-50">
-            Failed to execute query: {queryError.message}
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className="text-sm text-muted-foreground">
         Failed to execute query: {queryError.message}

@@ -184,6 +184,22 @@ function DashboardSheetPage() {
         } catch (err) {
           // File already exists
         }
+
+        // Verify the table exists and is ready before marking as loaded
+        try {
+          const conn = await db.connect();
+          const escapedTableName = `"${tableName.replace(/"/g, '""')}"`;
+          await conn.query(`SELECT 1 FROM ${escapedTableName} LIMIT 1`);
+          await conn.close();
+        } catch (verifyErr) {
+          // If verification fails, wait a bit and retry once
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          const conn = await db.connect();
+          const escapedTableName = `"${tableName.replace(/"/g, '""')}"`;
+          await conn.query(`SELECT 1 FROM ${escapedTableName} LIMIT 1`);
+          await conn.close();
+        }
+
         setTableLoaded(true);
       } catch (err) {
         const errorMessage =
