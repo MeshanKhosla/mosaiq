@@ -15,25 +15,18 @@ class TableChart extends BaseChart {
       selectedValues: Array<string | number>;
     }>,
   ): string {
-    if (!axes || !axes.measures) {
-      throw new Error('Axes must have measures');
-    }
-
-    const { dimensions = [], measures } = axes;
-
-    if (measures.length === 0) {
-      throw new Error('Table must have at least one measure');
-    }
+    const dimensions = axes?.dimensions ?? [];
+    const measures = axes?.measures ?? [];
 
     const dimensionColumns = dimensions
-      .map((id) => columns.find((col) => col._id === id))
+      .map((id: string) => columns.find((col: Column) => col._id === id))
       .filter((col): col is Column => col !== undefined);
 
     const measureData = measures
-      .map((m) => {
-        const columnId = typeof m === 'string' ? m : m.columnId;
-        const aggregation = typeof m === 'string' ? 'SUM' : m.aggregation;
-        const column = columns.find((col) => col._id === columnId);
+      .map((m: { columnId: string; aggregation: string }) => {
+        const columnId = m.columnId;
+        const aggregation = m.aggregation;
+        const column = columns.find((col: Column) => col._id === columnId);
         return { column, aggregation };
       })
       .filter(
@@ -41,28 +34,30 @@ class TableChart extends BaseChart {
           m.column !== undefined,
       );
 
-    if (measureData.length === 0) {
-      throw new Error('Measure columns not found');
+    if (dimensionColumns.length === 0 && measureData.length === 0) {
+      throw new Error('Table must have at least one dimension or measure');
     }
 
     const selectParts: Array<string> = [];
 
-    dimensionColumns.forEach((col) => {
+    dimensionColumns.forEach((col: Column) => {
       const escapedName = this.escapeColumnName(col.name);
       selectParts.push(escapedName);
     });
 
-    measureData.forEach(({ column, aggregation }) => {
-      const escapedName = this.escapeColumnName(column.name);
-      const aggregationExpr = this.buildAggregationExpression(
-        column.name,
-        aggregation,
-        column.type,
-      );
-      selectParts.push(`${aggregationExpr} as ${escapedName}`);
-    });
+    measureData.forEach(
+      ({ column, aggregation }: { column: Column; aggregation: string }) => {
+        const escapedName = this.escapeColumnName(column.name);
+        const aggregationExpr = this.buildAggregationExpression(
+          column.name,
+          aggregation,
+          column.type,
+        );
+        selectParts.push(`${aggregationExpr} as ${escapedName}`);
+      },
+    );
 
-    const groupByParts = dimensionColumns.map((col) =>
+    const groupByParts = dimensionColumns.map((col: Column) =>
       this.escapeColumnName(col.name),
     );
 
@@ -92,7 +87,9 @@ class TableChart extends BaseChart {
     const selectClause = selectParts.join(', ');
     const whereClause = this.buildWhereClause(filters, columns);
     const groupByClause =
-      groupByParts.length > 0 ? ` GROUP BY ${groupByParts.join(', ')}` : '';
+      groupByParts.length > 0 && measureData.length > 0
+        ? ` GROUP BY ${groupByParts.join(', ')}`
+        : '';
     const orderByClause =
       orderByParts.length > 0 ? ` ORDER BY ${orderByParts.join(', ')}` : '';
 
@@ -136,7 +133,7 @@ class TableChart extends BaseChart {
           max: 3,
         },
         measures: {
-          min: 1,
+          min: 0,
           max: 3,
         },
       },
