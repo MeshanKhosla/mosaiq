@@ -162,11 +162,6 @@ function DashboardsPage() {
     },
   });
 
-  if (!session) {
-    navigate({ to: '/' });
-    return null;
-  }
-
   if (isLoadingSession || dashboards === 'Unauthenticated') {
     return (
       <AppLayout>
@@ -182,6 +177,11 @@ function DashboardsPage() {
         </div>
       </AppLayout>
     );
+  }
+
+  if (!session) {
+    navigate({ to: '/' });
+    return null;
   }
 
   if (dashboards.length === 0) {

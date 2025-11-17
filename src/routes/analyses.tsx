@@ -139,11 +139,6 @@ function AnalysesPage() {
     },
   });
 
-  if (!session) {
-    navigate({ to: '/' });
-    return null;
-  }
-
   if (isLoadingSession || analyses === 'Unauthenticated') {
     return (
       <AppLayout>
@@ -159,6 +154,11 @@ function AnalysesPage() {
         </div>
       </AppLayout>
     );
+  }
+
+  if (!session) {
+    navigate({ to: '/' });
+    return null;
   }
 
   if (analyses.length === 0) {
