@@ -16,13 +16,9 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 type UploadMode = 'csv' | 'url';
 
 const EXAMPLE_URLS = [
-  'https://en.wikipedia.org/wiki/List_of_countries_and_dependencies_by_population',
-  'https://en.wikipedia.org/wiki/List_of_countries_by_GDP_(nominal)',
-  'https://www.worldometers.info/world-population/population-by-country/',
-  'https://en.wikipedia.org/wiki/List_of_countries_by_life_expectancy',
-  'https://en.wikipedia.org/wiki/List_of_countries_by_area',
+  'https://tanstack.com/maintainers',
+  'https://www.worldometers.info/gdp',
 ];
-
 export function Upload() {
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
