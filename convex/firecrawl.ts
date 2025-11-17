@@ -4,6 +4,28 @@ import { v } from 'convex/values';
 import { FirecrawlClient } from '@mendable/firecrawl-js';
 import { action } from './_generated/server';
 
+function normalizeNumericValue(value: any): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  if (typeof value === 'number') {
+    return String(value);
+  }
+
+  const stringValue = String(value).trim();
+  if (stringValue === '') {
+    return '';
+  }
+
+  const numericPatternWithCommas = /^-?\d{1,3}(,\d{3})*(\.\d+)?$/;
+  if (numericPatternWithCommas.test(stringValue)) {
+    return stringValue.replace(/,/g, '');
+  }
+
+  return stringValue;
+}
+
 function convertToCSV(data: any): string {
   if (!data || typeof data !== 'object') {
     return '';
@@ -30,10 +52,11 @@ function convertToCSV(data: any): string {
     for (const item of data) {
       const values = headers.map((header) => {
         const value = item?.[header];
-        if (value === null || value === undefined) {
+        const normalizedValue = normalizeNumericValue(value);
+        if (normalizedValue === '') {
           return '';
         }
-        const stringValue = String(value).replace(/"/g, '""');
+        const stringValue = normalizedValue.replace(/"/g, '""');
         if (
           stringValue.includes(',') ||
           stringValue.includes('"') ||
@@ -58,10 +81,11 @@ function convertToCSV(data: any): string {
     const headers = keys;
     const values = headers.map((key) => {
       const value = data[key];
-      if (value === null || value === undefined) {
+      const normalizedValue = normalizeNumericValue(value);
+      if (normalizedValue === '') {
         return '';
       }
-      const stringValue = String(value).replace(/"/g, '""');
+      const stringValue = normalizedValue.replace(/"/g, '""');
       if (
         stringValue.includes(',') ||
         stringValue.includes('"') ||
