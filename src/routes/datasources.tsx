@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Link, createFileRoute } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -22,8 +22,7 @@ import {
   TableRow,
 } from '~/components/ui/table';
 import { Button } from '~/components/ui/button';
-import { authClient } from '~/lib/auth-client';
-import { DataTableSkeleton } from '~/components/data-table/skeleton';
+import { useAuthGuard } from '~/hooks/use-auth-guard';
 
 export const Route = createFileRoute('/datasources')({
   loader: async (opts) => {
@@ -48,12 +47,14 @@ type Datasource = {
 };
 
 function DatasourcesPage() {
-  const { data: session, isPending: isLoadingSession } =
-    authClient.useSession();
-  const navigate = useNavigate();
   const { data: datasources } = useSuspenseQuery(
     convexQuery(api.datasources.list, {}),
   );
+  const { isLoading, shouldRedirect, loadingContent } = useAuthGuard({
+    title: 'Datasources',
+    description: 'View and manage your datasources',
+    data: datasources,
+  });
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const formatDate = (timestamp: number) => {
@@ -182,26 +183,8 @@ function DatasourcesPage() {
     },
   });
 
-  if (isLoadingSession || datasources === 'Unauthenticated') {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Datasources</h1>
-            <p className="text-muted-foreground">
-              View and manage your datasources
-            </p>
-          </div>
-
-          <DataTableSkeleton />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (!session) {
-    navigate({ to: '/' });
-    return null;
+  if (isLoading || shouldRedirect) {
+    return loadingContent;
   }
 
   if (datasources.length === 0) {

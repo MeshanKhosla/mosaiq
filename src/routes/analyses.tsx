@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -14,8 +14,7 @@ import type { Id } from '../../convex/_generated/dataModel';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { AppLayout } from '~/components/app-layout';
 import { AnalysisLink } from '~/components/analysis-link';
-import { authClient } from '~/lib/auth-client';
-import { DataTableSkeleton } from '~/components/data-table/skeleton';
+import { useAuthGuard } from '~/hooks/use-auth-guard';
 
 import {
   Table,
@@ -48,13 +47,16 @@ type Analysis = {
 };
 
 function AnalysesPage() {
-  const { data: session, isPending: isLoadingSession } =
-    authClient.useSession();
   const { data: analyses } = useSuspenseQuery(
     convexQuery(api.analyses.list, {}),
   );
+  const { isLoading, shouldRedirect, loadingContent } = useAuthGuard({
+    title: 'Analyses',
+    description: 'View and manage your analyses',
+    data: analyses,
+  });
   const [sorting, setSorting] = useState<SortingState>([]);
-  const navigate = useNavigate();
+
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -139,26 +141,8 @@ function AnalysesPage() {
     },
   });
 
-  if (isLoadingSession || analyses === 'Unauthenticated') {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Analyses</h1>
-            <p className="text-muted-foreground">
-              View and manage your analyses
-            </p>
-          </div>
-
-          <DataTableSkeleton />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (!session) {
-    navigate({ to: '/' });
-    return null;
+  if (isLoading || shouldRedirect) {
+    return loadingContent;
   }
 
   if (analyses.length === 0) {

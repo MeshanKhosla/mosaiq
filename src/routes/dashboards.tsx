@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import {
   flexRender,
   getCoreRowModel,
@@ -15,7 +15,7 @@ import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import { authClient } from '~/lib/auth-client';
 import { AppLayout } from '~/components/app-layout';
 import { DashboardLink } from '~/components/dashboard-link';
-import { DataTableSkeleton } from '~/components/data-table/skeleton';
+import { useAuthGuard } from '~/hooks/use-auth-guard';
 
 import {
   Table,
@@ -140,12 +140,15 @@ const columns: Array<ColumnDef<Dashboard>> = [
 ];
 
 function DashboardsPage() {
-  const { data: session, isPending: isLoadingSession } =
-    authClient.useSession();
-  const navigate = useNavigate();
+  const { data: session } = authClient.useSession();
   const { data: dashboards } = useSuspenseQuery(
     convexQuery(api.dashboards.list, {}),
   );
+  const { isLoading, shouldRedirect, loadingContent } = useAuthGuard({
+    title: 'Dashboards',
+    description: 'View and manage your dashboards',
+    data: dashboards,
+  });
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const table = useReactTable({
@@ -162,26 +165,8 @@ function DashboardsPage() {
     },
   });
 
-  if (isLoadingSession || dashboards === 'Unauthenticated') {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboards</h1>
-            <p className="text-muted-foreground">
-              View and manage your dashboards
-            </p>
-          </div>
-
-          <DataTableSkeleton />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (!session) {
-    navigate({ to: '/' });
-    return null;
+  if (isLoading || shouldRedirect) {
+    return loadingContent;
   }
 
   if (dashboards.length === 0) {
