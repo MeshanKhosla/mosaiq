@@ -4,6 +4,8 @@ import { v } from 'convex/values';
 import { FirecrawlClient } from '@mendable/firecrawl-js';
 import { action } from './_generated/server';
 
+const TIMEOUT = 5 * 60 * 1000; // 5 minutes
+
 function normalizeNumericValue(value: any): string {
   if (value === null || value === undefined) {
     return '';
@@ -142,12 +144,12 @@ export const scrapeUrl = action({
 
     const app = new FirecrawlClient({
       apiKey,
-      timeoutMs: 180000,
+      timeoutMs: TIMEOUT,
     });
 
     try {
       const result = await app.scrape(args.url, {
-        timeout: 120000,
+        timeout: TIMEOUT,
         formats: [
           {
             type: 'json',
