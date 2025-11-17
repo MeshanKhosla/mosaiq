@@ -17,7 +17,7 @@ type UploadMode = 'csv' | 'url';
 
 const EXAMPLE_URLS = [
   'https://tanstack.com/maintainers',
-  'https://www.worldometers.info/gdp',
+  'https://www.imdb.com/chart/top/?genres=sci-fi',
 ];
 export function Upload() {
   const navigate = useNavigate();
@@ -27,6 +27,7 @@ export function Upload() {
   const [uploadMode, setUploadMode] = useState<UploadMode>('csv');
   const [url, setUrl] = useState('');
   const [isUrlValid, setIsUrlValid] = useState(false);
+  const [lastRandomUrl, setLastRandomUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { db, loading: dbLoading, error: dbError } = useDuckDbContext();
 
@@ -274,9 +275,16 @@ export function Upload() {
   };
 
   const handleRandomUrl = () => {
+    // Filter out the last selected URL to avoid selecting the same one twice in a row
+    const availableUrls =
+      EXAMPLE_URLS.length > 1 && lastRandomUrl
+        ? EXAMPLE_URLS.filter((u) => u !== lastRandomUrl)
+        : EXAMPLE_URLS;
+
     const randomUrl =
-      EXAMPLE_URLS[Math.floor(Math.random() * EXAMPLE_URLS.length)];
+      availableUrls[Math.floor(Math.random() * availableUrls.length)];
     setUrl(randomUrl);
+    setLastRandomUrl(randomUrl);
     setIsUrlValid(true);
     setError(null);
   };
@@ -331,6 +339,7 @@ export function Upload() {
                 setError(null);
                 setIsUrlValid(false);
                 setUrl('');
+                setLastRandomUrl(null);
               }}
               disabled={isUploading}
               className="flex-1"
