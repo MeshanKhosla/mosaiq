@@ -8,15 +8,19 @@ Entry into https://www.convex.dev/hackathons/tanstack
 
 ### Frontend
 
-- **React 19** - UI framework
-- **TanStack Router** - File-based routing
-- **TanStack Query** - Data fetching and caching
+- **Convex** - Database
+- **TanStack Start** - Frontend framework
+- **DuckDB WASM** - Client-side data processing
+- **Sentry** - Error monitoring
+- **Cloudflare R2** - File storage
+- **Firecrawl** - Website scraping
+- **Autumn** - Payments
+- **Coderabbit** - Development
 - **TanStack Table** - Data table components
 - **ECharts** - Chart visualization library
 - **ShadCN** - UI component library
 - **Tailwind CSS** - Styling
-- **DuckDB WASM** - Client-side data processing
-- **Sentry** - For error monitoring
+- **Netlify** - Deployment
 
 ### Backend
 
