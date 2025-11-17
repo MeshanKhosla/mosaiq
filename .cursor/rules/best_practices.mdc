@@ -8,6 +8,8 @@ Do not write useless comments that are obviously AI generated.
 
 Prefer guard clauses over nested ternaries.
 
+Do not use the any type in Typescript.
+
 You should run this after any change that could impact code:
 
 ```sh
