@@ -1,7 +1,14 @@
 import { useState } from 'react';
-import { Database, FileText, Home, LayoutDashboard } from 'lucide-react';
+import {
+  Database,
+  FileText,
+  Home,
+  LayoutDashboard,
+  Sparkles,
+} from 'lucide-react';
 import { Link, useRouterState } from '@tanstack/react-router';
 import { useAction, useQuery } from 'convex/react';
+import { useCustomer } from 'autumn-js/react';
 import { api } from '../../convex/_generated/api';
 import { Avatar, AvatarFallback } from '~/components/ui/avatar';
 import {
@@ -73,7 +80,10 @@ export function AppSidebar() {
   const cancelSubscription = useAction(
     api.datasources.cancelSubscriptionAction,
   );
+  const { checkout } = useCustomer();
+  const syncSubscription = useAction(api.datasources.syncSubscriptionStatus);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -93,6 +103,25 @@ export function AppSidebar() {
     } catch (error) {
       console.error('Failed to cancel subscription:', error);
       setErrorMessage('Failed to cancel subscription. Please try again.');
+      setShowErrorDialog(true);
+    }
+  };
+
+  const handleUpgradeClick = () => {
+    setShowUpgradeDialog(true);
+  };
+
+  const handleUpgradeConfirm = async () => {
+    setShowUpgradeDialog(false);
+    try {
+      await checkout({
+        productId: 'pro',
+      });
+      await syncSubscription();
+      window.location.reload();
+    } catch (err) {
+      console.error('Checkout failed:', err);
+      setErrorMessage('Failed to upgrade. Please try again.');
       setShowErrorDialog(true);
     }
   };
@@ -170,6 +199,15 @@ export function AppSidebar() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {!subscriptionStatus?.hasPro && (
+                  <>
+                    <DropdownMenuItem onClick={handleUpgradeClick}>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Upgrade to Pro (Free!)
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 {subscriptionStatus?.hasPro && (
                   <>
                     <DropdownMenuItem
@@ -223,6 +261,27 @@ export function AppSidebar() {
             >
               Cancel Subscription
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upgrade to Pro</DialogTitle>
+            <DialogDescription>
+              Upgrade to Pro (Free!) to unlock up to 50 datasources (currently
+              limited to 20). This upgrade is free.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowUpgradeDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpgradeConfirm}>Confirm Upgrade</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
