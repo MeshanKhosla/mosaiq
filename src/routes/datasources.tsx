@@ -182,11 +182,6 @@ function DatasourcesPage() {
     },
   });
 
-  if (!session) {
-    navigate({ to: '/' });
-    return null;
-  }
-
   if (isLoadingSession || datasources === 'Unauthenticated') {
     return (
       <AppLayout>
@@ -202,6 +197,11 @@ function DatasourcesPage() {
         </div>
       </AppLayout>
     );
+  }
+
+  if (!session) {
+    navigate({ to: '/' });
+    return null;
   }
 
   if (datasources.length === 0) {
