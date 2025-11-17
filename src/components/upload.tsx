@@ -1,12 +1,21 @@
 import { useRef, useState } from 'react';
 import { Dice1, Globe, Loader2, Upload as UploadIcon } from 'lucide-react';
-import { useAction, useMutation } from 'convex/react';
+import { useAction, useMutation, useQuery } from 'convex/react';
 import { useNavigate } from '@tanstack/react-router';
 import { useUploadFile } from '@convex-dev/r2/react';
+import { CheckoutDialog, useCustomer } from 'autumn-js/react';
 import { api } from '../../convex/_generated/api';
 import type { ChangeEvent } from 'react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '~/components/ui/dialog';
 import { useDuckDbContext } from '~/components/duckdb-provider';
 import { authClient } from '~/lib/auth-client';
 import { parseCsvColumnTypesWithDuckDB } from '~/lib/csv-utils';
@@ -28,8 +37,15 @@ export function Upload() {
   const [url, setUrl] = useState('');
   const [isUrlValid, setIsUrlValid] = useState(false);
   const [lastRandomUrl, setLastRandomUrl] = useState<string | null>(null);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { db, loading: dbLoading, error: dbError } = useDuckDbContext();
+  const limitInfo = useQuery(
+    api.datasources.checkDatasourceLimit,
+    session ? {} : 'skip',
+  );
+  const { checkout } = useCustomer();
+  const syncSubscription = useAction(api.datasources.syncSubscriptionStatus);
 
   const validateUrl = (urlString: string): boolean => {
     if (!urlString.trim()) {
@@ -89,6 +105,14 @@ export function Upload() {
       navigate({ to: '/signin' });
       return;
     }
+
+    if (limitInfo && !limitInfo.allowed) {
+      setError(
+        `You've reached your datasource limit (${limitInfo.limit}). Upgrade to Pro to unlock more.`,
+      );
+      return;
+    }
+
     fileInputRef.current?.click();
   };
 
@@ -100,6 +124,16 @@ export function Upload() {
 
     if (!session) {
       navigate({ to: '/signin' });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    if (limitInfo && !limitInfo.allowed) {
+      setError(
+        `You've reached your datasource limit (${limitInfo.limit}). Upgrade to Pro to unlock more.`,
+      );
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -183,6 +217,13 @@ export function Upload() {
   const handleUrlScrape = async () => {
     if (!session) {
       navigate({ to: '/signin' });
+      return;
+    }
+
+    if (limitInfo && !limitInfo.allowed) {
+      setError(
+        `You've reached your datasource limit (${limitInfo.limit}). Upgrade to Pro to unlock more.`,
+      );
       return;
     }
 
@@ -460,12 +501,57 @@ export function Upload() {
           )}
 
           {error && (
-            <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive border border-destructive/20 w-full">
-              {error}
+            <div className="rounded-md bg-destructive/20 dark:bg-destructive/30 p-4 text-sm text-destructive dark:text-red-400 border-2 border-destructive/40 dark:border-destructive/60 w-full space-y-3">
+              <p className="font-medium">{error}</p>
+              {error.includes("You've reached your datasource limit") && (
+                <Button
+                  onClick={() => setShowUpgradeDialog(true)}
+                  className="w-full"
+                >
+                  Upgrade to Pro (Free!)
+                </Button>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upgrade to Pro</DialogTitle>
+            <DialogDescription>
+              Upgrade to Pro (Free!) to unlock up to 50 datasources (currently
+              limited to 20). This upgrade is free.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowUpgradeDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                setShowUpgradeDialog(false);
+                try {
+                  await checkout({
+                    productId: 'pro',
+                    dialog: CheckoutDialog,
+                  });
+                  await syncSubscription();
+                  window.location.reload();
+                } catch (err) {
+                  console.error('Checkout failed:', err);
+                }
+              }}
+            >
+              Continue to Checkout
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -94,4 +94,12 @@ export default defineSchema({
   })
     .index('by_sheetId', ['sheetId'])
     .index('by_createdBy', ['createdBy']),
+
+  subscriptions: defineTable({
+    userId: v.string(),
+    productId: v.string(),
+    isActive: v.boolean(),
+  })
+    .index('by_userId', ['userId'])
+    .index('by_userId_productId', ['userId', 'productId']),
 });

@@ -10,6 +10,7 @@
 
 import type * as analyses from "../analyses.js";
 import type * as auth from "../auth.js";
+import type * as autumn from "../autumn.js";
 import type * as dashboards from "../dashboards.js";
 import type * as datasources from "../datasources.js";
 import type * as firecrawl from "../firecrawl.js";
@@ -36,6 +37,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   analyses: typeof analyses;
   auth: typeof auth;
+  autumn: typeof autumn;
   dashboards: typeof dashboards;
   datasources: typeof datasources;
   firecrawl: typeof firecrawl;
@@ -2280,4 +2282,5 @@ export declare const components: {
       >;
     };
   };
+  autumn: {};
 };
