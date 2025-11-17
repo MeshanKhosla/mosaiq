@@ -246,7 +246,7 @@ export const scrapeUrl = action({
               },
             },
             prompt:
-              'Extract all tabular data and structured information from this page. Return the data as an object with a "data" property containing an array of objects, where each object represents a row with keys as column names. If there are multiple tables, combine them into a single array. If the page contains non-tabular data, structure it as an array with objects containing key-value pairs. Always return data in the format: { "data": [{...}, {...}] }',
+              'Extract all tabular data and structured information from this page. Return the data as an object with a "data" property containing an array of objects, where each object represents a row with keys as column names. If there are multiple tables, combine them into a single array. If the page contains non-tabular data, structure it as an array with objects containing key-value pairs. Always return data in the format: { "data": [{...}, {...}] }. When extracting numeric values, output them as raw numbers without shortening (e.g., use "1000000" instead of "1M" or "1 million", use "5000" instead of "5K"). Do not add extra characters or formatting to numbers.',
           },
         ],
       });
