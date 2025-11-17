@@ -547,7 +547,7 @@ export function Upload() {
                 }
               }}
             >
-              Continue to Checkout
+              Confirm Upgrade
             </Button>
           </DialogFooter>
         </DialogContent>
