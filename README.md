@@ -64,3 +64,4 @@ This starts both the web server and Convex backend concurrently.
 - `bun run build` - Build for production
 - `bun run lint` - Run TypeScript and ESLint checks
 - `bun run format` - Format code with Prettier
+- `bun convex deploy` - To deploy to Convex prod
