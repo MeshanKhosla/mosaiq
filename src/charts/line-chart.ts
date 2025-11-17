@@ -131,6 +131,10 @@ class LineChart extends BaseChart {
       hideDelay: 0,
       grid: {
         containLabel: true,
+        left: '80px',
+        right: '5%',
+        top: '10%',
+        bottom: '20%',
       },
       xAxis: {
         type: 'category',
