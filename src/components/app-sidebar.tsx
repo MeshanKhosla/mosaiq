@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Database, FileText, Home, LayoutDashboard } from 'lucide-react';
 import { Link, useRouterState } from '@tanstack/react-router';
+import { useAction, useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Avatar, AvatarFallback } from '~/components/ui/avatar';
 import {
   DropdownMenu,
@@ -9,6 +12,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '~/components/ui/dialog';
+import { Button } from '~/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
@@ -54,9 +66,35 @@ export function AppSidebar() {
   const currentPath = router.location.pathname;
   const { setOpenMobile, isMobile } = useSidebar();
   const { data: session } = authClient.useSession();
+  const subscriptionStatus = useQuery(
+    api.datasources.getSubscriptionStatus,
+    session ? {} : 'skip',
+  );
+  const cancelSubscription = useAction(
+    api.datasources.cancelSubscriptionAction,
+  );
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSignOut = async () => {
     await authClient.signOut();
+  };
+
+  const handleCancelSubscriptionClick = () => {
+    setShowCancelDialog(true);
+  };
+
+  const handleCancelSubscriptionConfirm = async () => {
+    setShowCancelDialog(false);
+    try {
+      await cancelSubscription({ productId: 'pro' });
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to cancel subscription:', error);
+      setErrorMessage('Failed to cancel subscription. Please try again.');
+      setShowErrorDialog(true);
+    }
   };
 
   return (
@@ -124,9 +162,25 @@ export function AppSidebar() {
                     <p className="text-xs leading-none text-muted-foreground">
                       {session.user.email}
                     </p>
+                    {subscriptionStatus?.hasPro && (
+                      <p className="text-xs leading-none text-primary font-medium mt-1">
+                        Pro Plan Active
+                      </p>
+                    )}
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {subscriptionStatus?.hasPro && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={handleCancelSubscriptionClick}
+                      className="text-destructive dark:text-red-400 focus:text-destructive dark:focus:text-red-400"
+                    >
+                      Cancel Subscription
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem onClick={handleSignOut}>
                   Sign out
                 </DropdownMenuItem>
@@ -146,6 +200,44 @@ export function AppSidebar() {
           </div>
         )}
       </SidebarFooter>
+
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancel Subscription</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel your Pro subscription? You will be
+              downgraded to the free plan (20 datasources limit).
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCancelDialog(false)}
+            >
+              Keep Subscription
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelSubscriptionConfirm}
+            >
+              Cancel Subscription
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Error</DialogTitle>
+            <DialogDescription>{errorMessage}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowErrorDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sidebar>
   );
 }

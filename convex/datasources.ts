@@ -3,6 +3,7 @@ import { v } from 'convex/values';
 import { action, mutation, query } from './_generated/server';
 import { api, components } from './_generated/api';
 import { authComponent } from './auth';
+import { autumn } from './autumn';
 import type { DataModel } from './_generated/dataModel';
 
 export const r2 = new R2(components.r2);
@@ -80,6 +81,39 @@ export const getStorageUrlForViewer = query({
   },
 });
 
+export const checkDatasourceLimit = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return { count: 0, limit: 20, allowed: false };
+    }
+
+    const datasources = await ctx.db
+      .query('datasources')
+      .withIndex('by_createdBy', (q) => q.eq('createdBy', user._id))
+      .collect();
+
+    const count = datasources.length;
+
+    const subscription = await ctx.db
+      .query('subscriptions')
+      .withIndex('by_userId_productId', (q) =>
+        q.eq('userId', user._id).eq('productId', 'pro'),
+      )
+      .first();
+
+    const hasPro = subscription?.isActive ?? false;
+    const limit = hasPro ? 50 : 20;
+
+    return {
+      count,
+      limit,
+      allowed: count < limit,
+    };
+  },
+});
+
 export const create = mutation({
   args: {
     name: v.string(),
@@ -102,6 +136,29 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const user = await authComponent.getAuthUser(ctx);
+
+    const datasources = await ctx.db
+      .query('datasources')
+      .withIndex('by_createdBy', (q) => q.eq('createdBy', user._id))
+      .collect();
+
+    const currentCount = datasources.length;
+
+    const subscription = await ctx.db
+      .query('subscriptions')
+      .withIndex('by_userId_productId', (q) =>
+        q.eq('userId', user._id).eq('productId', 'pro'),
+      )
+      .first();
+
+    const hasPro = subscription?.isActive ?? false;
+    const limit = hasPro ? 50 : 20;
+
+    if (currentCount >= limit) {
+      throw new Error(
+        `You've reached your datasource limit (${limit}). Upgrade to Pro (Free!) to unlock more.`,
+      );
+    }
 
     return await ctx.db.insert('datasources', {
       name: args.name,
@@ -203,5 +260,91 @@ export const updateName = mutation({
     await ctx.db.patch(args.datasourceId, {
       name: args.name.trim(),
     });
+  },
+});
+
+export const updateSubscriptionStatus = mutation({
+  args: {
+    productId: v.string(),
+    isActive: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+
+    const existing = await ctx.db
+      .query('subscriptions')
+      .withIndex('by_userId_productId', (q) =>
+        q.eq('userId', user._id).eq('productId', args.productId),
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        isActive: args.isActive,
+      });
+    } else {
+      await ctx.db.insert('subscriptions', {
+        userId: user._id,
+        productId: args.productId,
+        isActive: args.isActive,
+      });
+    }
+  },
+});
+
+export const syncSubscriptionStatus = action({
+  args: {},
+  handler: async (ctx) => {
+    await authComponent.getAuthUser(ctx as any);
+
+    const checkResult = await autumn.check(ctx, {
+      featureId: 'datasources',
+    });
+
+    const hasPro = checkResult.data?.allowed ?? false;
+
+    await ctx.runMutation(api.datasources.updateSubscriptionStatus, {
+      productId: 'pro',
+      isActive: hasPro,
+    });
+  },
+});
+
+export const cancelSubscriptionAction = action({
+  args: {
+    productId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await authComponent.getAuthUser(ctx as any);
+
+    await ctx.runAction(api.autumn.cancel, {
+      productId: args.productId,
+    });
+
+    await ctx.runMutation(api.datasources.updateSubscriptionStatus, {
+      productId: args.productId,
+      isActive: false,
+    });
+  },
+});
+
+export const getSubscriptionStatus = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) {
+      return null;
+    }
+
+    const subscription = await ctx.db
+      .query('subscriptions')
+      .withIndex('by_userId_productId', (q) =>
+        q.eq('userId', user._id).eq('productId', 'pro'),
+      )
+      .first();
+
+    return {
+      hasPro: subscription?.isActive ?? false,
+    };
   },
 });
