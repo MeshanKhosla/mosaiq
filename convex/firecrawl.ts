@@ -23,6 +23,27 @@ function normalizeNumericValue(value: any): string {
     return stringValue.replace(/,/g, '');
   }
 
+  const plainNumericPattern = /^-?\d+(\.\d+)?$/;
+  if (plainNumericPattern.test(stringValue)) {
+    return stringValue;
+  }
+
+  const numericWithSuffixPattern = /^(-?\d+(\.\d+)?)\s*([KMBkmb])$/;
+  const suffixMatch = stringValue.match(numericWithSuffixPattern);
+  if (suffixMatch) {
+    const numValue = parseFloat(suffixMatch[1]);
+    const suffix = suffixMatch[3].toUpperCase();
+    let multiplier = 1;
+    if (suffix === 'K') {
+      multiplier = 1000;
+    } else if (suffix === 'M') {
+      multiplier = 1000000;
+    } else if (suffix === 'B') {
+      multiplier = 1000000000;
+    }
+    return String(Math.round(numValue * multiplier));
+  }
+
   return stringValue;
 }
 

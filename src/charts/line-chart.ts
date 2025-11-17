@@ -131,10 +131,10 @@ class LineChart extends BaseChart {
       hideDelay: 0,
       grid: {
         containLabel: true,
-        left: '80px',
+        left: '5%',
         right: '5%',
         top: '10%',
-        bottom: '20%',
+        bottom: '10%',
       },
       xAxis: {
         type: 'category',
@@ -166,7 +166,7 @@ class LineChart extends BaseChart {
         name: measureName,
         nameLocation: 'middle', // Position on left side
         nameRotate: 90, // Rotate vertically
-        nameGap: 50, // Spacing between axis name and tick labels (more for rotated text)
+        nameGap: 70, // Spacing between axis name and tick labels (more for rotated text)
         nameTextStyle: {
           color: colors.textColor,
         },
