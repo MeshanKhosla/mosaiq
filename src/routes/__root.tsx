@@ -116,7 +116,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               (function() {
                 const storageKey = 'mosaiq-theme';
                 const stored = localStorage.getItem(storageKey);
-                const theme = stored === 'dark' || stored === 'light' ? stored : 'light';
+                const theme = stored === 'dark' || stored === 'light' ? stored : 'dark';
                 document.documentElement.classList.remove('light', 'dark');
                 document.documentElement.classList.add(theme);
               })();
@@ -125,7 +125,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         />
       </head>
       <body>
-        <ThemeProvider defaultTheme="light" storageKey="mosaiq-theme">
+        <ThemeProvider defaultTheme="dark" storageKey="mosaiq-theme">
           {children}
         </ThemeProvider>
         <Scripts />
