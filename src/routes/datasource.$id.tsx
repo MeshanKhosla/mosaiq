@@ -7,7 +7,7 @@ import { ExternalLink, Globe } from 'lucide-react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import { AppLayout } from '~/components/app-layout';
-import { authClient } from '~/lib/auth-client';
+import { useAuthGuard } from '~/hooks/use-auth-guard';
 import { DataTable } from '~/components/data-table/data-table';
 import { DataTableSearch } from '~/components/datasource/data-table-search';
 import { AnalysisLinksList } from '~/components/datasource/analysis-links-list';
@@ -37,13 +37,16 @@ export const Route = createFileRoute('/datasource/$id')({
 
 function DatasourcePage() {
   const { id } = Route.useParams();
-  const { data: session, isPending: isLoadingSession } =
-    authClient.useSession();
   const navigate = useNavigate();
   const datasourceId = id as Id<'datasources'>;
   const { data: datasource } = useSuspenseQuery(
     convexQuery(api.datasources.get, { id: datasourceId }),
   );
+  const { isLoading, shouldRedirect, loadingContent } = useAuthGuard({
+    title: 'Datasource',
+    description: 'View and manage your datasource',
+    loadingSkeleton: <DataTableSkeleton />,
+  });
   const { data: analyses } = useSuspenseQuery(
     convexQuery(api.analyses.getByDatasourceId, {
       datasourceId,
@@ -137,25 +140,8 @@ function DatasourcePage() {
     }
   };
 
-  if (isLoadingSession) {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Datasource</h1>
-            <p className="text-muted-foreground">
-              View and manage your datasource
-            </p>
-          </div>
-          <DataTableSkeleton />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (!session) {
-    navigate({ to: '/' });
-    return null;
+  if (isLoading || shouldRedirect) {
+    return loadingContent;
   }
 
   if (!datasource) {
