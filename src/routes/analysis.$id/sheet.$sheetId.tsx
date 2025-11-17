@@ -25,7 +25,6 @@ import { ShareDashboardModal } from '~/components/dashboard/share-dashboard-moda
 import { SheetRefreshOverlay } from '~/components/sheet-refresh-overlay';
 import { useDuckDbTable } from '~/hooks/use-duckdb-table';
 import { authClient } from '~/lib/auth-client';
-import { Skeleton } from '~/components/ui/skeleton';
 import { Button } from '~/components/ui/button';
 
 export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
@@ -51,8 +50,7 @@ export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
 
 function SheetPage() {
   const { id, sheetId } = Route.useParams();
-  const { data: session, isPending: isLoadingSession } =
-    authClient.useSession();
+  const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const analysisId = id as Id<'analyses'>;
   const currentSheetId = sheetId as Id<'sheets'>;
@@ -195,9 +193,6 @@ function SheetPage() {
     navigate({ to: '/' });
     return null;
   }
-
-  const isLoading =
-    isLoadingSession || !analysis || !sheets || sheets.length === 0;
 
   const handleNameBlur = async () => {
     setIsEditingName(false);
@@ -436,10 +431,7 @@ function SheetPage() {
       )}
       <div className="flex h-[calc(100vh-8rem)] flex-col -mt-6 -mx-6">
         <div className="flex items-center gap-2 border-b border-border/30 px-3 py-1">
-          <SheetTabs
-            sheets={isLoading ? undefined : sheets}
-            analysisId={analysisId}
-          />
+          <SheetTabs sheets={sheets} analysisId={analysisId} />
           {datasource ? (
             <VisualToolbar
               onCreateVisual={handleCreateVisual}
@@ -472,11 +464,7 @@ function SheetPage() {
             </div>
           )}
         </div>
-        {isLoading ? (
-          <div className="flex-1 overflow-auto px-6">
-            <Skeleton className="h-full w-full" />
-          </div>
-        ) : datasource ? (
+        {datasource ? (
           <div className="flex-1 overflow-auto px-6">
             <VisualCanvas
               sheetId={currentSheetId}
