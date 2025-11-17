@@ -1,5 +1,5 @@
 import { useQuery } from 'convex/react';
-import { CheckoutDialog, useCustomer } from 'autumn-js/react';
+import { useCustomer } from 'autumn-js/react';
 import { api } from '../../convex/_generated/api';
 import { Button } from '~/components/ui/button';
 import { authClient } from '~/lib/auth-client';
@@ -46,7 +46,6 @@ export function DatasourceLimitBanner() {
           onClick={() => {
             checkout({
               productId: 'pro',
-              dialog: CheckoutDialog,
             });
           }}
           className="w-full mt-2"

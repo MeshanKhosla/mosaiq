@@ -3,7 +3,7 @@ import { Dice1, Globe, Loader2, Upload as UploadIcon } from 'lucide-react';
 import { useAction, useMutation, useQuery } from 'convex/react';
 import { useNavigate } from '@tanstack/react-router';
 import { useUploadFile } from '@convex-dev/r2/react';
-import { CheckoutDialog, useCustomer } from 'autumn-js/react';
+import { useCustomer } from 'autumn-js/react';
 import { api } from '../../convex/_generated/api';
 import type { ChangeEvent } from 'react';
 import { Button } from '~/components/ui/button';
@@ -538,7 +538,6 @@ export function Upload() {
                 try {
                   await checkout({
                     productId: 'pro',
-                    dialog: CheckoutDialog,
                   });
                   await syncSubscription();
                   window.location.reload();

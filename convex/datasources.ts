@@ -155,9 +155,10 @@ export const create = mutation({
     const limit = hasPro ? 50 : 20;
 
     if (currentCount >= limit) {
-      throw new Error(
-        `You've reached your datasource limit (${limit}). Upgrade to Pro (Free!) to unlock more.`,
-      );
+      const errorMessage = hasPro
+        ? `You've reached your Pro plan datasource limit (${limit}).`
+        : `You've reached your datasource limit (${limit}). Upgrade to Pro (Free!) to unlock more.`;
+      throw new Error(errorMessage);
     }
 
     return await ctx.db.insert('datasources', {
@@ -297,8 +298,22 @@ export const syncSubscriptionStatus = action({
   handler: async (ctx) => {
     await authComponent.getAuthUser(ctx as any);
 
+    // Attach the 'pro' product to the customer
+    // The identify function in autumn.ts will automatically use the user._id as customerId
+    try {
+      await autumn.attach(ctx, {
+        productId: 'pro',
+      });
+    } catch (err) {
+      // If attach fails, the product might already be attached or there's an issue
+      // We'll still try to check the status
+      console.error('Failed to attach product:', err);
+    }
+
+    // Check if the customer has access to the 'pro' product
+    // Using check with productId instead of featureId
     const checkResult = await autumn.check(ctx, {
-      featureId: 'datasources',
+      productId: 'pro',
     });
 
     const hasPro = checkResult.data?.allowed ?? false;
