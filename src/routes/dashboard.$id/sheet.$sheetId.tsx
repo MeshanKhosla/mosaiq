@@ -14,7 +14,6 @@ import { VisualCanvas } from '~/components/chart/visual-canvas';
 import { SheetTabs } from '~/components/chart/sheet-tabs';
 import { useDuckDbTable } from '~/hooks/use-duckdb-table';
 import { authClient } from '~/lib/auth-client';
-import { Skeleton } from '~/components/ui/skeleton';
 
 export const Route = createFileRoute('/dashboard/$id/sheet/$sheetId')({
   component: DashboardSheetPage,
@@ -49,8 +48,7 @@ export const Route = createFileRoute('/dashboard/$id/sheet/$sheetId')({
 
 function DashboardSheetPage() {
   const { id, sheetId } = Route.useParams();
-  const { data: session, isPending: isLoadingSession } =
-    authClient.useSession();
+  const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const dashboardId = id as Id<'dashboards'>;
   const currentSheetId = sheetId as Id<'sheets'>;
@@ -135,65 +133,13 @@ function DashboardSheetPage() {
     }
   }, [dashboard]);
 
-  if (isLoadingSession) {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
-          <Skeleton className="h-[calc(100vh-12rem)] w-full" />
-        </div>
-      </AppLayout>
-    );
-  }
-
   if (!session) {
     navigate({ to: '/' });
     return null;
   }
 
   if (!dashboard) {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
-          <Skeleton className="h-[calc(100vh-12rem)] w-full" />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (!analysis) {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
-          <Skeleton className="h-[calc(100vh-12rem)] w-full" />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (!sheets || sheets.length === 0) {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
-          <Skeleton className="h-[calc(100vh-12rem)] w-full" />
-        </div>
-      </AppLayout>
-    );
+    return null;
   }
 
   const handleNameBlur = async () => {
