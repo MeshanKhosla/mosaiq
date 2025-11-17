@@ -1,7 +1,17 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMutation, useQuery } from 'convex/react';
-import { useQuery as useTanstackQuery } from '@tanstack/react-query';
+import {
+  useSuspenseQuery,
+  useQuery as useTanstackQuery,
+} from '@tanstack/react-query';
+import { convexQuery } from '@convex-dev/react-query';
+import {
+  BarChart3,
+  LineChart as LineChartIcon,
+  PieChart as PieChartIcon,
+  Table,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
@@ -14,63 +24,45 @@ import { SheetTabs } from '~/components/chart/sheet-tabs';
 import { ShareDashboardModal } from '~/components/dashboard/share-dashboard-modal';
 import { SheetRefreshOverlay } from '~/components/sheet-refresh-overlay';
 import { useDuckDbTable } from '~/hooks/use-duckdb-table';
+import { authClient } from '~/lib/auth-client';
+import { Skeleton } from '~/components/ui/skeleton';
+import { Button } from '~/components/ui/button';
 
 export const Route = createFileRoute('/analysis/$id/sheet/$sheetId')({
   component: SheetPage,
-  loader: ({ params }) => {
-    // Client-side data fetching will handle this via useQuery hooks
-    // Sheet validation happens client-side in the component
-    // Auth is already checked by the parent route /analysis/$id
-    return { analysisId: params.id, sheetId: params.sheetId };
+  loader: async (opts) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    await Promise.all([
+      opts.context.queryClient.ensureQueryData(
+        convexQuery(api.analyses.get, {
+          id: opts.params.id as Id<'analyses'>,
+        }),
+      ),
+      opts.context.queryClient.ensureQueryData(
+        convexQuery(api.sheets.getAllByAnalysis, {
+          analysisId: opts.params.id as Id<'analyses'>,
+        }),
+      ),
+    ]);
   },
 });
 
 function SheetPage() {
   const { id, sheetId } = Route.useParams();
+  const { data: session, isPending: isLoadingSession } =
+    authClient.useSession();
   const navigate = useNavigate();
   const analysisId = id as Id<'analyses'>;
   const currentSheetId = sheetId as Id<'sheets'>;
-  const analysis = useQuery(api.analyses.get, { id: analysisId });
-  const sheets = useQuery(api.sheets.getAllByAnalysis, { analysisId });
+  const { data: analysis } = useSuspenseQuery(
+    convexQuery(api.analyses.get, { id: analysisId }),
+  );
+  const { data: sheets } = useSuspenseQuery(
+    convexQuery(api.sheets.getAllByAnalysis, { analysisId }),
+  );
 
-  // Redirect if sheet doesn't exist
-  useEffect(() => {
-    if (sheets && sheets.length > 0) {
-      const sheetExists = sheets.some((s) => s._id === currentSheetId);
-      if (!sheetExists) {
-        navigate({
-          to: '/analysis/$id/sheet/$sheetId',
-          params: { id: analysisId, sheetId: sheets[0]._id },
-        });
-      }
-    }
-  }, [sheets, currentSheetId, analysisId, navigate]);
-
-  /**
-   * HACKATHON WORKAROUND: Force page refresh on first navigation
-   *
-   * This is a temporary fix for DuckDB table loading race conditions that cause
-   * "Binder Error: Referenced column not found in FROM clause" errors. The issue
-   * occurs when charts query tables before they're fully registered in DuckDB.
-   *
-   * Proper fix would be: Implement proper table registration tracking and query
-   * queueing system to ensure all queries wait for table readiness.
-   */
-  useLayoutEffect(() => {
-    const isFirstSheet =
-      sheets && sheets.length > 0 && sheets[0]._id === currentSheetId;
-    if (!isFirstSheet) return;
-
-    const hasRefreshed = sessionStorage.getItem(`refreshed-${analysisId}`);
-    if (!hasRefreshed && !refreshTimeoutRef.current) {
-      sessionStorage.setItem(`refreshed-${analysisId}`, 'true');
-      setShowRefreshOverlay(true);
-      refreshTimeoutRef.current = setTimeout(() => {
-        refreshTimeoutRef.current = null;
-        window.location.reload();
-      }, 450);
-    }
-  }, [currentSheetId, sheets, analysisId]);
   const updateAnalysisName = useMutation(
     api.analyses.updateName,
   ).withOptimisticUpdate((localStore, args) => {
@@ -132,42 +124,6 @@ function SheetPage() {
   const [showRefreshOverlay, setShowRefreshOverlay] = useState(false);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (analysis) {
-      setEditName(analysis.name);
-    }
-  }, [analysis]);
-
-  const handleNameBlur = async () => {
-    setIsEditingName(false);
-    if (analysis && editName.trim() && editName.trim() !== analysis.name) {
-      try {
-        await updateAnalysisName({ id: analysisId, name: editName.trim() });
-      } catch (error) {
-        toast.error('Failed to update analysis name', {
-          description:
-            error instanceof Error
-              ? error.message
-              : 'An unknown error occurred',
-        });
-        setEditName(analysis.name);
-      }
-    } else if (analysis) {
-      setEditName(analysis.name);
-    }
-  };
-
-  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur();
-    } else if (e.key === 'Escape') {
-      if (analysis) {
-        setEditName(analysis.name);
-      }
-      setIsEditingName(false);
-    }
-  };
-
   const datasourceId = analysis?.datasourceIds[0];
   const datasource = useQuery(
     api.datasources.get,
@@ -191,6 +147,88 @@ function SheetPage() {
     csvData,
     tableName,
   });
+
+  useEffect(() => {
+    if (!sheets || sheets.length === 0) return;
+    const sheetExists = sheets.some((s) => s._id === currentSheetId);
+    if (!sheetExists) {
+      navigate({
+        to: '/analysis/$id/sheet/$sheetId',
+        params: { id: analysisId, sheetId: sheets[0]._id },
+      });
+    }
+  }, [sheets, currentSheetId, analysisId, navigate]);
+
+  /**
+   * HACKATHON WORKAROUND: Force page refresh on first navigation
+   *
+   * This is a temporary fix for DuckDB table loading race conditions that cause
+   * "Binder Error: Referenced column not found in FROM clause" errors. The issue
+   * occurs when charts query tables before they're fully registered in DuckDB.
+   *
+   * Proper fix would be: Implement proper table registration tracking and query
+   * queueing system to ensure all queries wait for table readiness.
+   */
+  useLayoutEffect(() => {
+    if (!sheets || sheets.length === 0) return;
+    const isFirstSheet = sheets[0]._id === currentSheetId;
+    if (!isFirstSheet) return;
+
+    const hasRefreshed = sessionStorage.getItem(`refreshed-${analysisId}`);
+    if (!hasRefreshed && !refreshTimeoutRef.current) {
+      sessionStorage.setItem(`refreshed-${analysisId}`, 'true');
+      setShowRefreshOverlay(true);
+      refreshTimeoutRef.current = setTimeout(() => {
+        refreshTimeoutRef.current = null;
+        window.location.reload();
+      }, 450);
+    }
+  }, [currentSheetId, sheets, analysisId]);
+
+  useEffect(() => {
+    if (analysis) {
+      setEditName(analysis.name);
+    }
+  }, [analysis]);
+
+  if (!session) {
+    navigate({ to: '/' });
+    return null;
+  }
+
+  const isLoading =
+    isLoadingSession || !analysis || !sheets || sheets.length === 0;
+
+  const handleNameBlur = async () => {
+    setIsEditingName(false);
+    if (!analysis) return;
+    if (editName.trim() && editName.trim() !== analysis.name) {
+      try {
+        await updateAnalysisName({ id: analysisId, name: editName.trim() });
+      } catch (error) {
+        toast.error('Failed to update analysis name', {
+          description:
+            error instanceof Error
+              ? error.message
+              : 'An unknown error occurred',
+        });
+        setEditName(analysis.name);
+      }
+    } else {
+      setEditName(analysis.name);
+    }
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur();
+    } else if (e.key === 'Escape') {
+      if (analysis) {
+        setEditName(analysis.name);
+      }
+      setIsEditingName(false);
+    }
+  };
 
   const getDefaultPosition = (): {
     x: number;
@@ -362,18 +400,11 @@ function SheetPage() {
     visuals?.find((v) => v._id === selectedVisualId) || null;
 
   const handlePublishToDashboard = () => {
-    if (!analysis) {
-      return;
-    }
     setShowShareModal(true);
   };
 
   if (dbError) {
     return <div>Failed to initialize DuckDB: {dbError.message}</div>;
-  }
-
-  if (!analysis) {
-    return null;
   }
 
   return (
@@ -390,52 +421,76 @@ function SheetPage() {
           {
             label: 'Publish to dashboard',
             onClick: handlePublishToDashboard,
-            disabled: !analysis,
           },
         ],
       }}
     >
       {showRefreshOverlay && <SheetRefreshOverlay />}
-      <ShareDashboardModal
-        open={showShareModal}
-        onOpenChange={setShowShareModal}
-        analysisId={analysis._id}
-        defaultDashboardName={`${analysis.name} Dashboard`}
-      />
+      {analysis && (
+        <ShareDashboardModal
+          open={showShareModal}
+          onOpenChange={setShowShareModal}
+          analysisId={analysis._id}
+          defaultDashboardName={`${analysis.name} Dashboard`}
+        />
+      )}
       <div className="flex h-[calc(100vh-8rem)] flex-col -mt-6 -mx-6">
-        {datasource && (
-          <>
-            <div className="flex items-center gap-2 border-b border-border/30 px-3 py-1">
-              <SheetTabs sheets={sheets ?? undefined} analysisId={analysisId} />
-              <VisualToolbar
-                onCreateVisual={handleCreateVisual}
-                sheetId={currentSheetId}
-                columns={datasource.columns}
-                selectedVisual={selectedVisual}
-                onVisualSelect={(visual) =>
-                  setSelectedVisualId(visual?._id || null)
-                }
-                tableName={tableName}
-                tableLoaded={tableLoaded}
-              />
-            </div>
-            {sheets && sheets.length > 0 && (
-              <div className="flex-1 overflow-auto px-6">
-                <VisualCanvas
-                  sheetId={currentSheetId}
-                  datasourceId={datasource._id}
-                  columns={datasource.columns}
-                  csvDataLoading={csvDataLoading}
-                  dbLoading={dbLoading}
-                  tableName={tableName}
-                  tableLoaded={tableLoaded}
-                  selectedVisualId={selectedVisualId}
-                  onVisualSelect={setSelectedVisualId}
-                />
+        <div className="flex items-center gap-2 border-b border-border/30 px-3 py-1">
+          <SheetTabs
+            sheets={isLoading ? undefined : sheets}
+            analysisId={analysisId}
+          />
+          {datasource ? (
+            <VisualToolbar
+              onCreateVisual={handleCreateVisual}
+              sheetId={currentSheetId}
+              columns={datasource.columns}
+              selectedVisual={selectedVisual}
+              onVisualSelect={(visual) =>
+                setSelectedVisualId(visual?._id || null)
+              }
+              tableName={tableName}
+              tableLoaded={tableLoaded}
+            />
+          ) : (
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex items-center gap-1 border-l border-border/30 pl-3">
+                {[Table, BarChart3, LineChartIcon, PieChartIcon].map(
+                  (Icon, i) => (
+                    <Button
+                      key={i}
+                      variant="ghost"
+                      size="sm"
+                      disabled
+                      className="h-9 w-9 p-0 opacity-50"
+                    >
+                      <Icon className="h-4 w-4" />
+                    </Button>
+                  ),
+                )}
               </div>
-            )}
-          </>
-        )}
+            </div>
+          )}
+        </div>
+        {isLoading ? (
+          <div className="flex-1 overflow-auto px-6">
+            <Skeleton className="h-full w-full" />
+          </div>
+        ) : datasource ? (
+          <div className="flex-1 overflow-auto px-6">
+            <VisualCanvas
+              sheetId={currentSheetId}
+              datasourceId={datasource._id}
+              columns={datasource.columns}
+              csvDataLoading={csvDataLoading}
+              dbLoading={dbLoading}
+              tableName={tableName}
+              tableLoaded={tableLoaded}
+              selectedVisualId={selectedVisualId}
+              onVisualSelect={setSelectedVisualId}
+            />
+          </div>
+        ) : null}
       </div>
     </AppLayout>
   );
